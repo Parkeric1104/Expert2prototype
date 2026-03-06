@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { RotatingTitle } from "@/app/components/rotating-title";
+import { CreditStatus } from "@/app/components/credit-status";
 import { Send, Paperclip, X, FileText } from "lucide-react";
 import { 
   Scale, 
@@ -168,6 +169,11 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
             />
           </div>
         ))}
+      </div>
+
+      {/* 좌측 하단 크레딧 현황 */}
+      <div className="absolute bottom-6 left-6 z-20">
+        <CreditStatus />
       </div>
 
       {/* 메인 컨텐츠 */}
