@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatBubble } from "@/app/components/chat-bubble";
+import { UserMessageBubble } from "@/app/components/user-message-bubble";
 import { ProgressiveLoadingBubble } from "@/app/components/progressive-loading";
 import { ModernAIResponse } from "@/app/components/modern-ai-response";
+import { SimpleResponseCard } from "@/app/components/simple-response-card";
 import { DualPersonaDebate } from "@/app/components/dual-persona-debate";
 import { HumanFeedbackRequest } from "@/app/components/human-feedback-request";
 import { InvalidQuestionCard } from "@/app/components/invalid-question-card";
@@ -9,6 +11,8 @@ import { DocumentView } from "@/app/components/document-view";
 import { DocumentCompleteModal } from "@/app/components/document-complete-modal";
 import { AIDebateResultModal } from "@/app/components/ai-debate-result-modal";
 import { ChatLeaveConfirmModal } from "@/app/components/chat-leave-confirm-modal";
+import { SessionLimitModal } from "@/app/components/session-limit-modal";
+import { AnswerDetailSidebar } from "@/app/components/answer-detail-sidebar";
 import { 
   Send, 
   Paperclip, 
@@ -82,6 +86,7 @@ interface Message {
   relatedLaws?: string[]; // 추천 질문의 관련 법령
   isInvalidQuestion?: boolean; // 유효하지 않은 질문
   invalidReason?: "meaningless" | "out-of-scope" | "inappropriate" | "unethical";
+  attachedFiles?: Array<{ name: string; size: number; type: string; }>; // 첨부파일 정보
 }
 
 interface ModernChatInterfaceProps {
@@ -111,6 +116,9 @@ const FLOATING_ICONS = [
   { Icon: UserCheck, delay: 4, duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
+// 멀티턴 제한 상수 (테스트용: 3회)
+const MAX_QUESTIONS = 3;
+
 export function ModernChatInterface({ 
   initialMessage, 
   selectedLaws, 
@@ -139,8 +147,29 @@ export function ModernChatInterface({
   const [pendingDebateMessageId, setPendingDebateMessageId] = useState("");
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [pendingLeaveAction, setPendingLeaveAction] = useState<(() => void) | null>(null);
+  
+  // 세션 제한 관련 상태
+  const [showSessionLimitModal, setShowSessionLimitModal] = useState(false);
+  const [pendingQuestion, setPendingQuestion] = useState("");
+  const [pendingAttachedFiles, setPendingAttachedFiles] = useState<Array<{ name: string; size: number; type: string; }>>([]);
+  
+  // 답변 상세 사이드바 관련 상태
+  const [showDetailSidebar, setShowDetailSidebar] = useState(false);
+  const [preparingAnswerData, setPreparingAnswerData] = useState<EnhancedResponseData | null>(null);
+  const [isInitialAnswerView, setIsInitialAnswerView] = useState(false); // 최초 답변 생성 시 사이드바인지 여부
+  const [autoCloseSidebar, setAutoCloseSidebar] = useState(false); // 사이드바 자동 닫기 플래그
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // AI 답변 횟수 계산 (실제 답변만 카운트)
+  const getAIResponseCount = (): number => {
+    return messages.filter(m => 
+      !m.isUser && 
+      !m.isLoading && 
+      (m.isEnhancedResponse || (m.relatedLaws && m.relatedLaws.length > 0))
+    ).length;
+  };
 
   // Helper to get law names from IDs
   const getLawNames = (lawIds: string[]): string[] => {
@@ -159,7 +188,7 @@ export function ModernChatInterface({
       "disabled-employment": "장애인고용촉진법",
       "foreign-workers": "외국인근로자 고용법",
       "vocational-training": "근로자직업능력개발법",
-      "labor-welfare": "근로복기본법",
+      "labor-welfare": "근로본법",
     };
     return lawIds.map(id => lawMap[id] || id);
   };
@@ -222,7 +251,7 @@ export function ModernChatInterface({
     if (lowerMessage.includes("연차") || lowerMessage.includes("휴가")) {
       return "연차휴가 관련";
     }
-    if (lowerMessage.includes("퇴직금") || lowerMessage.includes("중간정산")) {
+    if (lowerMessage.includes("퇴직금") || lowerMessage.includes("중정산")) {
       return "퇴직금 관련";
     }
     if (lowerMessage.includes("징계")) {
@@ -250,7 +279,7 @@ export function ModernChatInterface({
         return [
           "최저임금 미만으로 급여를 받고 있는데 어떻게 해야 하나요?",
           "연차휴가를 사용하지 못하고 퇴사하면 수당을 받을 수 있나요?",
-          "근로계약서를 작성하지 않은 경우 법적으로 문제가 되나요?"
+          "근로계서를 작성하지 않은 경우 법적으로 문제가 되나요?"
         ];
       
       case "inappropriate":
@@ -258,7 +287,7 @@ export function ModernChatInterface({
         return [
           "해고 예고수당의 계산 방법과 지급 기준이 궁금합니다",
           "직장 내 괴롭힘을 당했을 때 대응 방법을 알려주세요",
-          "육아휴직 신청 시 회사가 거부할 수 있는 사유가 있나요?"
+          "육휴직 신청 시 회사가 거부할 수 있는 사유가 있나요?"
         ];
       
       case "insufficient":
@@ -309,7 +338,7 @@ export function ModernChatInterface({
       // Step 2: 법령 분석 완료 -> Step 3: 결과 확인
       onStepChange?.(3);
       setCurrentStep(3);
-    }, 4000);
+    }, 16000); // 16초로 변경
   };
 
   // Watch for selectedLaws changes (refined search)
@@ -359,7 +388,7 @@ export function ModernChatInterface({
           enhancedData: enhancedData,
         };
         setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-      }, 4000);
+      }, 16000); // 법령 재선택도 16초 분석 시간 적용
     }
   }, [selectedLaws]);
 
@@ -438,7 +467,33 @@ ${integratedData.aiOpinionSummary}
       // questionType이 있으면 해당 타입에 맞는 답변 생성
       if (questionType) {
         // 프로토타입 질문인 경우 questionType에 따라 분기
-        if (questionType === "normal") {
+        if (questionType === "simple") {
+          // 간단한 답변 - Simple Response Card
+          onStepChange?.(2);
+          setCurrentStep(2);
+
+          const loadingMsg: Message = {
+            id: (Date.now() + 1).toString(),
+            text: "",
+            isUser: false,
+            isLoading: true,
+            relatedLaws: relatedLaws,
+          };
+          setMessages((prev) => [...prev, loadingMsg]);
+
+          setTimeout(() => {
+            const simpleMsg: Message = {
+              id: (Date.now() + 2).toString(),
+              text: "",
+              isUser: false,
+              relatedLaws: relatedLaws || [],
+            };
+            setMessages((prev) => prev.filter(m => !m.isLoading).concat(simpleMsg));
+            setIsTyping(false);
+            onStepChange?.(3);
+            setCurrentStep(3);
+          }, 2000);
+        } else if (questionType === "normal") {
           // 정상 질문 - 일반 AI 답변 생성
           onStepChange?.(2);
           setCurrentStep(2);
@@ -465,7 +520,7 @@ ${integratedData.aiOpinionSummary}
             setIsTyping(false);
             onStepChange?.(3);
             setCurrentStep(3);
-          }, 4000);
+          }, 16000); // 16초로 변경
         } else if (questionType === "insufficient") {
           // 정보 부족 - 휴먼 피드백 요청
           const feedbackMsg: Message = {
@@ -554,11 +609,11 @@ ${integratedData.aiOpinionSummary}
         text: "",
         isUser: false,
         isLoading: true,
-        relatedLaws: relatedLaws, // 추천 질문의 관련 법령 전달
+        relatedLaws: relatedLaws, // 추천 질문의 련 법령 전달
       };
       setMessages((prev) => [...prev, loadingMsg]);
 
-      // After 4 seconds, replace with integrated response
+      // After 16 seconds, replace with integrated response
       setTimeout(() => {
         const enhancedData = generateIntegratedResponse(initialMessage);
         const aiMsg: Message = {
@@ -574,7 +629,7 @@ ${integratedData.aiOpinionSummary}
         // Step 2: 법령 분석 완료 -> Step 3: 결과 확인
         onStepChange?.(3);
         setCurrentStep(3);
-      }, 4000);
+      }, 16000); // 16초로 변경
     }
   }, [initialMessage, questionType]);
 
@@ -617,7 +672,30 @@ ${integratedData.aiOpinionSummary}
       // Step 2: 법령 분석 완료 -> Step 3: 결과 확인
       onStepChange?.(3);
       setCurrentStep(3);
-    }, 4000);
+    }, 16000); // 16초로 변경
+  };
+
+  // 최종 답변 준비 시작 시 호출되는 핸들러
+  const handleAnswerPreparationStart = () => {
+    console.log('[Modern Chat] 답변 준비 시작 핸들러 호출');
+    // 답변 데이터를 미리 생성
+    const userMessage = messages.find(m => m.isUser && !m.text.includes("AI 의견"))?.text || initialMessage || "";
+    console.log('[Modern Chat] 사용자 메시지:', userMessage);
+    if (userMessage) {
+      const enhancedData = generateIntegratedResponse(userMessage);
+      console.log('[Modern Chat] 답변 데이터 생성 완료:', enhancedData);
+      
+      // AI 의견은 최초 답변에서 제거 (AI 심층분석 후에만 표시)
+      const dataWithoutAIOpinion = {
+        ...enhancedData,
+        aiOpinionSummary: undefined, // AI 의견 제거
+      };
+      
+      setPreparingAnswerData(dataWithoutAIOpinion);
+      setShowDetailSidebar(true);
+      setIsInitialAnswerView(true); // 최초 답변 생성 시 설정
+      console.log('[Modern Chat] 사이드바 열기 상태 설정 (AI 의견 제외)');
+    }
   };
 
   // Auto scroll
@@ -629,14 +707,48 @@ ${integratedData.aiOpinionSummary}
     e.preventDefault();
     if (!inputValue.trim()) return;
 
+    // AI 심층분석 진행 중에는 입력 불가
+    const isDebateInProgress = messages.some(m => m.isDebate && !m.debateHistory);
+    if (isDebateInProgress) {
+      toast.info("AI 심층분석이 진행 중입니다. 잠시만 기다려주세요.");
+      return;
+    }
+
+    // 멀티턴 제한 체크
+    const aiResponseCount = getAIResponseCount();
+    if (aiResponseCount >= MAX_QUESTIONS) {
+      // 질문을 보내지 않고 세션 전환 알럿 표시
+      const filesInfo = uploadedFiles.map(file => ({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      }));
+      
+      setPendingQuestion(inputValue);
+      setPendingAttachedFiles(filesInfo);
+      setShowSessionLimitModal(true);
+      return;
+    }
+
+    // 첨부파일 정보 저장 (data 제외)
+    const filesInfo = uploadedFiles.map(file => ({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    }));
+
     const userMsg: Message = {
       id: Date.now().toString(),
       text: inputValue,
       isUser: true,
+      attachedFiles: filesInfo.length > 0 ? filesInfo : undefined,
     };
     const savedInput = inputValue;
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
+    
+    // 메시지 발송 후 첨부파일 삭제
+    setUploadedFiles([]);
 
     // Show loading
     const loadingMsg: Message = {
@@ -658,7 +770,7 @@ ${integratedData.aiOpinionSummary}
         enhancedData: enhancedData,
       };
       setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-    }, 4000);
+    }, 16000); // 후속 질문도 최초 질문과 동일한 16초 분석 시간 적용
   };
 
   const handleViewOpinion = () => {
@@ -782,7 +894,7 @@ ${integratedData.aiOpinionSummary}
 
   // Handle AI Opinion Apply
   const handleApplyAIOpinion = () => {
-    // 이전 답변을 업데이트하는 대신 새로운 답변 메시지를 추가
+    // 이전 답변을 업데이트하는 대신 새로운 답변 메시를 추가
     const originalQuestion = messages.find(m => m.isUser && !m.text.includes("AI 의견"))?.text || "";
     const originalEnhancedData = messages.find(m => m.isEnhancedResponse)?.enhancedData;
     const debateMessage = messages.find(m => m.isDebate);
@@ -833,7 +945,31 @@ ${integratedData.aiOpinionSummary}
   };
 
   const handleFinalComplete = () => {
-    setShowCompleteModal(false);
+    console.log('[Chat] handleFinalComplete 호출됨');
+    console.log('[Chat] showDetailSidebar:', showDetailSidebar);
+    console.log('[Chat] preparingAnswerData:', preparingAnswerData ? 'exists' : 'null');
+    console.log('[Chat] autoCloseSidebar (before):', autoCloseSidebar);
+    
+    // 문서 저장 완료 알림
+    toast.success('의견서가 성공적으로 저장되었습니다! 🎉');
+    
+    // 사이드바가 열려 있으면 5초 자동 닫기 활성화
+    if (showDetailSidebar && preparingAnswerData) {
+      console.log('[Chat] 의견서 저장 완료 - 사이드바 자동 닫기 활성화');
+      setAutoCloseSidebar(true);
+      console.log('[Chat] autoCloseSidebar (after):', true);
+    } else {
+      console.log('[Chat] 조건 불일치 - 자동 닫기 활성화 안됨');
+      if (!showDetailSidebar) console.log('[Chat] 이유: showDetailSidebar = false');
+      if (!preparingAnswerData) console.log('[Chat] 이���: preparingAnswerData = null');
+    }
+    
+    // 모달은 나중에 닫기 (상태 업데이트 후)
+    setTimeout(() => {
+      setShowCompleteModal(false);
+      console.log('[Chat] 모달 닫기 완료');
+    }, 100);
+    
     onCompleteDocument?.();
   };
 
@@ -897,7 +1033,7 @@ ${integratedData.aiOpinionSummary}
   const handleStopResponse = () => {
     // Remove loading message
     setMessages((prev) => prev.filter(m => !m.isLoading));
-    toast.info("답변 생성이 중단되었습니다.");
+    toast.info("답변 생성이 중단되었니다.");
   };
   
   // 법령 재선택 핸들러
@@ -926,6 +1062,54 @@ ${integratedData.aiOpinionSummary}
     }
   }, [messages, onMessagesChange]);
 
+  // 세션 제한 확인
+  useEffect(() => {
+    const aiResponseCount = getAIResponseCount();
+    if (aiResponseCount >= MAX_QUESTIONS) {
+      setShowSessionLimitModal(true);
+    }
+  }, [messages]);
+
+  // 세션 제한 모달에서 질문 재시도
+  const handleRetryQuestion = () => {
+    if (pendingQuestion) {
+      const userMsg: Message = {
+        id: Date.now().toString(),
+        text: pendingQuestion,
+        isUser: true,
+        attachedFiles: pendingAttachedFiles,
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      setInputValue("");
+      
+      // 메시지 발송 후 첨부파일 삭제
+      setUploadedFiles([]);
+
+      // Show loading
+      const loadingMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "",
+        isUser: false,
+        isLoading: true,
+        relatedLaws: relatedLaws, // 추천 질문의 관련 법령 전달
+      };
+      setMessages((prev) => [...prev, loadingMsg]);
+
+      setTimeout(() => {
+        const enhancedData = generateIntegratedResponse(pendingQuestion);
+        const aiMsg: Message = {
+          id: (Date.now() + 2).toString(),
+          text: "",
+          isUser: false,
+          isEnhancedResponse: true,
+          enhancedData: enhancedData,
+        };
+        setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+      }, 16000); // 세션 제한 모달 질문도 16초 분석 시간 적용
+    }
+    setShowSessionLimitModal(false);
+  };
+
   // If showing document preview, render DocumentView instead
   if (showDocPreview) {
     return (
@@ -937,6 +1121,9 @@ ${integratedData.aiOpinionSummary}
       />
     );
   }
+
+  // AI 심층분석 진행 중인지 확인
+  const isDebateInProgress = messages.some(m => m.isDebate && !m.debateHistory);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -997,19 +1184,51 @@ ${integratedData.aiOpinionSummary}
             {messages.map((message) => (
               <div key={message.id}>
                 {message.isUser && (
-                  <ChatBubble 
+                  <UserMessageBubble 
                     message={message.text} 
-                    isUser={true} 
-                    lawCategory={message.lawCategory}
+                    attachedFiles={message.attachedFiles}
                   />
                 )}
-                {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} />}
+                {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} onAnswerPreparationStart={handleAnswerPreparationStart} />}
                 {message.needsFeedback && message.feedbackReason && (
                   <HumanFeedbackRequest
                     reason={message.feedbackReason}
                     originalQuestion={messages.find(m => m.isUser)?.text || ""}
                     onSubmitRevision={handleRevisedQuestion}
                     suggestedQuestions={message.suggestedQuestions}
+                  />
+                )}
+                {!message.isUser && !message.isLoading && !message.needsFeedback && !message.isEnhancedResponse && !message.isDebate && !message.isInvalidQuestion && message.relatedLaws && (
+                  <SimpleResponseCard
+                    question={messages.find(m => m.isUser)?.text || ""}
+                    answer={{
+                      items: [
+                        {
+                          text: "법인세법은 대한민국의 법인에 대한 소득에 관하여 과세하는 것을 목적으로 하는 법입니다.",
+                          laws: ["법인세법 제1조"]
+                        },
+                        {
+                          text: "법인세법에서는 \"내국법인\", \"외국법인\", \"비영리법인\" 등 용어의 정의를 명확하게 하고 있습니다.",
+                          laws: ["법인세법 제2조"]
+                        },
+                        {
+                          text: "법인세를 납부할 의무자는 내국법인과 국내원천소득이 있는 외국법인입니다.",
+                          laws: ["법인세법 제3조"]
+                        },
+                        {
+                          text: "과세 대상 소득의 범위, 사업연도, 과세표준, 남부세액 등 세법적인 기준과 절차를 규정하고 있습니다.",
+                          laws: ["법인세법 제4조", "법인세법 제6조", "법인세법 제13조", "법인세법 제8조"]
+                        },
+                        {
+                          text: "또한, 법인세 부과와 관련된 질문 조사, 손금산입, 병 시 결손금 공제 제한 등 세부적인 절차를 세밀하게 규정하고 있습니다.",
+                          laws: ["법인세법 제122조", "법인세법 제25조", "법인세법 제45조"]
+                        }
+                      ]
+                    }}
+                    relatedLaws={message.relatedLaws.map((law, idx) => ({
+                      id: `제${idx + 1}조`,
+                      name: law
+                    }))}
                   />
                 )}
                 {message.isEnhancedResponse && message.enhancedData && (
@@ -1026,6 +1245,12 @@ ${integratedData.aiOpinionSummary}
                     onRequestAIOpinion={() => handleRequestAIOpinion(message.id)}
                     hasAIOpinion={message.hasAIOpinion || false}
                     questionSummary={generateQuestionSummary(messages.find(m => m.isUser)?.text || "")}
+                    onOpenDetailView={() => {
+                      setPreparingAnswerData(message.enhancedData || null);
+                      setShowDetailSidebar(true);
+                      setIsInitialAnswerView(false); // 상세 답변 보기는 최초 답변이 아님
+                      console.log('[Chat] 상세 답변 보기 열기 (타이핑 효과 없음)');
+                    }}
                   />
                 )}
                 {message.isDebate && (
@@ -1089,8 +1314,9 @@ ${integratedData.aiOpinionSummary}
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="추가 질문을 입력하세요..."
-                className="flex-1 bg-transparent border-none outline-none text-base text-foreground placeholder:text-muted-foreground"
+                placeholder={isDebateInProgress ? "AI 심층분석 진행 중..." : "추가 질문을 입력하세요..."}
+                disabled={isDebateInProgress}
+                className="flex-1 bg-transparent border-none outline-none text-base text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <input
                 type="file"
@@ -1103,14 +1329,15 @@ ${integratedData.aiOpinionSummary}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-9 h-9 bg-muted hover:bg-muted/80 rounded-full transition-colors flex items-center justify-center flex-shrink-0"
+                disabled={isDebateInProgress}
+                className="w-9 h-9 bg-muted hover:bg-muted/80 rounded-full transition-colors flex items-center justify-center flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="파일 업로드 (PDF, DOCX, HWP)"
               >
                 <Paperclip className="w-4.5 h-4.5" />
               </button>
               <button
                 type="submit"
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() || isDebateInProgress}
                 className="w-10 h-10 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
               >
                 <Send className="w-4.5 h-4.5" />
@@ -1178,6 +1405,50 @@ ${integratedData.aiOpinionSummary}
           }
         }}
       />
+
+      {/* Session Limit Modal */}
+      <SessionLimitModal
+        isOpen={showSessionLimitModal}
+        onClose={() => setShowSessionLimitModal(false)}
+        onContinueNewSession={() => {
+          // 새 세션 시작: 페이지 리셋하고 질문 자동 전송
+          window.location.reload();
+          // TODO: 페이지 로드 후 pendingQuestion을 입력창에 자동으로 넣고 전송
+        }}
+        onDraftDocument={() => {
+          setShowSessionLimitModal(false);
+          const userMessage = messages.find(m => m.isUser)?.text || "";
+          if (userMessage) {
+            handleDraftDocument(userMessage);
+          }
+        }}
+        onEndConsultation={() => {
+          setShowSessionLimitModal(false);
+          onCompleteDocument?.();
+        }}
+        questionCount={getAIResponseCount()}
+        maxQuestions={MAX_QUESTIONS}
+      />
+
+      {/* Answer Detail Sidebar */}
+      {preparingAnswerData && (
+        <AnswerDetailSidebar
+          isOpen={showDetailSidebar}
+          onClose={() => {
+            console.log('[Chat] 사이드바 닫기 - autoCloseSidebar 플래그 초기화');
+            setShowDetailSidebar(false);
+            setAutoCloseSidebar(false); // 플래그 초기화
+          }}
+          conclusion={preparingAnswerData.conclusion}
+          factAnalysis={preparingAnswerData.factAnalysis}
+          queryContent={preparingAnswerData.queryRedefinition}
+          reviewContent={preparingAnswerData.reviewContent}
+          sources={preparingAnswerData.sources}
+          aiOpinion={preparingAnswerData.aiOpinionSummary}
+          questionSummary={messages.find(m => m.isUser)?.text || initialMessage}
+          isInitialAnswer={isInitialAnswerView} // 최초 답변 생성 시 사이드바인지 여부
+        />
+      )}
     </div>
   );
 }

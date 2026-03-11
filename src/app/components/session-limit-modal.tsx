@@ -1,0 +1,99 @@
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Button } from "@/app/components/ui/button";
+import { MessageCircle, FileText, LogOut } from "lucide-react";
+
+interface SessionLimitModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onContinueNewSession: () => void; // "이어서 질문하기"
+  onDraftDocument: () => void; // "의견서 작성"
+  onEndConsultation: () => void; // "상담 종료"
+  questionCount: number;
+  maxQuestions: number;
+}
+
+export function SessionLimitModal({
+  isOpen,
+  onClose,
+  onContinueNewSession,
+  onDraftDocument,
+  onEndConsultation,
+  questionCount,
+  maxQuestions,
+}: SessionLimitModalProps) {
+  return (
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent className="max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-indigo-600" />
+            새로운 상담으로 이어가기
+          </AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-sm">
+              <div className="p-4 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-lg">
+                <div className="text-foreground font-medium mb-3">
+                  원활하고 정확한 답변을 위해 새로운 대화창에서 상담을 이어갑니다.
+                </div>
+                <div className="text-indigo-700 dark:text-indigo-300 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 px-3 py-2 rounded">
+                  💬 방금 입력하신 질문은 그대로 유지되어 새로운 세션에서 자동으로 시작됩니다.
+                </div>
+              </div>
+
+              <div className="text-muted-foreground text-xs space-y-1">
+                <div className="flex items-start gap-1.5">
+                  <span className="text-indigo-600 mt-0.5">✓</span>
+                  <span>기존 대화 내용은 히스토리에 안전하게 자동 저장됩니다.</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-indigo-600 mt-0.5">✓</span>
+                  <span>선택하신 법령은 새 세션에도 그대로 적용됩니다.</span>
+                </div>
+              </div>
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <AlertDialogFooter className="flex-col sm:flex-col gap-2">
+          {/* Primary: Continue with new session */}
+          <Button
+            onClick={onContinueNewSession}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            이어서 질문하기
+          </Button>
+
+          <div className="flex gap-2 w-full">
+            {/* Secondary: Draft document */}
+            <Button
+              onClick={onDraftDocument}
+              variant="outline"
+              className="flex-1"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              의견서 작성
+            </Button>
+
+            {/* Secondary: End consultation */}
+            <Button
+              onClick={onEndConsultation}
+              variant="outline"
+              className="flex-1"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              상담 종료
+            </Button>
+          </div>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}

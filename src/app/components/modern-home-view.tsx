@@ -44,6 +44,17 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const prompts = [
+    // 🟢 간단한 답변 테스트 - Simple Response Card
+    {
+      text: "연차 사용 시 회사가 사용 사유를 물어봐도 되나요?",
+      displayText: "🟢 연차 사용 시 회사가 사용 사유를 물어봐도 되나요? (간단 답변)",
+      questionType: "simple",
+      laws: [
+        "근로기준법 제60조",
+        "근로기준법 시행령 제30조",
+        "대법원 2017다232132 판결"
+      ]
+    },
     // ✅ 정상 질문 - 명확하고 상세한 질문
     {
       text: "점심시간에 회사 구내식당으로 이동 중 넘어져 발목을 다쳤어요. 산재 인정될까요?",

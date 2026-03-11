@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, FileText, X, Shield, Box } from "lucide-react";
+import { Upload, FileText, X, Shield, Box, AlertCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/app/components/ui/dialog";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
@@ -30,16 +30,21 @@ interface PolicyRegistrationModalProps {
     type: string;
     category: string;
   }) => void;
+  existingCategories?: string[]; // 기존에 등록된 카테고리 목록
+  existingPolicies?: Array<{ category: string; name: string }>; // 기존 정책 목록
 }
 
 export function PolicyRegistrationModal({ 
   isOpen, 
   onClose,
-  onSubmit 
+  onSubmit,
+  existingCategories = [],
+  existingPolicies = []
 }: PolicyRegistrationModalProps) {
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number; type: string } | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>("취업규칙");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [customCategory, setCustomCategory] = useState<string>("");
+  const [customCategoryError, setCustomCategoryError] = useState<string>("");
   const [selectedAIBoxes, setSelectedAIBoxes] = useState<AIBox[]>([]);
   const [showAIBoxModal, setShowAIBoxModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,6 +57,37 @@ export function PolicyRegistrationModal({
     "복리후생규정",
     "직접입력",
   ];
+
+  // 선택된 카테고리에 이미 등록된 정책이 있는지 확인
+  const hasExistingPolicy = selectedCategory && selectedCategory !== "직접입력" 
+    && existingPolicies.some(policy => policy.category === selectedCategory);
+
+  // 직접입력 카테고리명이 변경될 때마다 중복 검증
+  const handleCustomCategoryChange = (value: string) => {
+    setCustomCategory(value);
+    
+    if (value.trim() === "") {
+      setCustomCategoryError("");
+      return;
+    }
+
+    // 기존 카테고리와 중복 체크 (대소문자 구분 없이, 앞뒤 공백 제거)
+    const normalizedValue = value.trim().toLowerCase();
+    const allExistingCategories = [
+      ...categories.filter(c => c !== "직접입력"),
+      ...existingCategories
+    ];
+
+    const isDuplicate = allExistingCategories.some(
+      cat => cat.toLowerCase() === normalizedValue
+    );
+
+    if (isDuplicate) {
+      setCustomCategoryError("이미 존재하는 카테고리입니다.");
+    } else {
+      setCustomCategoryError("");
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,6 +129,12 @@ export function PolicyRegistrationModal({
       return;
     }
 
+    // 직접입력 시 중복 체크
+    if (selectedCategory === "직접입력" && customCategoryError) {
+      toast.error(customCategoryError);
+      return;
+    }
+
     // 파일 또는 AI Box 중 하나는 필수
     if (!uploadedFile && selectedAIBoxes.length === 0) {
       toast.error("파일을 업로드하거나 AI Box를 선택해주세요.");
@@ -103,7 +145,7 @@ export function PolicyRegistrationModal({
       name: uploadedFile?.name || "AI Box 연결",
       size: uploadedFile?.size || 0,
       type: uploadedFile?.type || "aibox",
-      category: selectedCategory === "직접입력" ? customCategory : selectedCategory,
+      category: selectedCategory === "직접입력" ? customCategory.trim() : selectedCategory,
     });
 
     const message = uploadedFile 
@@ -114,16 +156,18 @@ export function PolicyRegistrationModal({
 
     // Reset form
     setUploadedFile(null);
-    setSelectedCategory("취업규칙");
+    setSelectedCategory("");
     setCustomCategory("");
+    setCustomCategoryError("");
     setSelectedAIBoxes([]);
     onClose();
   };
 
   const handleClose = () => {
     setUploadedFile(null);
-    setSelectedCategory("취업규칙");
+    setSelectedCategory("");
     setCustomCategory("");
+    setCustomCategoryError("");
     setSelectedAIBoxes([]);
     onClose();
   };
@@ -183,8 +227,24 @@ export function PolicyRegistrationModal({
                 type="text"
                 placeholder="예: 보안규정, 윤리강령 등"
                 value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
+                onChange={(e) => handleCustomCategoryChange(e.target.value)}
+                className={customCategoryError ? "border-red-500" : ""}
               />
+              {customCategoryError && (
+                <p className="text-xs text-red-500 mt-1">{customCategoryError}</p>
+              )}
+            </div>
+          )}
+
+          {/* 카테고리 중복 안내문구 */}
+          {hasExistingPolicy && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-900 dark:text-amber-200">
+                  선택하신 카테고리에 이미 등록된 정책이 있습니다. 새 파일을 등록하면 기존 정책이 최신 버전으로 업데이트됩니다.
+                </p>
+              </div>
             </div>
           )}
 

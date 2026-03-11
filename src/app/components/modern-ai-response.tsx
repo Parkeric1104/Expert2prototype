@@ -35,6 +35,7 @@ interface ModernAIResponseProps {
   onRequestAIOpinion?: () => void;
   hasAIOpinion?: boolean;
   questionSummary?: string; // 질문 요약 추가
+  onOpenDetailView?: () => void; // 상세 답변 보기 콜백 추가
 }
 
 export function ModernAIResponse({
@@ -50,6 +51,7 @@ export function ModernAIResponse({
   onRequestAIOpinion,
   hasAIOpinion = false,
   questionSummary,
+  onOpenDetailView,
 }: ModernAIResponseProps) {
   const [copied, setCopied] = useState(false);
   const [showDetailSidebar, setShowDetailSidebar] = useState(false);
@@ -137,7 +139,11 @@ ${reviewContent}
   };
 
   const handleOpenDetail = () => {
-    setShowDetailSidebar(true);
+    if (onOpenDetailView) {
+      onOpenDetailView();
+    } else {
+      setShowDetailSidebar(true);
+    }
   };
 
   return (
@@ -197,7 +203,8 @@ ${reviewContent}
 
       {/* Action Buttons - 메시지 밖 영역 */}
       <div className="mb-6 flex flex-wrap gap-2">
-        {onRefineSearch && (
+        {/* AI 심층분석 버튼을 선택한 후에는 법령 재선택 버튼 미노출 */}
+        {onRefineSearch && !hasAIOpinion && (
           <Button
             onClick={onRefineSearch}
             variant="outline"

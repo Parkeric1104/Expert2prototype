@@ -34,23 +34,28 @@ const buttonVariants = cva(
   },
 );
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
-  }) {
+function Button(
+  allProps: React.ComponentProps<"button"> &
+    VariantProps<typeof buttonVariants> & {
+      asChild?: boolean;
+    }
+) {
+  // Filter out Figma-specific props
+  const { className, variant, size, asChild = false, ...restProps } = allProps;
+  const filteredProps = Object.keys(restProps).reduce((acc, key) => {
+    if (!key.startsWith('_fg')) {
+      acc[key] = (restProps as any)[key];
+    }
+    return acc;
+  }, {} as any);
+
   const Comp = asChild ? Slot : "button";
 
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
+      {...filteredProps}
     />
   );
 }

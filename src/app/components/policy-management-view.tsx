@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { 
   Shield, FileText, Search, Filter, Download, ChevronDown, ChevronUp, 
-  Edit, Trash2, History as HistoryIcon, Plus, Lock
+  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -37,6 +37,7 @@ interface PolicyFile {
   uploadedBy: string;
   version: number;
   history: PolicyHistory[];
+  status: "pending" | "active" | "error"; // 상태 추가
 }
 
 interface PolicyHistory {
@@ -45,6 +46,7 @@ interface PolicyHistory {
   action: "등록" | "수정" | "재업로드";
   changedBy: string;
   changes?: string;
+  status?: "pending" | "active" | "error"; // 히스토리 항목별 상태 추가
 }
 
 interface PolicyManagementViewProps {
@@ -53,7 +55,7 @@ interface PolicyManagementViewProps {
 
 export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewProps) {
   // Mock data for existing policies
-  const [policies, setPolicies] = useState<PolicyFile[]>([
+  const [policies, setPolicies] = useState<PolicyFile[]>(([
     {
       id: "1",
       name: "2024년_취업규칙.pdf",
@@ -65,9 +67,10 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
       uploadedBy: "김관리",
       version: 2,
       history: [
-        { version: 1, date: "2024-01-15", action: "등록", changedBy: "김관리" },
-        { version: 2, date: "2024-02-20", action: "수정", changedBy: "김관리", changes: "카테고리 변경" },
+        { version: 1, date: "2024-01-15", action: "등록", changedBy: "김관리", status: "active" },
+        { version: 2, date: "2024-02-20", action: "등록", changedBy: "김관리", status: "pending" },
       ],
+      status: "active",
     },
     {
       id: "2",
@@ -80,8 +83,9 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
       uploadedBy: "이노무",
       version: 1,
       history: [
-        { version: 1, date: "2024-02-01", action: "등록", changedBy: "이노무" },
+        { version: 1, date: "2024-02-01", action: "등록", changedBy: "이노무", status: "active" },
       ],
+      status: "active",
     },
     {
       id: "3",
@@ -94,12 +98,136 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
       uploadedBy: "박인사",
       version: 3,
       history: [
-        { version: 1, date: "2023-12-10", action: "등록", changedBy: "박인사" },
-        { version: 2, date: "2024-01-10", action: "재업로드", changedBy: "박인사", changes: "개정된 파일로 교체" },
-        { version: 3, date: "2024-01-25", action: "수정", changedBy: "김관리", changes: "카테고리 세부 분류" },
+        { version: 1, date: "2023-12-10", action: "등록", changedBy: "박인사", status: "active" },
+        { version: 2, date: "2024-01-10", action: "등록", changedBy: "박인사", status: "error" },
+        { version: 3, date: "2024-01-25", action: "등록", changedBy: "김관리", status: "pending" },
       ],
+      status: "active",
     },
-  ]);
+    {
+      id: "4",
+      name: "급여규정_2024_v1.pdf",
+      size: 2156780,
+      type: "application/pdf",
+      category: "급여규정",
+      uploadDate: "2024-03-01",
+      lastModified: "2024-03-01",
+      uploadedBy: "최재무",
+      version: 1,
+      history: [
+        { version: 1, date: "2024-03-01", action: "등록", changedBy: "최재무", status: "pending" },
+      ],
+      status: "pending",
+    },
+    {
+      id: "5",
+      name: "복리후생규정_개정안.hwp",
+      size: 1920384,
+      type: "application/x-hwp",
+      category: "복리후생규정",
+      uploadDate: "2024-03-05",
+      lastModified: "2024-03-05",
+      uploadedBy: "정복지",
+      version: 1,
+      history: [
+        { version: 1, date: "2024-03-05", action: "등록", changedBy: "정복지", status: "pending" },
+      ],
+      status: "pending",
+    },
+    {
+      id: "6",
+      name: "보안규정_손상파일.pdf",
+      size: 512000,
+      type: "application/pdf",
+      category: "인사규정",
+      uploadDate: "2024-02-28",
+      lastModified: "2024-02-28",
+      uploadedBy: "강보안",
+      version: 1,
+      history: [
+        { version: 1, date: "2024-02-28", action: "등록", changedBy: "강보안", status: "error" },
+      ],
+      status: "error",
+    },
+    {
+      id: "7",
+      name: "윤리강령_2024.docx",
+      size: 987654,
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      category: "인사규정",
+      uploadDate: "2024-01-20",
+      lastModified: "2024-01-20",
+      uploadedBy: "윤윤리",
+      version: 1,
+      history: [
+        { version: 1, date: "2024-01-20", action: "등록", changedBy: "윤윤리", status: "active" },
+      ],
+      status: "active",
+    },
+    {
+      id: "8",
+      name: "퇴직금규정_최신본.pdf",
+      size: 1456789,
+      type: "application/pdf",
+      category: "급여규정",
+      uploadDate: "2024-03-08",
+      lastModified: "2024-03-08",
+      uploadedBy: "김급여",
+      version: 1,
+      history: [
+        { version: 1, date: "2024-03-08", action: "등록", changedBy: "김급여", status: "pending" },
+      ],
+      status: "pending",
+    },
+    {
+      id: "9",
+      name: "파일파싱실패.hwp",
+      size: 234567,
+      type: "application/x-hwp",
+      category: "취업규칙",
+      uploadDate: "2024-03-07",
+      lastModified: "2024-03-07",
+      uploadedBy: "오에러",
+      version: 1,
+      history: [
+        { version: 1, date: "2024-03-07", action: "등록", changedBy: "오에러", status: "error" },
+      ],
+      status: "error",
+    },
+    {
+      id: "10",
+      name: "연차휴가규정_개정.pdf",
+      size: 1678901,
+      type: "application/pdf",
+      category: "복리후생규정",
+      uploadDate: "2024-02-15",
+      lastModified: "2024-02-22",
+      uploadedBy: "박휴가",
+      version: 2,
+      history: [
+        { version: 1, date: "2024-02-15", action: "등록", changedBy: "박휴가", status: "active" },
+        { version: 2, date: "2024-02-22", action: "등록", changedBy: "박휴가", status: "pending" },
+      ],
+      status: "active",
+    },
+    {
+      id: "11",
+      name: "근로계약서_표준양식.pdf",
+      size: 1234567,
+      type: "application/pdf",
+      category: "취업규칙",
+      uploadDate: "2024-02-10",
+      lastModified: "2024-03-10",
+      uploadedBy: "송계약",
+      version: 3,
+      history: [
+        { version: 1, date: "2024-02-10", action: "등록", changedBy: "송계약", status: "active" },
+        { version: 2, date: "2024-02-25", action: "등록", changedBy: "송계약", status: "active" },
+        { version: 3, date: "2024-03-10", action: "등록", changedBy: "송계약", status: "error" },
+      ],
+      status: "active",
+    },
+  ]));
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("전체");
@@ -150,6 +278,7 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
           changedBy: "현재사용자",
         },
       ],
+      status: "active", // 상태 추가
     };
 
     setPolicies([newPolicy, ...policies]);
@@ -195,8 +324,64 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
     toast.success(`${policy.name} 다운로드를 시작합니다.`);
   };
 
+  const handleRetryUpload = (policyId: string) => {
+    // 재업로드 로직
+    toast.info("파일을 다시 업로드해주세요.");
+  };
+
   const toggleExpand = (policyId: string) => {
     setExpandedPolicy(expandedPolicy === policyId ? null : policyId);
+  };
+
+  // 리스트에 표시할 버전 정보 결정하는 함수
+  // 접힌 상태의 리스트는 항상 v1(최초 버전) 기준으로 노출
+  const getDisplayInfo = (policy: PolicyFile) => {
+    // 항상 v1 정보를 리스트에 표시
+    const firstVersion = policy.history[0];
+    return {
+      date: firstVersion.date,
+      uploadedBy: firstVersion.changedBy,
+      status: firstVersion.status || policy.status,
+    };
+  };
+
+  // 히스토리 파일명 생성 함수 (파일명 + 버전 번호)
+  const getHistoryFileName = (baseName: string, version: number) => {
+    // 파일명과 확장자 분리
+    const lastDotIndex = baseName.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+      return `${baseName} ${version}`;
+    }
+    const nameWithoutExt = baseName.substring(0, lastDotIndex);
+    const extension = baseName.substring(lastDotIndex);
+    return `${nameWithoutExt} ${version}${extension}`;
+  };
+
+  // 상태 배지 렌더링 함수
+  const getStatusBadge = (status: PolicyFile["status"]) => {
+    switch (status) {
+      case "pending":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded text-xs font-medium whitespace-nowrap">
+            <Clock className="w-3 h-3" />
+            대기중
+          </span>
+        );
+      case "active":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-xs font-medium whitespace-nowrap">
+            <CheckCircle2 className="w-3 h-3" />
+            등록완료
+          </span>
+        );
+      case "error":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs font-medium whitespace-nowrap">
+            <AlertCircle className="w-3 h-3" />
+            오류
+          </span>
+        );
+    }
   };
 
   // 관리자 권한이 없는 경우
@@ -277,149 +462,158 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
 
           {/* 정책 목록 */}
           <div className="space-y-3">
-            {filteredPolicies.map((policy) => (
-              <div
-                key={policy.id}
-                className="border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors bg-card"
-              >
-                {/* 정책 헤더 */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <FileText className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-foreground truncate">
-                            {policy.name}
-                          </h3>
-                          <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium whitespace-nowrap">
-                            {policy.category}
-                          </span>
+            {filteredPolicies.map((policy) => {
+              const displayInfo = getDisplayInfo(policy);
+              
+              return (
+                <div
+                  key={policy.id}
+                  className="border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors bg-card"
+                >
+                  {/* 정책 헤더 */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <FileText className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                        <div className="flex-1 min-w-0 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-foreground truncate">
+                              {policy.name}
+                            </h3>
+                            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium whitespace-nowrap">
+                              {policy.category}
+                            </span>
+                            {getStatusBadge(displayInfo.status)}
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                            <span>등록일: {displayInfo.date}</span>
+                            <span>•</span>
+                            <span>등록자: {displayInfo.uploadedBy}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                          <span>수정일: {policy.lastModified}</span>
-                          <span>•</span>
-                          <span>등록자: {policy.uploadedBy}</span>
-                        </div>
+                      </div>
+
+                      {/* 액션 버튼 */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDownloadPolicy(policy)}
+                          title="다운로드"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingPolicy(policy.id)}
+                          title="수정"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setDeletingPolicy(policy.id);
+                            setShowDeleteDialog(true);
+                          }}
+                          title="삭제"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleExpand(policy.id)}
+                          title="히스토리 보기"
+                        >
+                          {expandedPolicy === policy.id ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </Button>
                       </div>
                     </div>
 
-                    {/* 액션 버튼 */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDownloadPolicy(policy)}
-                        title="다운로드"
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setEditingPolicy(policy.id)}
-                        title="수정"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setDeletingPolicy(policy.id);
-                          setShowDeleteDialog(true);
-                        }}
-                        title="삭제"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => toggleExpand(policy.id)}
-                        title="히스토리 보기"
-                      >
-                        {expandedPolicy === policy.id ? (
-                          <ChevronUp className="w-4 h-4" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
+                    {/* 수정 폼 */}
+                    {editingPolicy === policy.id && (
+                      <div className="mt-4 p-3 bg-muted rounded-lg">
+                        <Label className="text-sm mb-2 block">카테고리 변경</Label>
+                        <div className="flex gap-2">
+                          <Select
+                            defaultValue={policy.category}
+                            onValueChange={(value) => handleEditCategory(policy.id, value)}
+                          >
+                            <SelectTrigger className="flex-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingPolicy(null)}
+                          >
+                            취소
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* 수정 폼 */}
-                  {editingPolicy === policy.id && (
-                    <div className="mt-4 p-3 bg-muted rounded-lg">
-                      <Label className="text-sm mb-2 block">카테고리 변경</Label>
-                      <div className="flex gap-2">
-                        <Select
-                          defaultValue={policy.category}
-                          onValueChange={(value) => handleEditCategory(policy.id, value)}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingPolicy(null)}
-                        >
-                          취소
-                        </Button>
+                  {/* 히스토리 확장 영역 */}
+                  {expandedPolicy === policy.id && (
+                    <div className="p-4 bg-muted/50 border-t border-border">
+                      <div className="flex items-center gap-2 mb-3">
+                        <HistoryIcon className="w-4 h-4 text-primary" />
+                        <h4 className="font-semibold text-sm">변경 이력</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {policy.history.map((h, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-4 p-3 bg-card rounded-lg border border-border"
+                          >
+                            {/* 버전 정보 */}
+                            <div className="flex items-center justify-center px-3 py-2 border-2 border-primary/30 bg-primary/5 text-primary text-sm font-bold rounded flex-shrink-0">
+                              v{h.version}
+                            </div>
+                            
+                            {/* 파일명 및 상세 정보 */}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-foreground text-sm mb-1">
+                                {getHistoryFileName(policy.name, h.version)}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>등록일: {h.date}</span>
+                                <span>•</span>
+                                <span>등록자: {h.changedBy}</span>
+                              </div>
+                            </div>
+
+                            {/* 상태 배지 */}
+                            {h.status && (
+                              <div className="flex-shrink-0">
+                                {getStatusBadge(h.status)}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
-
-                {/* 히스토리 확장 영역 */}
-                {expandedPolicy === policy.id && (
-                  <div className="p-4 bg-muted/50 border-t border-border">
-                    <div className="flex items-center gap-2 mb-3">
-                      <HistoryIcon className="w-4 h-4 text-primary" />
-                      <h4 className="font-semibold text-sm">변경 이력</h4>
-                    </div>
-                    <div className="space-y-2">
-                      {policy.history.map((h, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-start gap-3 p-2 bg-card rounded text-sm"
-                        >
-                          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex-shrink-0">
-                            v{h.version}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium">{h.action}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {h.date}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                by {h.changedBy}
-                              </span>
-                            </div>
-                            {h.changes && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {h.changes}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
 
             {filteredPolicies.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
@@ -436,6 +630,8 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
         isOpen={showRegistrationModal}
         onClose={() => setShowRegistrationModal(false)}
         onSubmit={handleSubmitNewPolicy}
+        existingCategories={Array.from(new Set(policies.map(p => p.category)))}
+        existingPolicies={policies.map(p => ({ category: p.category, name: p.name }))}
       />
 
       {/* 삭제 확인 다이얼로그 */}

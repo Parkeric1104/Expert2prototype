@@ -21,14 +21,14 @@ export default function App() {
   const [currentView, setCurrentView] = useState<"home" | "chat" | "policy">("home");
   const [chatQuery, setChatQuery] = useState<string>("");
   const [selectedLaws, setSelectedLaws] = useState<string[]>([]);
-  const [relatedLaws, setRelatedLaws] = useState<string[]>([]); // 추천 질문의 관련 법령
-  const [questionType, setQuestionType] = useState<string | undefined>(undefined); // 질문 유형 추가
+  const [relatedLaws, setRelatedLaws] = useState<string[]>([]);
+  const [questionType, setQuestionType] = useState<string | undefined>(undefined);
   const [showLawModal, setShowLawModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [isRefiningSearch, setIsRefiningSearch] = useState(false);
-  const [currentStep, setCurrentStep] = useState<number>(1); // 진행 단계: 1-4
-  const [isAdmin] = useState<boolean>(true); // 관리자 권한 (실제로는 인증 시스템에서 가져옴)
-  const [hasChatMessages, setHasChatMessages] = useState(false); // 채팅 메시지 존재 여부
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [isAdmin] = useState<boolean>(true);
+  const [hasChatMessages, setHasChatMessages] = useState(false);
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
 

@@ -13,9 +13,10 @@ interface LoadingStage {
 interface ProgressiveLoadingBubbleProps {
   relatedLaws?: string[];
   onStop?: () => void;
+  onAnswerPreparationStart?: () => void; // 최종 답변 준비 시작 콜백 추가
 }
 
-export function ProgressiveLoadingBubble({ relatedLaws, onStop }: ProgressiveLoadingBubbleProps = {}) {
+export function ProgressiveLoadingBubble({ relatedLaws, onStop, onAnswerPreparationStart }: ProgressiveLoadingBubbleProps = {}) {
   const [currentStage, setCurrentStage] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showLawBox, setShowLawBox] = useState(false);
@@ -26,12 +27,10 @@ export function ProgressiveLoadingBubble({ relatedLaws, onStop }: ProgressiveLoa
   
   // useRef로 타이머 ID 관리
   const timersRef = useRef<NodeJS.Timeout[]>([]);
-  const pausedStateRef = useRef<{
-    currentStage: number;
-    progress: number;
-    foundLaws: string[];
-    pausedAt: number;
-  } | null>(null);
+  const pausedStateRef = useRef<any>(null);
+  const hasCalledPreparationRef = useRef(false); // ref로 변경
+
+  console.log('[Progressive Loading] 컴포넌트 렌더링됨', { onAnswerPreparationStart: !!onAnswerPreparationStart });
 
   const stages: LoadingStage[] = [
     { id: 0, text: "질문의 핵심 쟁점 추출 중...", completed: false },
@@ -102,7 +101,7 @@ export function ProgressiveLoadingBubble({ relatedLaws, onStop }: ProgressiveLoa
     // 이미 중단되었으면 타이머 시작 안 함
     if (isStopped) return;
 
-    // 15초 동안 단계별 진행 (프로토타입 시연용)
+    // 15초 동안 단계별 진 (프로토타입 시연용)
     const timer1 = setTimeout(() => {
       setCurrentStage(1);
       setProgress(1);
@@ -142,10 +141,21 @@ export function ProgressiveLoadingBubble({ relatedLaws, onStop }: ProgressiveLoa
     const timer8 = setTimeout(() => {
       setProgress(8);
       setCurrentStage(3);
+      // 최종 답변 정리 단계 시작 시 사이드바 열기
+      console.log('[Progressive Loading] Step 3 시작 - 사이드바 열기', { hasCalledPreparationRef: hasCalledPreparationRef.current, onAnswerPreparationStart: !!onAnswerPreparationStart });
+      if (!hasCalledPreparationRef.current && onAnswerPreparationStart) {
+        console.log('[Progressive Loading] 사이드바 콜백 호출');
+        onAnswerPreparationStart();
+        hasCalledPreparationRef.current = true;
+      }
     }, 13500); // 13.5초 - Step 3 시작
 
     const timer9 = setTimeout(() => {
       setProgress(9);
+      if (!hasCalledPreparationRef.current) {
+        onAnswerPreparationStart?.(); // 최종 답변 준비 시작 콜백 호출
+        hasCalledPreparationRef.current = true;
+      }
     }, 15000); // 15초 - 완료
 
     // 타이머 ID 저장
@@ -169,7 +179,7 @@ export function ProgressiveLoadingBubble({ relatedLaws, onStop }: ProgressiveLoa
         <div className="bg-card rounded-2xl shadow-lg border border-border p-5">
           {/* 단계별 진행 상황 */}
           <div className="space-y-3">
-            {/* Step 1: 질문 분석 완료 */}
+            {/* Step 1: 문 분석 완료 */}
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary flex items-center justify-center mt-0.5">
                 <Check className="w-3 h-3 text-white" />

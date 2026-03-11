@@ -11,10 +11,18 @@ function Popover({
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-function PopoverTrigger({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+function PopoverTrigger(
+  props: React.ComponentProps<typeof PopoverPrimitive.Trigger>
+) {
+  // Filter out all Figma-specific props (starting with _fg)
+  const filteredProps = Object.keys(props).reduce((acc, key) => {
+    if (!key.startsWith('_fg')) {
+      acc[key] = (props as any)[key];
+    }
+    return acc;
+  }, {} as any);
+  
+  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...filteredProps} />;
 }
 
 function PopoverContent({

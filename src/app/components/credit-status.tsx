@@ -22,14 +22,12 @@ export function CreditStatus() {
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <button 
-          className="w-9 h-9 bg-muted/80 hover:bg-muted border border-border rounded-lg shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center group"
-          onClick={() => setIsOpen(!isOpen)}
-          title="크레딧 현황"
-        >
-          <CreditCard className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-        </button>
+      <PopoverTrigger
+        className="w-9 h-9 bg-muted/80 hover:bg-muted border border-border rounded-lg shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center group"
+        onClick={() => setIsOpen(!isOpen)}
+        title="크레딧 현황"
+      >
+        <CreditCard className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
       </PopoverTrigger>
       
       <PopoverContent 

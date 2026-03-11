@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, FileText, BookOpen, Scale, Gavel, Sparkles, ChevronRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 
@@ -26,6 +26,7 @@ interface AnswerDetailSidebarProps {
   sources: Source[];
   aiOpinion?: AIOpinionSummary | string; // 기존 string 타입도 지원
   questionSummary?: string; // 질문 요약 추가
+  isInitialAnswer?: boolean; // 최초 답변 생성 여부 (타이핑 효과 + 자동 닫기 적용)
 }
 
 export function AnswerDetailSidebar({
@@ -38,12 +39,25 @@ export function AnswerDetailSidebar({
   sources,
   aiOpinion,
   questionSummary,
+  isInitialAnswer = false,
 }: AnswerDetailSidebarProps) {
   const [viewMode, setViewMode] = useState<"answer" | "law">("answer");
   const [selectedLaw, setSelectedLaw] = useState<Source | null>(null);
+  
+  // 타이핑 효과를 위한 상태
+  const [typingStage, setTypingStage] = useState(0); // 0: 준비, 1: 사실관계, 2: 질의내용, 3: 검토내용, 4: 근거법령, 5: 결론
+  const [displayedFactAnalysis, setDisplayedFactAnalysis] = useState("");
+  const [displayedQueryContent, setDisplayedQueryContent] = useState("");
+  const [displayedReviewContent, setDisplayedReviewContent] = useState("");
+  const [displayedConclusion, setDisplayedConclusion] = useState("");
+  const [showSources, setShowSources] = useState(false);
+  
+  // 자동 닫기 카운트다운 상태
+  const [autoCloseCountdown, setAutoCloseCountdown] = useState<number | null>(null);
+  
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
-  if (!isOpen) return null;
-
+  // Handler functions - defined before useEffect hooks to avoid hoisting issues
   const handleLawClick = (source: Source) => {
     setSelectedLaw(source);
     setViewMode("law");
@@ -59,6 +73,138 @@ export function AnswerDetailSidebar({
     setSelectedLaw(null);
     onClose();
   };
+
+  // 타이핑 효과 함수
+  const typeText = (
+    fullText: string,
+    setter: React.Dispatch<React.SetStateAction<string>>,
+    onComplete?: () => void
+  ) => {
+    let index = 0;
+    const speed = 8; // 타이핑 속도 (ms)
+
+    const timer = setInterval(() => {
+      if (index < fullText.length) {
+        setter(fullText.substring(0, index + 1));
+        index++;
+      } else {
+        clearInterval(timer);
+        onComplete?.();
+      }
+    }, speed);
+
+    timersRef.current.push(timer as unknown as NodeJS.Timeout);
+    return timer;
+  };
+
+  // 사이드바가 열릴 때 타이핑 애니메이션 시작 (최초 답변인 경우만)
+  useEffect(() => {
+    if (isOpen) {
+      // 이전 타이머 클리어
+      timersRef.current.forEach(timer => clearTimeout(timer));
+      timersRef.current = [];
+
+      if (isInitialAnswer) {
+        // 최초 답변 생성 시: 타이핑 효과 적용
+        console.log('[Sidebar] 최초 답변 생성 - 타이핑 효과 시작');
+        
+        // 초기화
+        setTypingStage(0);
+        setDisplayedFactAnalysis("");
+        setDisplayedQueryContent("");
+        setDisplayedReviewContent("");
+        setDisplayedConclusion("");
+        setShowSources(false);
+        setAutoCloseCountdown(null);
+
+        // 단계별 타이핑 시작
+        const stage1Timer = setTimeout(() => {
+          console.log('[Sidebar] Stage 1: 사실관계 타이핑 시작');
+          setTypingStage(1);
+          typeText(factAnalysis, setDisplayedFactAnalysis, () => {
+            const stage2Timer = setTimeout(() => {
+              console.log('[Sidebar] Stage 2: 질의내용 타이핑 시작');
+              setTypingStage(2);
+              typeText(queryContent, setDisplayedQueryContent, () => {
+                const stage3Timer = setTimeout(() => {
+                  console.log('[Sidebar] Stage 3: 검토내용 타이핑 시작');
+                  setTypingStage(3);
+                  typeText(reviewContent, setDisplayedReviewContent, () => {
+                    const stage4Timer = setTimeout(() => {
+                      console.log('[Sidebar] Stage 4: 근거법령 표시');
+                      setTypingStage(4);
+                      setShowSources(true);
+                      const stage5Timer = setTimeout(() => {
+                        console.log('[Sidebar] Stage 5: 결론 타이핑 시작');
+                        setTypingStage(5);
+                        typeText(conclusion, setDisplayedConclusion, () => {
+                          console.log('[Sidebar] 타이핑 완료 - 3초 카운트다운 시작');
+                          // 타이핑 완료 후 자동으로 3초 카운트다운 시작
+                          setAutoCloseCountdown(3);
+                        });
+                      }, 300);
+                      timersRef.current.push(stage5Timer);
+                    }, 200);
+                    timersRef.current.push(stage4Timer);
+                  });
+                }, 200);
+                timersRef.current.push(stage3Timer);
+              });
+            }, 200);
+            timersRef.current.push(stage2Timer);
+          });
+        }, 300);
+        
+        timersRef.current.push(stage1Timer);
+      } else {
+        // 상세 답변 보기: 즉시 표시
+        console.log('[Sidebar] 상세 답변 보기 - 즉시 표시');
+        setTypingStage(5);
+        setDisplayedFactAnalysis(factAnalysis);
+        setDisplayedQueryContent(queryContent);
+        setDisplayedReviewContent(reviewContent);
+        setDisplayedConclusion(conclusion);
+        setShowSources(true);
+        setAutoCloseCountdown(null); // 자동 닫기 없음
+      }
+
+      return () => {
+        // 클린업: 모든 타이머 클리어
+        timersRef.current.forEach(timer => clearTimeout(timer));
+        timersRef.current = [];
+      };
+    }
+  }, [isOpen, factAnalysis, queryContent, reviewContent, conclusion, isInitialAnswer]);
+
+  // 자동 닫기 카운트다운 로직
+  useEffect(() => {
+    if (autoCloseCountdown === null) {
+      return;
+    }
+
+    // 카운트다운이 0이 되면 자동으로 닫기
+    if (autoCloseCountdown === 0) {
+      handleClose();
+      return;
+    }
+
+    // 1초마다 카운트다운 감소
+    const countdownTimer = setTimeout(() => {
+      setAutoCloseCountdown((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearTimeout(countdownTimer);
+  }, [autoCloseCountdown]);
+
+  // autoCloseAfterDocumentSave prop 변경 감지하여 카운트다운 시작
+  useEffect(() => {
+    if (isInitialAnswer && typingStage === 5 && autoCloseCountdown === null) {
+      console.log('[Sidebar] 의견서 저장 완료 감지 - 5초 카운트다운 시작');
+      setAutoCloseCountdown(5);
+    }
+  }, [isInitialAnswer, typingStage, autoCloseCountdown]);
+
+  if (!isOpen) return null;
 
   const lawSources = sources.filter(s => s.type === "법령");
   const interpretationSources = sources.filter(s => s.type === "해석례");
@@ -127,9 +273,16 @@ export function AnswerDetailSidebar({
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="flex-shrink-0"
+              className={`flex-shrink-0 ${autoCloseCountdown !== null ? 'bg-primary/10 hover:bg-primary/20' : ''}`}
+              title={autoCloseCountdown !== null ? `${autoCloseCountdown}초 후 자동으로 닫힙니다` : '닫기'}
             >
-              <X className="w-5 h-5" />
+              {autoCloseCountdown !== null ? (
+                <div className="flex items-center justify-center">
+                  <span className="text-sm font-semibold text-primary">{autoCloseCountdown}</span>
+                </div>
+              ) : (
+                <X className="w-5 h-5" />
+              )}
             </Button>
           </div>
         </div>
@@ -140,161 +293,178 @@ export function AnswerDetailSidebar({
             // Answer View
             <div className="space-y-6">
               {/* Fact Analysis */}
-              <div className="bg-white dark:bg-card border border-border rounded-lg p-5">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <FileText className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-bold text-foreground mb-2">사실관계</h4>
-                    <div className="text-sm leading-relaxed text-foreground whitespace-pre-line">
-                      {factAnalysis}
+              {typingStage >= 1 && (
+                <div className="bg-white dark:bg-card border border-border rounded-lg p-5 animate-in fade-in duration-300">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <FileText className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-foreground mb-2">사실관계</h4>
+                      <div className="text-sm leading-relaxed text-foreground whitespace-pre-line">
+                        {displayedFactAnalysis}
+                        {typingStage === 1 && displayedFactAnalysis.length < factAnalysis.length && (
+                          <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Query Content */}
-              <div className="bg-white dark:bg-card border border-border rounded-lg p-5">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <FileText className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-bold text-foreground mb-2">질의내용</h4>
-                    <div className="text-sm leading-relaxed text-foreground whitespace-pre-line">
-                      {queryContent}
+              {typingStage >= 2 && (
+                <div className="bg-white dark:bg-card border border-border rounded-lg p-5 animate-in fade-in duration-300">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <FileText className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-foreground mb-2">질의내용</h4>
+                      <div className="text-sm leading-relaxed text-foreground whitespace-pre-line">
+                        {displayedQueryContent}
+                        {typingStage === 2 && displayedQueryContent.length < queryContent.length && (
+                          <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Review Content */}
-              <div className="bg-white dark:bg-card border border-border rounded-lg p-5">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <BookOpen className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-bold text-foreground mb-2">검토 내용</h4>
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
-                      <div className="text-sm leading-relaxed text-foreground whitespace-pre-line">
-                        {reviewContent}
+              {typingStage >= 3 && (
+                <div className="bg-white dark:bg-card border border-border rounded-lg p-5 animate-in fade-in duration-300">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <BookOpen className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-foreground mb-2">검토 내용</h4>
+                      <div className="prose prose-sm max-w-none dark:prose-invert">
+                        <div className="text-sm leading-relaxed text-foreground whitespace-pre-line">
+                          {displayedReviewContent}
+                          {typingStage === 3 && displayedReviewContent.length < reviewContent.length && (
+                            <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Sources */}
-              <div className="bg-white dark:bg-card border border-border rounded-lg p-5">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Scale className="w-3.5 h-3.5 text-white" />
+              {showSources && (
+                <div className="bg-white dark:bg-card border border-border rounded-lg p-5 animate-in fade-in duration-300">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Scale className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-foreground">근거 법령</h4>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-bold text-foreground">근거 법령</h4>
+
+                  <div className="space-y-4 pl-9">
+                    {/* Laws */}
+                    {lawSources.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Scale className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                          <h5 className="text-xs font-bold text-foreground">근거 법령</h5>
+                          <span className="text-xs text-muted-foreground">({lawSources.length})</span>
+                        </div>
+                        <div className="space-y-2">
+                          {lawSources.map((source, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleLawClick(source)}
+                              className="block w-full text-left p-3 bg-indigo-50 dark:bg-indigo-950/20 hover:bg-indigo-100 dark:hover:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm transition-colors group"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-foreground font-medium leading-relaxed flex-1">
+                                  {source.title}
+                                </span>
+                                <ChevronRight className="w-4 h-4 text-indigo-400 group-hover:text-indigo-600 transition-colors" />
+                              </div>
+                              {source.description && (
+                                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                  {source.description}
+                                </p>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Interpretations */}
+                    {interpretationSources.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="w-4 h-4 text-green-600 dark:text-green-400" />
+                          <h5 className="text-xs font-bold text-foreground">해석례</h5>
+                          <span className="text-xs text-muted-foreground">({interpretationSources.length})</span>
+                        </div>
+                        <div className="space-y-2">
+                          {interpretationSources.map((source, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleLawClick(source)}
+                              className="block w-full text-left p-3 bg-green-50 dark:bg-green-950/20 hover:bg-green-100 dark:hover:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg text-sm transition-colors group"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-foreground font-medium leading-relaxed flex-1">
+                                  {source.title}
+                                </span>
+                                <ChevronRight className="w-4 h-4 text-green-400 group-hover:text-green-600 transition-colors" />
+                              </div>
+                              {source.description && (
+                                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                  {source.description}
+                                </p>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Case Law */}
+                    {caseSources.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Gavel className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                          <h5 className="text-xs font-bold text-foreground">판례</h5>
+                          <span className="text-xs text-muted-foreground">({caseSources.length})</span>
+                        </div>
+                        <div className="space-y-2">
+                          {caseSources.map((source, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleLawClick(source)}
+                              className="block w-full text-left p-3 bg-purple-50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-lg text-sm transition-colors group"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-foreground font-medium leading-relaxed flex-1">
+                                  {source.title}
+                                </span>
+                                <ChevronRight className="w-4 h-4 text-purple-400 group-hover:text-purple-600 transition-colors" />
+                              </div>
+                              {source.description && (
+                                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                  {source.description}
+                                </p>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <div className="space-y-4 pl-9">
-                  {/* Laws */}
-                  {lawSources.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Scale className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        <h5 className="text-xs font-bold text-foreground">근거 법령</h5>
-                        <span className="text-xs text-muted-foreground">({lawSources.length})</span>
-                      </div>
-                      <div className="space-y-2">
-                        {lawSources.map((source, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => handleLawClick(source)}
-                            className="block w-full text-left p-3 bg-indigo-50 dark:bg-indigo-950/20 hover:bg-indigo-100 dark:hover:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm transition-colors group"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-foreground font-medium leading-relaxed flex-1">
-                                {source.title}
-                              </span>
-                              <ChevronRight className="w-4 h-4 text-indigo-400 group-hover:text-indigo-600 transition-colors" />
-                            </div>
-                            {source.description && (
-                              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                                {source.description}
-                              </p>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Interpretations */}
-                  {interpretationSources.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="w-4 h-4 text-green-600 dark:text-green-400" />
-                        <h5 className="text-xs font-bold text-foreground">해석례</h5>
-                        <span className="text-xs text-muted-foreground">({interpretationSources.length})</span>
-                      </div>
-                      <div className="space-y-2">
-                        {interpretationSources.map((source, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => handleLawClick(source)}
-                            className="block w-full text-left p-3 bg-green-50 dark:bg-green-950/20 hover:bg-green-100 dark:hover:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg text-sm transition-colors group"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-foreground font-medium leading-relaxed flex-1">
-                                {source.title}
-                              </span>
-                              <ChevronRight className="w-4 h-4 text-green-400 group-hover:text-green-600 transition-colors" />
-                            </div>
-                            {source.description && (
-                              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                                {source.description}
-                              </p>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Case Law */}
-                  {caseSources.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Gavel className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                        <h5 className="text-xs font-bold text-foreground">판례</h5>
-                        <span className="text-xs text-muted-foreground">({caseSources.length})</span>
-                      </div>
-                      <div className="space-y-2">
-                        {caseSources.map((source, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => handleLawClick(source)}
-                            className="block w-full text-left p-3 bg-purple-50 dark:bg-purple-950/20 hover:bg-purple-100 dark:hover:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-lg text-sm transition-colors group"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-foreground font-medium leading-relaxed flex-1">
-                                {source.title}
-                              </span>
-                              <ChevronRight className="w-4 h-4 text-purple-400 group-hover:text-purple-600 transition-colors" />
-                            </div>
-                            {source.description && (
-                              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                                {source.description}
-                              </p>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
 
               {/* AI Opinion */}
               {aiOpinion && (
@@ -357,19 +527,24 @@ export function AnswerDetailSidebar({
               )}
               
               {/* Conclusion - 최하단으로 이동 */}
-              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border-l-4 border-indigo-500 rounded-lg p-5">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Scale className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-bold text-foreground mb-2">결론</h3>
-                    <div className="text-sm leading-relaxed text-foreground whitespace-pre-line">
-                      {conclusion}
+              {typingStage >= 5 && (
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border-l-4 border-indigo-500 rounded-lg p-5 animate-in fade-in duration-300">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Scale className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base font-bold text-foreground mb-2">결론</h3>
+                      <div className="text-sm leading-relaxed text-foreground whitespace-pre-line">
+                        {displayedConclusion}
+                        {typingStage === 5 && displayedConclusion.length < conclusion.length && (
+                          <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           ) : (
             // Law View
@@ -412,8 +587,9 @@ export function AnswerDetailSidebar({
 
         {/* Footer */}
         <div className="p-4 border-t border-border bg-muted/30">
+          {/* 일반 닫기 버튼 */}
           <Button
-            onClick={viewMode === "law" ? handleBackToAnswer : handleClose}
+            onClick={viewMode === "law" ? handleBackToAnswer : (autoCloseCountdown !== null ? () => setAutoCloseCountdown(null) : handleClose)}
             className="w-full"
             variant={viewMode === "law" ? "default" : "outline"}
           >
@@ -422,6 +598,8 @@ export function AnswerDetailSidebar({
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 뒤로가기
               </>
+            ) : autoCloseCountdown !== null && autoCloseCountdown > 0 ? (
+              `닫기 (${autoCloseCountdown})`
             ) : (
               "닫기"
             )}

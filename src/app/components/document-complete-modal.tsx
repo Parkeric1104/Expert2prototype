@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Download, Share2, FileText } from "lucide-react";
+import { X, FileText } from "lucide-react";
 
 interface DocumentCompleteModalProps {
   isOpen: boolean;
@@ -14,77 +14,27 @@ export function DocumentCompleteModal({
   onComplete,
   content,
 }: DocumentCompleteModalProps) {
-  const [documentName, setDocumentName] = useState("법률검토의견서");
-  const [fileFormat, setFileFormat] = useState<"pdf" | "word" | "hwp">("pdf");
+  const [documentName, setDocumentName] = useState("260303_AI노무의견서");
+  const [fileFormat, setFileFormat] = useState<"oneffice" | "pdf" | "word">("oneffice");
 
   if (!isOpen) return null;
 
   const handleDownload = () => {
+    console.log('[DocumentCompleteModal] 저장하기 버튼 클릭');
+    
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${documentName}.${fileFormat === "word" ? "docx" : fileFormat}`;
+    a.download = `${documentName}.${fileFormat === "word" ? "docx" : fileFormat === "pdf" ? "pdf" : "txt"}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: documentName,
-        text: content,
-      }).catch(() => {
-        // User cancelled - silently ignore
-      });
-    } else {
-      // Fallback: copy to clipboard
-      copyToClipboard(content);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(text).then(
-          () => {
-            alert("문서 내용이 클립보드에 복사되었습니다.");
-          },
-          () => {
-            fallbackCopyToClipboard(text);
-          }
-        );
-      } else {
-        fallbackCopyToClipboard(text);
-      }
-    } catch (err) {
-      fallbackCopyToClipboard(text);
-    }
-  };
-
-  const fallbackCopyToClipboard = (text: string) => {
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    textarea.style.position = "fixed";
-    textarea.style.left = "-999999px";
-    textarea.style.top = "-999999px";
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    try {
-      document.execCommand("copy");
-      alert("문서 내용이 클립보드에 복사되었습니다.");
-    } catch (err) {
-      alert("클립보드 복사에 실패했습니다.");
-    }
-    document.body.removeChild(textarea);
-  };
-
-  const handleComplete = () => {
+    
+    console.log('[DocumentCompleteModal] 다운로드 완료 - onComplete 호출');
+    // 다운로드 후 완료 처리
     onComplete();
-    onClose();
   };
 
   return (
@@ -113,7 +63,7 @@ export function DocumentCompleteModal({
               type="text"
               value={documentName}
               onChange={(e) => setDocumentName(e.target.value)}
-              className="w-full px-4 py-2.5 bg-muted border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="문서명을 입력하세요"
             />
           </div>
@@ -121,39 +71,21 @@ export function DocumentCompleteModal({
           {/* 저장 유형 선택 */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">저장 유형</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(["pdf", "word", "hwp"] as const).map((format) => (
+            <div className="grid grid-cols-3 gap-3">
+              {([{ value: "oneffice", label: "ONEFFICE" }, { value: "pdf", label: "PDF" }, { value: "word", label: "Word" }] as const).map((format) => (
                 <button
-                  key={format}
-                  onClick={() => setFileFormat(format)}
-                  className={`px-4 py-2.5 rounded-lg border-2 font-medium text-sm transition-all ${
-                    fileFormat === format
+                  key={format.value}
+                  onClick={() => setFileFormat(format.value)}
+                  className={`px-4 py-3 rounded-2xl border-2 font-semibold text-base transition-all ${
+                    fileFormat === format.value
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card text-foreground border-border hover:border-primary/50"
                   }`}
                 >
-                  {format === "pdf" ? "PDF" : format === "word" ? "Word" : "HWP"}
+                  {format.label}
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* 공유하기 / 다운로드 버튼 */}
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleShare}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border rounded-lg text-foreground hover:bg-muted transition-colors font-medium text-sm"
-            >
-              <Share2 className="w-4 h-4" />
-              공유하기
-            </button>
-            <button
-              onClick={handleDownload}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-card border border-border rounded-lg text-foreground hover:bg-muted transition-colors font-medium text-sm"
-            >
-              <Download className="w-4 h-4" />
-              다운로드
-            </button>
           </div>
         </div>
 
@@ -161,15 +93,15 @@ export function DocumentCompleteModal({
         <div className="px-6 py-4 border-t border-border flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 bg-card border border-border rounded-lg text-foreground hover:bg-muted transition-colors font-medium"
+            className="flex-1 px-4 py-3 bg-card border-2 border-border rounded-2xl text-foreground hover:bg-muted transition-colors font-semibold text-base"
           >
             닫기
           </button>
           <button
-            onClick={handleComplete}
-            className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+            onClick={handleDownload}
+            className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-2xl hover:bg-primary/90 transition-colors font-semibold text-base"
           >
-            작성완료하기
+            저장하기
           </button>
         </div>
       </div>
