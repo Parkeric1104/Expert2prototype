@@ -9,14 +9,39 @@ interface UploadedFile {
 interface UserMessageBubbleProps {
   message: string;
   attachedFiles?: UploadedFile[];
+  remainingQuestions?: number; // 잔여 질문 횟수
+  currentTurn?: number; // 현재 턴 수
+  maxQuestions?: number; // 최대 질문 횟수 (동적 계산을 위해 추가)
 }
 
-export function UserMessageBubble({ message, attachedFiles }: UserMessageBubbleProps) {
+export function UserMessageBubble({ message, attachedFiles, remainingQuestions, currentTurn, maxQuestions = 6 }: UserMessageBubbleProps) {
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
+
+  // 잔여 횟수 메시지 생성
+  // 노출 조건: 마지막 3회 (MAX_QUESTIONS - 2 이상일 때)
+  const getRemainingMessage = (): string | null => {
+    if (currentTurn === undefined || remainingQuestions === undefined) {
+      return null;
+    }
+
+    // 마지막 3회부터 표시 (잔여 2, 1, 0)
+    const showThreshold = maxQuestions - 2;
+    if (currentTurn < showThreshold) {
+      return null;
+    }
+
+    if (remainingQuestions === 0) {
+      return "이 채팅의 마지막 질문입니다.";
+    }
+
+    return `이 채팅에서 ${remainingQuestions}번 더 질문할 수 있어요.`;
+  };
+
+  const remainingMessage = getRemainingMessage();
 
   return (
     <div className="flex justify-end mb-6">
@@ -51,6 +76,13 @@ export function UserMessageBubble({ message, attachedFiles }: UserMessageBubbleP
           <p className="text-sm leading-relaxed whitespace-pre-line">
             {message}
           </p>
+
+          {/* 잔여 질문 횟수 메시지 표시 */}
+          {remainingMessage && (
+            <div className="mt-2 text-xs opacity-80">
+              {remainingMessage}
+            </div>
+          )}
         </div>
       </div>
     </div>

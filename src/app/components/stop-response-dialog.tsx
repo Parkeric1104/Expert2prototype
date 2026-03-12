@@ -39,7 +39,7 @@ export function StopResponseDialog({
             답변 생성을 중단하시겠습니까?
           </DialogTitle>
           <DialogDescription className="sr-only">
-            답변 생성을 중단하면 현재까지 작성된 내용은 표시되지 않으며, 이미 처리된 작업에 대한 토큰은 소모될 수 있습니다.
+            답변 생성을 중단하면 현재까지 작성된 내용은 표시되지 않으며, 이미 처리된 작업에 대한 크레딧은 소모될 수 있습니다.
           </DialogDescription>
         </DialogHeader>
 
@@ -56,7 +56,7 @@ export function StopResponseDialog({
                   중요 안내
                 </p>
                 <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                  답변 생성을 중단하더라도 이미 처리된 작업에 대한 <strong>토큰은 소모</strong>될 수 있습니다.
+                  답변 생성을 중단하더라도 이미 처리된 작업에 대한 <strong>크레딧은 소모</strong>될 수 있습니다.
                   API 요청이 서버에서 진행 중이므로 비용이 발생할 수 있음을 유의해주세요.
                 </p>
               </div>

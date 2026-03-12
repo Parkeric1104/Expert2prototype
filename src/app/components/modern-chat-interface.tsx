@@ -116,8 +116,8 @@ const FLOATING_ICONS = [
   { Icon: UserCheck, delay: 4, duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
-// 멀티턴 제한 상수 (테스트용: 3회)
-const MAX_QUESTIONS = 3;
+// 멀티턴 제한 상수 (최대 6회)
+const MAX_QUESTIONS = 6;
 
 export function ModernChatInterface({ 
   initialMessage, 
@@ -135,7 +135,7 @@ export function ModernChatInterface({
   const [showDocPreview, setShowDocPreview] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [documentContent, setDocumentContent] = useState("");
-  const [documentData, setDocumentData] = useState<any>(null); // 의견서 구조화 데이터
+  const [documentData, setDocumentData] = useState<any>(null); // 의견서 조화 데이터
   const [previousSelectedLaws, setPreviousSelectedLaws] = useState<string[]>(selectedLaws);
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number; type: string; data: ArrayBuffer | string }[]>([]);
   const [showSecurityAlert, setShowSecurityAlert] = useState(false);
@@ -249,7 +249,7 @@ export function ModernChatInterface({
       return "임금 지급 관련";
     }
     if (lowerMessage.includes("연차") || lowerMessage.includes("휴가")) {
-      return "연차휴가 관련";
+      return "연휴가 관련";
     }
     if (lowerMessage.includes("퇴직금") || lowerMessage.includes("중정산")) {
       return "퇴직금 관련";
@@ -357,7 +357,7 @@ export function ModernChatInterface({
       
       // 법령 재선택 메시지 표시
       const lawNames = getLawNames(selectedLaws);
-      const refinedSearchMessage = `[${lawNames.join(", ")}] 범위로 재검색`;
+      const refinedSearchMessage = `[${lawNames.join(", ")}] 범위로 검색`;
       
       const userMsg: Message = {
         id: Date.now().toString(),
@@ -824,7 +824,7 @@ ${integratedData.aiOpinionSummary}
           standard: "[근거 법령/판례 요약]",
           judgment: "[적법/미비/위법 가능성 및 사유]",
           caution: "[절차/증빙/실무상 주의점]",
-          recommendation: "[수정/운영 개선/프로세스 제안]"
+          recommendation: "[수정/운영 개선/로세스 제안]"
         }
       ],
       improvements: [
@@ -961,7 +961,7 @@ ${integratedData.aiOpinionSummary}
     } else {
       console.log('[Chat] 조건 불일치 - 자동 닫기 활성화 안됨');
       if (!showDetailSidebar) console.log('[Chat] 이유: showDetailSidebar = false');
-      if (!preparingAnswerData) console.log('[Chat] 이���: preparingAnswerData = null');
+      if (!preparingAnswerData) console.log('[Chat] 이: preparingAnswerData = null');
     }
     
     // 모달은 나중에 닫기 (상태 업데이트 후)
@@ -1123,6 +1123,7 @@ ${integratedData.aiOpinionSummary}
   }
 
   // AI 심층분석 진행 중인지 확인
+  // AI 심층분석 선택 시 채팅 입력창 비활성화 처리
   const isDebateInProgress = messages.some(m => m.isDebate && !m.debateHistory);
 
   return (
@@ -1181,15 +1182,23 @@ ${integratedData.aiOpinionSummary}
               </div>
             )}
 
-            {messages.map((message) => (
-              <div key={message.id}>
-                {message.isUser && (
-                  <UserMessageBubble 
-                    message={message.text} 
-                    attachedFiles={message.attachedFiles}
-                  />
-                )}
-                {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} onAnswerPreparationStart={handleAnswerPreparationStart} />}
+            {messages.map((message, index) => {
+              // 현재 메시지의 턴 계산 (사용자 메시지만 카운트)
+              const userMessagesUpToNow = messages.slice(0, index + 1).filter(m => m.isUser).length;
+              const remainingQuestions = MAX_QUESTIONS - userMessagesUpToNow;
+
+              return (
+                <div key={message.id}>
+                  {message.isUser && (
+                    <UserMessageBubble 
+                      message={message.text} 
+                      attachedFiles={message.attachedFiles}
+                      currentTurn={userMessagesUpToNow}
+                      remainingQuestions={remainingQuestions}
+                      maxQuestions={MAX_QUESTIONS}
+                    />
+                  )}
+                  {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} onAnswerPreparationStart={handleAnswerPreparationStart} />}
                 {message.needsFeedback && message.feedbackReason && (
                   <HumanFeedbackRequest
                     reason={message.feedbackReason}
@@ -1239,7 +1248,7 @@ ${integratedData.aiOpinionSummary}
                     reviewContent={message.enhancedData.reviewContent}
                     sources={message.enhancedData.sources}
                     aiOpinion={message.hasAIOpinion ? message.enhancedData.aiOpinionSummary : undefined}
-                    disclaimer="AI 의견은 참고용이며 부정확한 정보가 포함될 수 있습니다. 중요한 결정은 전문가 상담을 권장드립니다."
+                    disclaimer="AI 의견은 참고용이며 부정확한 정보가 포함될 수 있습니다. 중요한 결정은 전문가 상담을 권드립니다."
                     onRefineSearch={handleRefineSearch}
                     onDraftDocument={() => handleDraftDocument(messages.find(m => m.isUser)?.text || "")}
                     onRequestAIOpinion={() => handleRequestAIOpinion(message.id)}
@@ -1268,8 +1277,9 @@ ${integratedData.aiOpinionSummary}
                     onSelectQuestion={handleSuggestedQuestionSelect}
                   />
                 )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
 
             <div ref={messagesEndRef} />
           </div>

@@ -203,7 +203,7 @@ ${reviewContent}
 
       {/* Action Buttons - 메시지 밖 영역 */}
       <div className="mb-6 flex flex-wrap gap-2">
-        {/* AI 심층분석 버튼을 선택한 후에는 법령 재선택 버튼 미노출 */}
+        {/* 1. 법령 재선택 버튼: AI 심층분석 버튼 선택 후에는 미노출 */}
         {onRefineSearch && !hasAIOpinion && (
           <Button
             onClick={onRefineSearch}
@@ -215,6 +215,8 @@ ${reviewContent}
             법령 재선택
           </Button>
         )}
+        
+        {/* 2. 의견서 작성 버튼: 항상 노출 */}
         {onDraftDocument && (
           <Button
             onClick={onDraftDocument}
@@ -226,6 +228,8 @@ ${reviewContent}
             의견서 작성
           </Button>
         )}
+        
+        {/* 3. AI 심층분석 버튼: 선택 후에는 비노출 */}
         {onRequestAIOpinion && !hasAIOpinion && (
           <Button
             onClick={onRequestAIOpinion}

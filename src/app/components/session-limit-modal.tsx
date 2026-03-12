@@ -34,27 +34,27 @@ export function SessionLimitModal({
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-indigo-600" />
-            새로운 상담으로 이어가기
+            입력하신 질문으로 새 채팅을 시작합니다.
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-sm">
               <div className="p-4 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-lg">
                 <div className="text-foreground font-medium mb-3">
-                  원활하고 정확한 답변을 위해 새로운 대화창에서 상담을 이어갑니다.
+                  더 정확하고 심층적인 검토를 위해 새로운 채팅으로 전환합니다.
                 </div>
                 <div className="text-indigo-700 dark:text-indigo-300 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 px-3 py-2 rounded">
-                  💬 방금 입력하신 질문은 그대로 유지되어 새로운 세션에서 자동으로 시작됩니다.
+                  💬 방금 입력하신 질문으로 새로운 채팅창에서 즉시 대화가 시작됩니다.
                 </div>
               </div>
 
               <div className="text-muted-foreground text-xs space-y-1">
                 <div className="flex items-start gap-1.5">
                   <span className="text-indigo-600 mt-0.5">✓</span>
-                  <span>기존 대화 내용은 히스토리에 안전하게 자동 저장됩니다.</span>
+                  <span>현재 채팅의 답변은 히스토리에 안전하게 저장됩니다.</span>
                 </div>
                 <div className="flex items-start gap-1.5">
                   <span className="text-indigo-600 mt-0.5">✓</span>
-                  <span>선택하신 법령은 새 세션에도 그대로 적용됩니다.</span>
+                  <span>선택하신 법령 설정은 그대로 적용됩니다.</span>
                 </div>
               </div>
             </div>
