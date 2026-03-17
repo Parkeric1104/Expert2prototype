@@ -187,6 +187,13 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
         <CreditStatus />
       </div>
 
+      {/* 하단 푸터 안내 문구 */}
+      <div className="absolute bottom-4 right-0 left-0 z-20">
+        <p className="text-center text-xs text-muted-foreground/60">
+          AI 노무도우미의 답변은 참고용이며 법적 효력이 없습니다. 최종 의사결정 시 반드시 규정 원본 및 전문가의 확인을 거치시기 바랍니다.
+        </p>
+      </div>
+
       {/* 메인 컨텐츠 */}
       <div className="w-full max-w-4xl flex flex-col items-center gap-10 relative z-10">
         {/* Rotating Main Title */}

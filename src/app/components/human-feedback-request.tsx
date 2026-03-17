@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { AlertCircle, MessageCircle, Send, HelpCircle, Bot, Sparkles } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
-import { Textarea } from "@/app/components/ui/textarea";
+import { AlertCircle, XCircle, Shield, HelpCircle, Sparkles } from "lucide-react";
 
 interface HumanFeedbackRequestProps {
   reason: "invalid" | "insufficient" | "inappropriate";
   originalQuestion: string;
   onSubmitRevision: (revisedQuestion: string) => void;
   suggestedQuestions?: string[];
+  onQuestionSelect?: (question: string) => void; // 추천 질문 선택 시 입력창에 자동 입력
 }
 
 export function HumanFeedbackRequest({
@@ -15,144 +14,186 @@ export function HumanFeedbackRequest({
   originalQuestion,
   onSubmitRevision,
   suggestedQuestions = [],
+  onQuestionSelect,
 }: HumanFeedbackRequestProps) {
-  const [revisedQuestion, setRevisedQuestion] = useState(originalQuestion);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const getReasonMessage = () => {
     switch (reason) {
       case "invalid":
         return {
           title: "질문을 이해할 수 없습니다",
-          description: "입력하신 내용이 명확한 질문 형태가 아닙니다. 구체적인 노동법 관련 질문을 입력해주세요.",
-          placeholder: "예: 연차 사용 시 회사가 사유를 물어봐도 되나요?\n예: 퇴직금 중간정산이 가능한 경우가 어떻게 되나요?",
+          description: "입력하신 내용이 명확하지 않습니다. 구체적인 질문을 입력해주세요.",
         };
       case "insufficient":
         return {
-          title: "질���을 한 더 확인해주세요",
-          description: "질문에 대한 정확한 답변을 위해 더 구체적인 정보가 필요합니다. 상황을 자세히 설명해주세요.",
-          placeholder: `${originalQuestion}\n\n추가 정보:\n- 구체적인 상황 설명\n- 관련 날짜나 기간\n- 근로자의 직급이나 근무 형태 등`,
+          title: "질문을 한번 더 확인해주세요",
+          description: "",
         };
       case "inappropriate":
         return {
           title: "답변할 수 없는 질문입니다",
-          description: "노동법과 관련 없는 내용이거나, 윤리적으로 부적절한 질문입니다. 노동법 관련 질문을 입력해주세요.",
-          placeholder: "예: 임금 체불 시 대응 방법이 궁금합니다\n예: 직장 내 괴롭힘을 당했을 때 어떻게 해야 하나요?",
+          description: "이 질문은 법적·윤리적 책임 문제로 인해 답변이 제한됩니다.",
         };
     }
   };
 
-  const { title, description, placeholder } = getReasonMessage();
+  // 사실 관계 분석 생성 (insufficient일 경우에만)
+  const generateFactAnalysis = (): { summary: string; missingPoints: string[] } | null => {
+    if (reason !== "insufficient") return null;
 
-  const handleSubmit = () => {
-    if (!revisedQuestion.trim()) return;
+    // 원본 질문 기반으로 사실 관계 요약 생성
+    const summary = `귀하께서는 ${originalQuestion.length > 50 ? originalQuestion.substring(0, 50) + '...' : originalQuestion}에 대해 문의하셨습니다. 문의하신 상황에서 다음과 같은 사항이 추가로 확인이 필요합니다.`;
 
-    setIsSubmitting(true);
-    
-    // Simulate processing
-    setTimeout(() => {
-      onSubmitRevision(revisedQuestion);
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-    }, 500);
+    // 추가 확인 필요 사항 자동 생성
+    const missingPoints: string[] = [];
+
+    const lowerQuestion = originalQuestion.toLowerCase();
+
+    // 질문 내용에 따라 확인 사항 생성
+    if (lowerQuestion.includes("퇴직금") || lowerQuestion.includes("중간정산")) {
+      missingPoints.push("재직 기간은 얼마나 되시나요? (정확한 입사일과 퇴사일 또는 중간정산 시점)");
+      missingPoints.push("회사의 상시근로자 수는 몇 명인가요?");
+      missingPoints.push("중간정산 사유가 무엇인가요? (주택구입, 전세금, 부채상환 등)");
+    } else if (lowerQuestion.includes("연차") || lowerQuestion.includes("휴가")) {
+      missingPoints.push("근속 기간은 얼마나 되시나요?");
+      missingPoints.push("정규직인가요, 아니면 계약직/파견직 등 다른 고용 형태인가요?");
+      missingPoints.push("회사의 취업규칙이나 단체협약에 연차 관련 규정이 있나요?");
+    } else if (lowerQuestion.includes("임금") || lowerQuestion.includes("급여") || lowerQuestion.includes("체불")) {
+      missingPoints.push("임금 지급일은 언제이며, 미지급 기간은 얼마나 되나요?");
+      missingPoints.push("근로계약서에 명시된 임금은 얼마인가요?");
+      missingPoints.push("회사의 상시근로자 수는 몇 명인가요?");
+    } else if (lowerQuestion.includes("해고") || lowerQuestion.includes("징계")) {
+      missingPoints.push("해고 또는 징계 사유로 통보받은 내용이 무엇인가요?");
+      missingPoints.push("해고 예고 통지를 받으셨나요? 받으셨다면 언제인가요?");
+      missingPoints.push("취업규칙이나 단체협약에 징계 절차가 규정되어 있나요?");
+    } else if (lowerQuestion.includes("산재") || lowerQuestion.includes("재해") || lowerQuestion.includes("사고")) {
+      missingPoints.push("사고가 발생한 정확한 시간과 장소는 어디인가요?");
+      missingPoints.push("사고 당시 업무와의 관련성이 명확한가요? (업무 지시, 출퇴근 중 등)");
+      missingPoints.push("회사에 산재 신청을 하셨나요? 하셨다면 진행 상황은 어떻게 되나요?");
+    } else {
+      // 일반적인 확인 사항
+      missingPoints.push("구체적인 상황과 배경을 설명해주세요.");
+      missingPoints.push("관련된 날짜나 기간을 알려주세요.");
+      missingPoints.push("회사의 규모(상시근로자 수)와 귀하의 고용 형태를 알려주세요.");
+    }
+
+    return { summary, missingPoints };
   };
 
+  const factAnalysis = generateFactAnalysis();
+
+  const { title, description } = getReasonMessage();
+
   const handleSuggestedQuestionClick = (question: string) => {
-    if (isSubmitted) return;
-    setRevisedQuestion(question);
+    if (isSubmitting) return;
+    
+    // 입력창에만 자동 입력 (제출은 사용자가 직접)
+    if (onQuestionSelect) {
+      onQuestionSelect(question);
+    }
   };
 
   const getBgColor = () => {
     switch (reason) {
       case "invalid":
-        return "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800";
+        return "bg-[#FFF8E1]";
       case "insufficient":
-        return "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800";
+        return "bg-[#EFF6FF]";
       case "inappropriate":
-        return "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800";
+        return "bg-[#FFE8F0]";
+    }
+  };
+
+  const getBorderColor = () => {
+    switch (reason) {
+      case "invalid":
+        return "border-[#FFE0A3]";
+      case "insufficient":
+        return "bg-[#BEDBFF]";
+      case "inappropriate":
+        return "border-[#FFD0E0]";
     }
   };
 
   const getIconColor = () => {
     switch (reason) {
       case "invalid":
-        return "text-yellow-600 dark:text-yellow-400";
+        return "text-[#FF9800]";
       case "insufficient":
-        return "text-blue-600 dark:text-blue-400";
+        return "text-[#155DFC]";
       case "inappropriate":
-        return "text-red-600 dark:text-red-400";
+        return "text-[#E91E63]";
     }
   };
 
-  const Icon = reason === "insufficient" ? HelpCircle : AlertCircle;
+  const getIcon = () => {
+    switch (reason) {
+      case "invalid":
+        return XCircle;
+      case "insufficient":
+        return HelpCircle;
+      case "inappropriate":
+        return Shield;
+    }
+  };
+
+  const Icon = getIcon();
 
   return (
-    <div className={`my-6 border-2 rounded-xl p-6 ${getBgColor()}`}>
+    <div className={`my-6 border-2 rounded-2xl p-6 ${getBgColor()} ${getBorderColor()}`}>
       <div className="flex items-start gap-3 mb-4">
         <Icon className={`w-6 h-6 flex-shrink-0 mt-0.5 ${getIconColor()}`} />
         <div className="flex-1">
-          <h3 className="font-bold text-lg text-foreground mb-1" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{title}</h3>
-          <p className="text-sm text-muted-foreground" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{description}</p>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {/* 질문 영역 - 수정 가능 */}
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground" style={{ wordBreak: 'keep-all' }}>질문</p>
-          <Textarea
-            value={revisedQuestion}
-            onChange={(e) => setRevisedQuestion(e.target.value)}
-            placeholder={placeholder}
-            className="min-h-[100px] resize-none"
-            style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}
-            disabled={isSubmitting || isSubmitted}
-          />
-        </div>
-
-        {/* 추천 질문들 */}
-        {suggestedQuestions.length > 0 && !isSubmitted && (
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <p className="text-sm font-semibold text-foreground" style={{ wordBreak: 'keep-all' }}>또는 이런 질문은 어떠세요?</p>
-            </div>
-            <div className="space-y-2.5">
-              {suggestedQuestions.map((question, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSuggestedQuestionClick(question)}
-                  className="w-full text-left px-4 py-3.5 bg-white dark:bg-gray-900 hover:bg-primary/5 dark:hover:bg-primary/10 border-2 border-primary/20 hover:border-primary/40 rounded-xl transition-all group shadow-sm hover:shadow-md"
-                  style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}
-                >
-                  <p className="text-sm text-foreground group-hover:text-primary transition-colors font-medium leading-relaxed">
-                    {question}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <Button
-          onClick={handleSubmit}
-          disabled={!revisedQuestion.trim() || isSubmitting || isSubmitted}
-          className="w-full"
-        >
-          {isSubmitting ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-              처리중...
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4 mr-2" />
-              계속 질문하기
-            </>
+          <h3 className="font-bold text-lg text-[#1A1A1E] mb-1" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{title}</h3>
+          {description && (
+            <p className="text-sm text-[#666673]" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{description}</p>
           )}
-        </Button>
+        </div>
       </div>
+
+      {/* 사실 관계 섹션 (insufficient일 경우에만 표시) */}
+      {factAnalysis && (
+        <div className="mb-4 p-4 bg-white/60 rounded-xl border border-[rgba(190,219,255,0.5)]">
+          <h4 className="text-sm font-bold text-[#1A1A1E] mb-2.5" style={{ wordBreak: 'keep-all' }}>사실 관계</h4>
+          <div className="space-y-3 text-sm text-[#666673]" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+            <p>{factAnalysis.summary}</p>
+            <ul className="space-y-2 ml-0">
+              {factAnalysis.missingPoints.map((point, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-[#155DFC] mt-0.5 flex-shrink-0">•</span>
+                  <span className="flex-1">{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* 추천 질문들 */}
+      {suggestedQuestions.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#6366F1]" />
+            <p className="text-sm font-semibold text-[#1A1A1E]" style={{ wordBreak: 'keep-all' }}>또는 이런 질문은 어떠세요?</p>
+          </div>
+          <div className="space-y-2.5">
+            {suggestedQuestions.map((question, index) => (
+              <button
+                key={index}
+                onClick={() => handleSuggestedQuestionClick(question)}
+                disabled={isSubmitting}
+                className="w-full text-left px-4 py-3.5 bg-white hover:bg-[#6366F1]/5 border border-[rgba(99,102,241,0.2)] hover:border-[rgba(99,102,241,0.4)] rounded-2xl transition-all group shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}
+              >
+                <p className="text-sm text-[#1A1A1E] group-hover:text-[#6366F1] transition-colors font-medium leading-relaxed">
+                  {question}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

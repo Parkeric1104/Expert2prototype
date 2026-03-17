@@ -46,7 +46,7 @@ export function TopHeader({ onNewChat, onOpenHistory, onOpenPolicyUpload, onLogo
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <FileStack className="w-4 h-4" />
-            <span className="text-sm">정책 등록</span>
+            <span className="text-sm">정책 관리</span>
           </button>
         </nav>
       </div>

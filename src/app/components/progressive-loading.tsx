@@ -14,9 +14,10 @@ interface ProgressiveLoadingBubbleProps {
   relatedLaws?: string[];
   onStop?: () => void;
   onAnswerPreparationStart?: () => void; // 최종 답변 준비 시작 콜백 추가
+  onNavigateToMain?: () => void; // 메인화면 이동 핸들러 추가
 }
 
-export function ProgressiveLoadingBubble({ relatedLaws, onStop, onAnswerPreparationStart }: ProgressiveLoadingBubbleProps = {}) {
+export function ProgressiveLoadingBubble({ relatedLaws, onStop, onAnswerPreparationStart, onNavigateToMain }: ProgressiveLoadingBubbleProps = {}) {
   const [currentStage, setCurrentStage] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showLawBox, setShowLawBox] = useState(false);
@@ -263,6 +264,7 @@ export function ProgressiveLoadingBubble({ relatedLaws, onStop, onAnswerPreparat
           isOpen={showStopDialog}
           onClose={() => setShowStopDialog(false)}
           onConfirm={handleStopConfirm}
+          onNavigateToMain={onNavigateToMain}
         />
       </div>
     </div>

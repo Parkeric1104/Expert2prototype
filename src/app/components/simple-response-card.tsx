@@ -1,5 +1,4 @@
 import { Scale, BookOpen, Check } from "lucide-react";
-import { toast } from "sonner";
 
 interface SimpleResponseCardProps {
   question: string;
@@ -13,12 +12,14 @@ interface SimpleResponseCardProps {
     id: string;
     name: string;
   }>;
+  onLawClick?: (lawName: string) => void; // 법령 클릭 핸들러 추가
 }
 
-export function SimpleResponseCard({ question, answer, relatedLaws }: SimpleResponseCardProps) {
+export function SimpleResponseCard({ question, answer, relatedLaws, onLawClick }: SimpleResponseCardProps) {
   const handleLawClick = (lawName: string) => {
-    toast.info(`${lawName} 상세 정보를 확인합니다`);
-    // TODO: Open law detail sidebar
+    if (onLawClick) {
+      onLawClick(lawName);
+    }
   };
 
   return (

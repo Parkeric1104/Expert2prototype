@@ -13,12 +13,14 @@ interface StopResponseDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  onNavigateToMain?: () => void; // 메인화면 이동 핸들러 추가
 }
 
 export function StopResponseDialog({
   isOpen,
   onClose,
   onConfirm,
+  onNavigateToMain,
 }: StopResponseDialogProps) {
   return (
     <Dialog open={isOpen}>
@@ -73,6 +75,10 @@ export function StopResponseDialog({
             onClick={() => {
               onConfirm();
               onClose();
+              // 메인화면으로 이동
+              if (onNavigateToMain) {
+                onNavigateToMain();
+              }
             }}
             className="gap-2"
           >

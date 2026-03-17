@@ -1,3 +1,5 @@
+import { AnswerDetailSidebar } from "@/app/components/answer-detail-sidebar";
+import { LawDetailSidebar } from "@/app/components/law-detail-sidebar";
 import { useState, useRef, useEffect } from "react";
 import { ChatBubble } from "@/app/components/chat-bubble";
 import { UserMessageBubble } from "@/app/components/user-message-bubble";
@@ -12,7 +14,6 @@ import { DocumentCompleteModal } from "@/app/components/document-complete-modal"
 import { AIDebateResultModal } from "@/app/components/ai-debate-result-modal";
 import { ChatLeaveConfirmModal } from "@/app/components/chat-leave-confirm-modal";
 import { SessionLimitModal } from "@/app/components/session-limit-modal";
-import { AnswerDetailSidebar } from "@/app/components/answer-detail-sidebar";
 import { 
   Send, 
   Paperclip, 
@@ -159,6 +160,10 @@ export function ModernChatInterface({
   const [isInitialAnswerView, setIsInitialAnswerView] = useState(false); // 최초 답변 생성 시 사이드바인지 여부
   const [autoCloseSidebar, setAutoCloseSidebar] = useState(false); // 사이드바 자동 닫기 플래그
   
+  // 법령 상세 사이드바 관련 상태
+  const [showLawDetailSidebar, setShowLawDetailSidebar] = useState(false);
+  const [selectedLawName, setSelectedLawName] = useState<string>("");
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -212,7 +217,7 @@ export function ModernChatInterface({
     if (lowerMessage.includes("휴가") || lowerMessage.includes("연차")) {
       return "휴가 · 휴직";
     }
-    if (lowerMessage.includes("차별") || lowerMessage.includes("성희롱") || lowerMessage.includes("평등")) {
+    if (lowerMessage.includes("차별") || lowerMessage.includes("성희롱") || lowerMessage.includes("평")) {
       return "고용평등 · 차별";
     }
     if (lowerMessage.includes("노동조합") || lowerMessage.includes("단체교섭")) {
@@ -320,7 +325,7 @@ export function ModernChatInterface({
     };
     setMessages((prev) => [...prev, loadingMsg]);
 
-    // Step 1: 질문 입력 완료 -> Step 2: 법령 분석 시작
+    // Step 1: 문 입력 완료 -> Step 2: 법령 분석 시작
     onStepChange?.(2);
     setCurrentStep(2);
 
@@ -428,7 +433,7 @@ ${integratedData.factAnalysis}
 ${integratedData.queryRedefinition}
 
 
-검토 의견
+검 의견
 =========
 ${integratedData.reviewContent}
 
@@ -533,38 +538,38 @@ ${integratedData.aiOpinionSummary}
           };
           setMessages((prev) => [...prev, feedbackMsg]);
         } else if (questionType === "meaningless") {
-          // 의미없는 질문 - Invalid 카드 표시
-          const invalidMsg: Message = {
+          // 의미없는 질문 - 휴먼 피드백 요청 (invalid)
+          const feedbackMsg: Message = {
             id: (Date.now() + 1).toString(),
             text: "",
             isUser: false,
-            isInvalidQuestion: true,
-            invalidReason: "meaningless",
+            needsFeedback: true,
+            feedbackReason: "invalid",
             suggestedQuestions: getSuggestedQuestions("meaningless"),
           };
-          setMessages((prev) => [...prev, invalidMsg]);
+          setMessages((prev) => [...prev, feedbackMsg]);
         } else if (questionType === "out-of-scope") {
-          // 범위 밖 질문 - Invalid 카드 표시
-          const invalidMsg: Message = {
+          // 범위 밖 질문 - 휴먼 피드백 요청 (invalid)
+          const feedbackMsg: Message = {
             id: (Date.now() + 1).toString(),
             text: "",
             isUser: false,
-            isInvalidQuestion: true,
-            invalidReason: "out-of-scope",
+            needsFeedback: true,
+            feedbackReason: "invalid",
             suggestedQuestions: getSuggestedQuestions("out-of-scope"),
           };
-          setMessages((prev) => [...prev, invalidMsg]);
+          setMessages((prev) => [...prev, feedbackMsg]);
         } else if (questionType === "inappropriate") {
-          // 부적절한 질문 - Invalid 카드 표시
-          const invalidMsg: Message = {
+          // 부적절한 질문 - 휴먼 피드백 요청 (inappropriate)
+          const feedbackMsg: Message = {
             id: (Date.now() + 1).toString(),
             text: "",
             isUser: false,
-            isInvalidQuestion: true,
-            invalidReason: "unethical",
+            needsFeedback: true,
+            feedbackReason: "inappropriate",
             suggestedQuestions: getSuggestedQuestions("unethical"),
           };
-          setMessages((prev) => [...prev, invalidMsg]);
+          setMessages((prev) => [...prev, feedbackMsg]);
         }
         return; // questionType이 있으면 검증 로직 우회
       }
@@ -783,7 +788,7 @@ ${integratedData.aiOpinionSummary}
     const today = new Date();
     const formattedDate = `${today.getFullYear()}. ${String(today.getMonth() + 1).padStart(2, '0')}. ${String(today.getDate()).padStart(2, '0')}.`;
     
-    // 구조화된 의견서 데이터 생성
+    // 구조화된 의견서 데이 생성
     const data = {
       referenceNo: `AI-LABOR-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}-001`,
       date: formattedDate,
@@ -1033,13 +1038,37 @@ ${integratedData.aiOpinionSummary}
   const handleStopResponse = () => {
     // Remove loading message
     setMessages((prev) => prev.filter(m => !m.isLoading));
-    toast.info("답변 생성이 중단되었니다.");
+    toast.info("답변 생성이 중단되었습니다.");
+  };
+  
+  // 메인화면 이동 핸들러
+  const handleNavigateToMain = () => {
+    // 모든 메시지 및 상태 초기화
+    setMessages([]);
+    setInputValue("");
+    setUploadedFiles([]);
+    setShowDetailSidebar(false);
+    setPreparingAnswerData(null);
+    setCurrentStep(1);
+    
+    // 부모 컴포넌트에 메시지 상태 알림
+    if (onMessagesChange) {
+      onMessagesChange(false);
+    }
+    
+    toast.success("메인화면으로 돌아갑니다.");
   };
   
   // 법령 재선택 핸들러
   const handleRefineSearch = () => {
-    // 법령 선택 팝업만 열 (확인 모달 없이)
+    // 법령 선택 팝업만 열기 (확인 모달 없이)
     onOpenLawSelector();
+  };
+
+  // 법령 클릭 핸들러
+  const handleLawClick = (lawName: string) => {
+    setSelectedLawName(lawName);
+    setShowLawDetailSidebar(true);
   };
 
   // Handle leave with confirmation
@@ -1125,6 +1154,20 @@ ${integratedData.aiOpinionSummary}
   // AI 심층분석 진행 중인지 확인
   // AI 심층분석 선택 시 채팅 입력창 비활성화 처리
   const isDebateInProgress = messages.some(m => m.isDebate && !m.debateHistory);
+  
+  // 답변 생성 중이거나 휴먼 피드백 요청 중인지 확인
+  const isAnswerLoading = messages.some(m => m.isLoading);
+  const hasActiveFeedback = messages.some(m => m.needsFeedback);
+  
+  // 입력 비활성화 조건: 토론 진행 중 OR 답변 생성 중
+  const isInputDisabled = isDebateInProgress || isAnswerLoading;
+  
+  // 비활성화 사유에 따른 placeholder 텍스트
+  const getPlaceholder = (): string => {
+    if (isDebateInProgress) return "AI 심층분석 진행 중...";
+    if (isAnswerLoading) return "답변 생성 중...";
+    return "추가 질문을 입력하세요...";
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -1198,13 +1241,14 @@ ${integratedData.aiOpinionSummary}
                       maxQuestions={MAX_QUESTIONS}
                     />
                   )}
-                  {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} onAnswerPreparationStart={handleAnswerPreparationStart} />}
+                  {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} onAnswerPreparationStart={handleAnswerPreparationStart} onNavigateToMain={handleNavigateToMain} />}
                 {message.needsFeedback && message.feedbackReason && (
                   <HumanFeedbackRequest
                     reason={message.feedbackReason}
                     originalQuestion={messages.find(m => m.isUser)?.text || ""}
                     onSubmitRevision={handleRevisedQuestion}
                     suggestedQuestions={message.suggestedQuestions}
+                    onQuestionSelect={(question) => setInputValue(question)}
                   />
                 )}
                 {!message.isUser && !message.isLoading && !message.needsFeedback && !message.isEnhancedResponse && !message.isDebate && !message.isInvalidQuestion && message.relatedLaws && (
@@ -1237,7 +1281,8 @@ ${integratedData.aiOpinionSummary}
                     relatedLaws={message.relatedLaws.map((law, idx) => ({
                       id: `제${idx + 1}조`,
                       name: law
-                    }))}
+                    }))} 
+                    onLawClick={handleLawClick}
                   />
                 )}
                 {message.isEnhancedResponse && message.enhancedData && (
@@ -1324,8 +1369,8 @@ ${integratedData.aiOpinionSummary}
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder={isDebateInProgress ? "AI 심층분석 진행 중..." : "추가 질문을 입력하세요..."}
-                disabled={isDebateInProgress}
+                placeholder={getPlaceholder()}
+                disabled={isInputDisabled}
                 className="flex-1 bg-transparent border-none outline-none text-base text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <input
@@ -1339,7 +1384,7 @@ ${integratedData.aiOpinionSummary}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isDebateInProgress}
+                disabled={isInputDisabled}
                 className="w-9 h-9 bg-muted hover:bg-muted/80 rounded-full transition-colors flex items-center justify-center flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="파일 업로드 (PDF, DOCX, HWP)"
               >
@@ -1347,7 +1392,7 @@ ${integratedData.aiOpinionSummary}
               </button>
               <button
                 type="submit"
-                disabled={!inputValue.trim() || isDebateInProgress}
+                disabled={!inputValue.trim() || isInputDisabled}
                 className="w-10 h-10 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
               >
                 <Send className="w-4.5 h-4.5" />
@@ -1457,6 +1502,15 @@ ${integratedData.aiOpinionSummary}
           aiOpinion={preparingAnswerData.aiOpinionSummary}
           questionSummary={messages.find(m => m.isUser)?.text || initialMessage}
           isInitialAnswer={isInitialAnswerView} // 최초 답변 생성 시 사이드바인지 여부
+        />
+      )}
+
+      {/* Law Detail Sidebar */}
+      {showLawDetailSidebar && (
+        <LawDetailSidebar
+          isOpen={showLawDetailSidebar}
+          onClose={() => setShowLawDetailSidebar(false)}
+          lawName={selectedLawName}
         />
       )}
     </div>
