@@ -27,6 +27,29 @@ const AVAILABLE_LAWS = [
   { id: "labor-welfare", name: "근로복지기본법", isDefault: false },
 ];
 
+const COMPANY_REGULATIONS = [
+  { id: "hr-reg-001", name: "인사관리규정", category: "인사" },
+  { id: "hr-reg-002", name: "급여관리규정", category: "인사" },
+  { id: "hr-reg-003", name: "복리후생규정", category: "인사" },
+  { id: "hr-reg-004", name: "교육훈련규정", category: "인사" },
+  { id: "hr-reg-005", name: "징계규정", category: "인사" },
+  { id: "work-reg-001", name: "근무관리규정", category: "근무" },
+  { id: "work-reg-002", name: "휴가관리규정", category: "근무" },
+  { id: "work-reg-003", name: "출장관리규정", category: "근무" },
+  { id: "work-reg-004", name: "재택근무규정", category: "근무" },
+  { id: "work-reg-005", name: "탄력근무제운영규정", category: "근무" },
+  { id: "safety-reg-001", name: "안전보건관리규정", category: "안전" },
+  { id: "safety-reg-002", name: "비상대응절차규정", category: "안전" },
+  { id: "safety-reg-003", name: "작업환경관리규정", category: "안전" },
+  { id: "it-reg-001", name: "정보보안규정", category: "기타" },
+  { id: "it-reg-002", name: "개인정보처리규정", category: "기타" },
+  { id: "ethics-reg-001", name: "윤리강령", category: "기타" },
+  { id: "ethics-reg-002", name: "성희롱예방규정", category: "기타" },
+  { id: "finance-reg-001", name: "경비관리규정", category: "기타" },
+  { id: "vehicle-reg-001", name: "차량관리규정", category: "기타" },
+  { id: "facility-reg-001", name: "시설물관리규정", category: "기타" },
+];
+
 export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: LawSelectionModalProps) {
   // Initialize with all laws if selectedLaws is empty (first time opening)
   // 근로기준법은 항상 포함
@@ -39,6 +62,7 @@ export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: 
     return laws;
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "laws" | "regulations">("all");
 
   // Reset local state when modal opens
   useState(() => {
@@ -52,6 +76,7 @@ export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: 
         setLocalSelectedLaws(laws);
       }
       setSearchQuery("");
+      setFilterType("all");
     }
   });
 
@@ -60,6 +85,15 @@ export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: 
   const filteredLaws = AVAILABLE_LAWS.filter(law =>
     law.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const filteredRegulations = COMPANY_REGULATIONS.filter(reg =>
+    reg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    reg.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // 필터에 따라 표시할 항목 결정
+  const shouldShowLaws = filterType === "all" || filterType === "laws";
+  const shouldShowRegulations = filterType === "all" || filterType === "regulations";
 
   const handleToggle = (lawId: string) => {
     // 근로기준법은 토글 불가
@@ -73,12 +107,25 @@ export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: 
   };
 
   const handleSelectAll = () => {
-    setLocalSelectedLaws(filteredLaws.map(law => law.id));
+    const newIds: string[] = [];
+    if (shouldShowLaws) {
+      newIds.push(...filteredLaws.map(law => law.id));
+    }
+    if (shouldShowRegulations) {
+      newIds.push(...filteredRegulations.map(reg => reg.id));
+    }
+    setLocalSelectedLaws(prev => [...new Set([...prev, ...newIds])]);
   };
 
   const handleDeselectAll = () => {
-    // 근로기준법은 항상 유지
-    setLocalSelectedLaws(["labor-standards"]);
+    const idsToRemove: string[] = [];
+    if (shouldShowLaws) {
+      idsToRemove.push(...filteredLaws.map(law => law.id).filter(id => id !== "labor-standards"));
+    }
+    if (shouldShowRegulations) {
+      idsToRemove.push(...filteredRegulations.map(reg => reg.id));
+    }
+    setLocalSelectedLaws(prev => prev.filter(id => !idsToRemove.includes(id)));
   };
 
   const handleApply = () => {
@@ -115,16 +162,31 @@ export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: 
 
         {/* Search */}
         <div className="px-8 py-4 border-b border-border flex-shrink-0">
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="법령명 검색..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
-            />
+          <div className="flex gap-3 mb-3">
+            {/* Filter Dropdown - 좌측 */}
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as "all" | "laws" | "regulations")}
+              className="px-4 py-2 rounded-lg bg-muted border border-border text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+            >
+              <option value="all">전체</option>
+              <option value="laws">법령</option>
+              <option value="regulations">사규</option>
+            </select>
+
+            {/* Search Input - 우측 */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="검색..."
+                className="w-full pl-10 pr-4 py-2 rounded-lg bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
           </div>
+
           {/* Select All / Deselect All Controls */}
           <div className="flex items-center gap-4">
             <button
@@ -147,33 +209,59 @@ export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: 
 
         {/* Law List - 스크롤 영역 */}
         <div className="flex-1 overflow-y-auto px-8 py-4">
-          {filteredLaws.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p className="text-sm">검색 결과가 없습니다.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredLaws.map((law) => {
-                const isDisabled = law.id === "labor-standards";
-                return (
+          {shouldShowLaws && (
+            filteredLaws.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <p className="text-sm">검색 결과가 없습니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredLaws.map((law) => {
+                  const isDisabled = law.id === "labor-standards";
+                  return (
+                    <label
+                      key={law.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                        isDisabled ? 'cursor-not-allowed' : 'hover:bg-muted cursor-pointer'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={localSelectedLaws.includes(law.id)}
+                        onCheckedChange={() => handleToggle(law.id)}
+                        disabled={isDisabled}
+                      />
+                      <span className="text-sm text-foreground flex-1">
+                        {law.name}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )
+          )}
+          {shouldShowRegulations && (
+            filteredRegulations.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <p className="text-sm">검색 결과가 없습니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredRegulations.map((reg) => (
                   <label
-                    key={law.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                      isDisabled ? 'cursor-not-allowed' : 'hover:bg-muted cursor-pointer'
-                    }`}
+                    key={reg.id}
+                    className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted cursor-pointer"
                   >
                     <Checkbox
-                      checked={localSelectedLaws.includes(law.id)}
-                      onCheckedChange={() => handleToggle(law.id)}
-                      disabled={isDisabled}
+                      checked={localSelectedLaws.includes(reg.id)}
+                      onCheckedChange={() => handleToggle(reg.id)}
                     />
                     <span className="text-sm text-foreground flex-1">
-                      {law.name}
+                      {reg.name}
                     </span>
                   </label>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
 

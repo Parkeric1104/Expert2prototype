@@ -194,6 +194,19 @@ export function HumanFeedbackRequest({
           </div>
         </div>
       )}
+
+      {/* 입력한 질문으로 이어서 질문하기 버튼 */}
+      <button
+        onClick={() => {
+          setIsSubmitting(true);
+          onSubmitRevision(originalQuestion);
+        }}
+        disabled={isSubmitting}
+        className="w-full mt-4 px-6 py-4 bg-[#6366F1] hover:bg-[#5558E3] text-white font-semibold rounded-2xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ wordBreak: 'keep-all' }}
+      >
+        입력한 질문으로 이어서 질문하기
+      </button>
     </div>
   );
 }
