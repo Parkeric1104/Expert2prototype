@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/app/components/ui/tabs";
-import { Checkbox } from "@/app/components/ui/checkbox";
 
 interface AIBox {
   id: string;
@@ -33,6 +32,7 @@ interface AIBoxSelectionModalProps {
   onSelect: (selectedBoxes: AIBox[]) => void;
 }
 
+
 export function AIBoxSelectionModal({
   isOpen,
   onClose,
@@ -41,7 +41,7 @@ export function AIBoxSelectionModal({
   const [activeTab, setActiveTab] = useState<"my" | "shared" | "favorite">("my");
   const [searchType, setSearchType] = useState<string>("이름");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedBoxes, setSelectedBoxes] = useState<AIBox[]>([]);
+  const [selectedBox, setSelectedBox] = useState<AIBox | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -135,28 +135,18 @@ export function AIBoxSelectionModal({
   });
 
   const handleBoxSelect = (box: AIBox) => {
-    const isSelected = selectedBoxes.some(b => b.id === box.id);
-    if (isSelected) {
-      setSelectedBoxes(selectedBoxes.filter(b => b.id !== box.id));
-    } else {
-      setSelectedBoxes([...selectedBoxes, box]);
-    }
-  };
-
-  const handleRemoveSelected = (boxId: string) => {
-    setSelectedBoxes(selectedBoxes.filter(b => b.id !== boxId));
+    setSelectedBox(prev => prev?.id === box.id ? null : box);
   };
 
   const handleConfirm = () => {
-    onSelect(selectedBoxes);
+    onSelect(selectedBox ? [selectedBox] : []);
     onClose();
-    // Reset state
-    setSelectedBoxes([]);
+    setSelectedBox(null);
     setSearchQuery("");
   };
 
   const handleClose = () => {
-    setSelectedBoxes([]);
+    setSelectedBox(null);
     setSearchQuery("");
     setCurrentPage(1);
     onClose();
@@ -235,7 +225,7 @@ export function AIBoxSelectionModal({
 
             <TabsContent value="my" className="flex-1 m-0 overflow-hidden flex flex-col">
               <div className="flex-1 overflow-hidden px-6 pt-4 pb-3">
-                <AIBoxListWithCheckbox boxes={currentBoxes} onSelect={handleBoxSelect} selectedIds={selectedBoxes.map(b => b.id)} />
+                <AIBoxListWithCheckbox boxes={currentBoxes} onSelect={handleBoxSelect} selectedId={selectedBox?.id} />
               </div>
               {totalPages > 1 && (
                 <div className="px-6 pb-4">
@@ -245,7 +235,7 @@ export function AIBoxSelectionModal({
             </TabsContent>
             <TabsContent value="shared" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
               <div className="flex-1 overflow-hidden px-6 pt-4 pb-3">
-                <AIBoxListWithCheckbox boxes={currentBoxes} onSelect={handleBoxSelect} selectedIds={selectedBoxes.map(b => b.id)} />
+                <AIBoxListWithCheckbox boxes={currentBoxes} onSelect={handleBoxSelect} selectedId={selectedBox?.id} />
               </div>
               {totalPages > 1 && (
                 <div className="px-6 pb-4">
@@ -255,7 +245,7 @@ export function AIBoxSelectionModal({
             </TabsContent>
             <TabsContent value="favorite" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
               <div className="flex-1 overflow-hidden px-6 pt-4 pb-3">
-                <AIBoxListWithCheckbox boxes={currentBoxes} onSelect={handleBoxSelect} selectedIds={selectedBoxes.map(b => b.id)} />
+                <AIBoxListWithCheckbox boxes={currentBoxes} onSelect={handleBoxSelect} selectedId={selectedBox?.id} />
               </div>
               {totalPages > 1 && (
                 <div className="px-6 pb-4">
@@ -335,14 +325,14 @@ function AIBoxList({
   );
 }
 
-function AIBoxListWithCheckbox({ 
-  boxes, 
-  onSelect, 
-  selectedIds 
-}: { 
-  boxes: AIBox[]; 
-  onSelect: (box: AIBox) => void; 
-  selectedIds: string[];
+function AIBoxListWithCheckbox({
+  boxes,
+  onSelect,
+  selectedId
+}: {
+  boxes: AIBox[];
+  onSelect: (box: AIBox) => void;
+  selectedId: string | undefined;
 }) {
   if (boxes.length === 0) {
     return (
@@ -364,7 +354,7 @@ function AIBoxListWithCheckbox({
         </thead>
         <tbody>
           {boxes.map((box) => {
-            const isSelected = selectedIds.includes(box.id);
+            const isSelected = selectedId === box.id;
             return (
               <tr
                 key={box.id}
@@ -373,12 +363,16 @@ function AIBoxListWithCheckbox({
                   isSelected ? "bg-primary/5" : ""
                 }`}
               >
-                <td className="px-4 py-3 align-top">
-                  <Checkbox 
-                    checked={isSelected} 
-                    onCheckedChange={() => onSelect(box)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                <td className="px-4 py-3 align-middle">
+                  <div className="flex items-center justify-center">
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        isSelected ? "border-primary" : "border-muted-foreground"
+                      }`}
+                    >
+                      {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
+                    </div>
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-start gap-2">
