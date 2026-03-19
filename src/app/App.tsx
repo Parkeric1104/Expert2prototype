@@ -5,6 +5,11 @@ import { ModernChatInterface } from "@/app/components/modern-chat-interface";
 import { PolicyManagementView } from "@/app/components/policy-management-view";
 import { LawSelectionModal } from "@/app/components/law-selection-modal";
 import { EnhancedChatHistoryModal } from "@/app/components/enhanced-chat-history-modal";
+import { AutoPolicyReviewModal } from "@/app/components/auto-policy-review-modal";
+import {
+  EmbeddingCorrectionView,
+  type EmbeddingCorrectionPolicy,
+} from "@/app/components/embedding-correction-view";
 import { Toaster } from "@/app/components/ui/sonner";
 import {
   AlertDialog,
@@ -18,7 +23,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy">("home");
+  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding">("home");
   const [chatQuery, setChatQuery] = useState<string>("");
   const [selectedLaws, setSelectedLaws] = useState<string[]>([]);
   const [relatedLaws, setRelatedLaws] = useState<string[]>([]);
@@ -32,13 +37,19 @@ export default function App() {
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
 
+  // AutoPolicyReviewModal에서 등록 완료된 정책 ID 목록
+  const [reviewCompleteIds, setReviewCompleteIds] = useState<string[]>([]);
+
+  // EmbeddingCorrectionView에서 볼 정책 정보
+  const [embeddingPolicy, setEmbeddingPolicy] = useState<EmbeddingCorrectionPolicy | null>(null);
+
   const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string) => {
     setChatQuery(query);
     setSelectedLaws(laws);
-    setRelatedLaws(promptRelatedLaws || []); // 추천 질문의 관련 법령 저장
-    setQuestionType(promptQuestionType); // 질문 유형 저장
+    setRelatedLaws(promptRelatedLaws || []);
+    setQuestionType(promptQuestionType);
     setCurrentView("chat");
-    setCurrentStep(1); // 질문 입력 단계
+    setCurrentStep(1);
   };
 
   const handleNewChat = () => {
@@ -50,10 +61,8 @@ export default function App() {
 
   const handleConfirmLaws = (laws: string[]) => {
     setSelectedLaws(laws);
-    // If we're in chat view and refining search, trigger a new search
     if (currentView === "chat" && isRefiningSearch) {
       setIsRefiningSearch(false);
-      // The chat interface will handle the refined search
     }
   };
 
@@ -69,7 +78,6 @@ export default function App() {
   };
 
   const handleCompleteDocument = () => {
-    // 메인 화면으로 이동
     handleNewChat();
   };
 
@@ -86,9 +94,7 @@ export default function App() {
   };
 
   const handleSelectChat = (chatId: string) => {
-    // 실제로는 chatId로 해당 대화를 불러옴
     console.log("Selected chat:", chatId);
-    // For demo, just show a placeholder
   };
 
   const handleNavigation = (action: () => void) => {
@@ -112,21 +118,40 @@ export default function App() {
     setShowLeaveConfirmModal(false);
   };
 
+  // AutoPolicyReviewModal: 검토 완료 및 사내 정책 등록 완료 처리
+  const handlePolicyRegistered = (policyId: string) => {
+    setReviewCompleteIds((prev) => [...prev, policyId]);
+  };
+
+  // PolicyManagementView: 임베딩 수정 페이지로 이동
+  const handleNavigateToEmbedding = (policy: EmbeddingCorrectionPolicy) => {
+    setEmbeddingPolicy(policy);
+    setCurrentView("embedding");
+  };
+
+  // EmbeddingCorrectionView: 목록으로 돌아가기
+  const handleBackFromEmbedding = () => {
+    setEmbeddingPolicy(null);
+    setCurrentView("policy");
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Top Header */}
-      <TopHeader 
-        onNewChat={() => handleNavigation(handleNewChat)} 
-        onOpenHistory={handleOpenHistory}
-        onOpenPolicyUpload={() => {
-          if (currentView === "chat" && hasChatMessages) {
-            handleNavigation(handleOpenPolicyUpload);
-          } else {
-            handleOpenPolicyUpload();
-          }
-        }}
-        onLogoClick={handleLogoClick}
-      />
+      {/* Top Header - embedding 뷰에서는 숨김 */}
+      {currentView !== "embedding" && (
+        <TopHeader
+          onNewChat={() => handleNavigation(handleNewChat)}
+          onOpenHistory={handleOpenHistory}
+          onOpenPolicyUpload={() => {
+            if (currentView === "chat" && hasChatMessages) {
+              handleNavigation(handleOpenPolicyUpload);
+            } else {
+              handleOpenPolicyUpload();
+            }
+          }}
+          onLogoClick={handleLogoClick}
+        />
+      )}
 
       {/* Main Content */}
       {currentView === "home" && (
@@ -153,7 +178,21 @@ export default function App() {
       {currentView === "policy" && (
         <PolicyManagementView
           isAdmin={isAdmin}
+          reviewCompleteIds={reviewCompleteIds}
+          onNavigateToEmbedding={handleNavigateToEmbedding}
         />
+      )}
+
+      {currentView === "embedding" && embeddingPolicy && (
+        <EmbeddingCorrectionView
+          policy={embeddingPolicy}
+          onBack={handleBackFromEmbedding}
+        />
+      )}
+
+      {/* AutoPolicyReviewModal: 홈 또는 정책 관리 화면 진입 시 자동 팝업 */}
+      {(currentView === "home" || currentView === "policy") && (
+        <AutoPolicyReviewModal onPolicyRegistered={handlePolicyRegistered} />
       )}
 
       {/* Law Selection Modal */}

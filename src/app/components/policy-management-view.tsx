@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { 
-  Shield, FileText, Search, Filter, Download, ChevronDown, ChevronUp, 
-  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle
+import { useState, useEffect } from "react";
+import {
+  Shield, FileText, Search, Filter, Download, ChevronDown, ChevronUp,
+  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle,
+  Database, Eye
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -37,7 +38,7 @@ interface PolicyFile {
   uploadedBy: string;
   version: number;
   history: PolicyHistory[];
-  status: "pending" | "active" | "error"; // 상태 추가
+  status: "pending" | "review" | "active" | "error"; // 상태 추가
 }
 
 interface PolicyHistory {
@@ -46,14 +47,20 @@ interface PolicyHistory {
   action: "등록" | "수정" | "재업로드";
   changedBy: string;
   changes?: string;
-  status?: "pending" | "active" | "error"; // 히스토리 항목별 상태 추가
+  status?: "pending" | "review" | "active" | "error"; // 히스토리 항목별 상태 추가
 }
 
 interface PolicyManagementViewProps {
   isAdmin?: boolean;
+  reviewCompleteIds?: string[];
+  onNavigateToEmbedding?: (policy: { id: string; name: string; category: string }) => void;
 }
 
-export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewProps) {
+export function PolicyManagementView({
+  isAdmin = true,
+  reviewCompleteIds = [],
+  onNavigateToEmbedding,
+}: PolicyManagementViewProps) {
   // Mock data for existing policies
   const [policies, setPolicies] = useState<PolicyFile[]>(([
     {
@@ -227,12 +234,39 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
       ],
       status: "active",
     },
+    // 검토 대기 문서 (AutoPolicyReviewModal에서 파싱 완료 알림)
+    {
+      id: "review-001",
+      name: "2024 더존비즈온 취업규칙 개정안.pdf",
+      size: 2048000,
+      type: "application/pdf",
+      category: "취업규칙",
+      uploadDate: "2026-03-19",
+      lastModified: "2026-03-19",
+      uploadedBy: "현재사용자",
+      version: 1,
+      history: [
+        { version: 1, date: "2026-03-19", action: "등록", changedBy: "현재사용자", status: "review" },
+      ],
+      status: "review",
+    },
   ]));
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("전체");
   const [expandedPolicy, setExpandedPolicy] = useState<string | null>(null);
   const [editingPolicy, setEditingPolicy] = useState<string | null>(null);
+
+  // AutoPolicyReviewModal에서 등록 완료된 정책 상태를 active로 업데이트
+  useEffect(() => {
+    if (reviewCompleteIds.length > 0) {
+      setPolicies((prev) =>
+        prev.map((p) =>
+          reviewCompleteIds.includes(p.id) ? { ...p, status: "active" } : p
+        )
+      );
+    }
+  }, [reviewCompleteIds]);
   const [deletingPolicy, setDeletingPolicy] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
@@ -367,6 +401,13 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
             대기중
           </span>
         );
+      case "review":
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-xs font-medium whitespace-nowrap">
+            <Eye className="w-3 h-3" />
+            검토 대기
+          </span>
+        );
       case "active":
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-xs font-medium whitespace-nowrap">
@@ -483,7 +524,7 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
                             <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium whitespace-nowrap">
                               {policy.category}
                             </span>
-                            {getStatusBadge(displayInfo.status)}
+                            {getStatusBadge(policy.status)}
                           </div>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                             <span>등록일: {displayInfo.date}</span>
@@ -495,6 +536,24 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
 
                       {/* 액션 버튼 */}
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* 임베딩 수정: 등록완료(active) 정책에만 노출 */}
+                        {policy.status === "active" && onNavigateToEmbedding && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              onNavigateToEmbedding({
+                                id: policy.id,
+                                name: policy.name,
+                                category: policy.category,
+                              })
+                            }
+                            title="임베딩 데이터 수정"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Database className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="ghost"
