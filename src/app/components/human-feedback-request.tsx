@@ -208,8 +208,8 @@ export function HumanFeedbackRequest({
         </div>
       )}
 
-      {/* 입력한 질문으로 이어서 질문하기 버튼 */}
-      <button
+      {/* 입력한 질문으로 이어서 질문하기 버튼 - insufficient(조금 더 자세히)만 노출 */}
+      {reason === "insufficient" && <button
         onClick={() => {
           setIsSubmitting(true);
           onSubmitRevision(originalQuestion);
@@ -219,7 +219,7 @@ export function HumanFeedbackRequest({
         style={{ wordBreak: 'keep-all' }}
       >
         입력한 질문으로 이어서 질문하기
-      </button>
+      </button>}
     </div>
   );
 }
