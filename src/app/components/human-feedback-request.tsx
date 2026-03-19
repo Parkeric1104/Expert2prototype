@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertCircle, XCircle, Shield, HelpCircle, Sparkles } from "lucide-react";
 
 interface HumanFeedbackRequestProps {
-  reason: "invalid" | "insufficient" | "inappropriate";
+  reason: "invalid" | "insufficient" | "inappropriate" | "out-of-scope";
   originalQuestion: string;
   onSubmitRevision: (revisedQuestion: string) => void;
   suggestedQuestions?: string[];
@@ -27,13 +27,18 @@ export function HumanFeedbackRequest({
         };
       case "insufficient":
         return {
-          title: "질문을 한번 더 확인해주세요",
+          title: "조금 더 자세히 알려주세요",
           description: "",
         };
       case "inappropriate":
         return {
-          title: "답변할 수 없는 질문입니다",
+          title: "답변할 수 없는 범위입니다",
           description: "이 질문은 법적·윤리적 책임 문제로 인해 답변이 제한됩니다.",
+        };
+      case "out-of-scope":
+        return {
+          title: "노무/인사 영역 외 질문입니다",
+          description: "이 서비스는 노무·인사 관련 질문에만 답변할 수 있습니다.",
         };
     }
   };
@@ -102,6 +107,8 @@ export function HumanFeedbackRequest({
         return "bg-[#EFF6FF]";
       case "inappropriate":
         return "bg-[#FFE8F0]";
+      case "out-of-scope":
+        return "bg-[#FFF3E0]";
     }
   };
 
@@ -110,9 +117,11 @@ export function HumanFeedbackRequest({
       case "invalid":
         return "border-[#FFE0A3]";
       case "insufficient":
-        return "bg-[#BEDBFF]";
+        return "border-[#BEDBFF]";
       case "inappropriate":
         return "border-[#FFD0E0]";
+      case "out-of-scope":
+        return "border-[#FFCC80]";
     }
   };
 
@@ -124,6 +133,8 @@ export function HumanFeedbackRequest({
         return "text-[#155DFC]";
       case "inappropriate":
         return "text-[#E91E63]";
+      case "out-of-scope":
+        return "text-[#F57C00]";
     }
   };
 
@@ -135,6 +146,8 @@ export function HumanFeedbackRequest({
         return HelpCircle;
       case "inappropriate":
         return Shield;
+      case "out-of-scope":
+        return AlertCircle;
     }
   };
 

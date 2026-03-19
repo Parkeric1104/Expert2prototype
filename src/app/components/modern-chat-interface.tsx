@@ -70,7 +70,7 @@ interface Message {
   isLoading?: boolean;
   isFeedback?: boolean;
   needsFeedback?: boolean;
-  feedbackReason?: "invalid" | "insufficient" | "inappropriate";
+  feedbackReason?: "invalid" | "insufficient" | "inappropriate" | "out-of-scope";
   feedbackData?: {
     feedbackPoints: string[];
   };
@@ -471,12 +471,10 @@ ${integratedData.aiOpinionSummary}
 
       // questionType이 있으면 해당 타입에 맞는 답변 생성
       if (questionType) {
-        // 프로토타입 질문인 경우 questionType에 따라 분기
         if (questionType === "simple") {
-          // 간단한 답변 - Simple Response Card
+          // [3-1] 간단 답변
           onStepChange?.(2);
           setCurrentStep(2);
-
           const loadingMsg: Message = {
             id: (Date.now() + 1).toString(),
             text: "",
@@ -485,7 +483,6 @@ ${integratedData.aiOpinionSummary}
             relatedLaws: relatedLaws,
           };
           setMessages((prev) => [...prev, loadingMsg]);
-
           setTimeout(() => {
             const simpleMsg: Message = {
               id: (Date.now() + 2).toString(),
@@ -499,35 +496,18 @@ ${integratedData.aiOpinionSummary}
             setCurrentStep(3);
           }, 2000);
         } else if (questionType === "normal") {
-          // 정상 질문 - 일반 AI 답변 생성
-          onStepChange?.(2);
-          setCurrentStep(2);
-
-          const loadingMsg: Message = {
+          // 첫 질문 normal → [4] 조금 더 자세히 알려주세요
+          const feedbackMsg: Message = {
             id: (Date.now() + 1).toString(),
             text: "",
             isUser: false,
-            isLoading: true,
-            relatedLaws: relatedLaws,
+            needsFeedback: true,
+            feedbackReason: "insufficient",
+            suggestedQuestions: getSuggestedQuestions("insufficient"),
           };
-          setMessages((prev) => [...prev, loadingMsg]);
-
-          setTimeout(() => {
-            const enhancedData = generateIntegratedResponse(initialMessage);
-            const aiMsg: Message = {
-              id: (Date.now() + 2).toString(),
-              text: "",
-              isUser: false,
-              isEnhancedResponse: true,
-              enhancedData: enhancedData,
-            };
-            setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-            setIsTyping(false);
-            onStepChange?.(3);
-            setCurrentStep(3);
-          }, 16000); // 16초로 변경
+          setMessages((prev) => [...prev, feedbackMsg]);
         } else if (questionType === "insufficient") {
-          // 정보 부족 - 휴먼 피드백 요청
+          // [4] 조금 더 자세히 알려주세요
           const feedbackMsg: Message = {
             id: (Date.now() + 1).toString(),
             text: "",
@@ -538,7 +518,7 @@ ${integratedData.aiOpinionSummary}
           };
           setMessages((prev) => [...prev, feedbackMsg]);
         } else if (questionType === "meaningless") {
-          // 의미없는 질문 - 휴먼 피드백 요청 (invalid)
+          // [4-1] 질문을 이해할 수 없습니다
           const feedbackMsg: Message = {
             id: (Date.now() + 1).toString(),
             text: "",
@@ -549,18 +529,18 @@ ${integratedData.aiOpinionSummary}
           };
           setMessages((prev) => [...prev, feedbackMsg]);
         } else if (questionType === "out-of-scope") {
-          // 범위 밖 질문 - 휴먼 피드백 요청 (invalid)
+          // [4-2] 노무/인사 영역 외 질문입니다
           const feedbackMsg: Message = {
             id: (Date.now() + 1).toString(),
             text: "",
             isUser: false,
             needsFeedback: true,
-            feedbackReason: "invalid",
+            feedbackReason: "out-of-scope",
             suggestedQuestions: getSuggestedQuestions("out-of-scope"),
           };
           setMessages((prev) => [...prev, feedbackMsg]);
         } else if (questionType === "inappropriate") {
-          // 부적절한 질문 - 휴먼 피드백 요청 (inappropriate)
+          // [4-3] 답변할 수 없는 범위입니다
           const feedbackMsg: Message = {
             id: (Date.now() + 1).toString(),
             text: "",
@@ -571,70 +551,43 @@ ${integratedData.aiOpinionSummary}
           };
           setMessages((prev) => [...prev, feedbackMsg]);
         }
-        return; // questionType이 있으면 검증 로직 우회
+        return;
       }
 
-      // questionType이 없으면 기존 검증 로직 실행
+      // questionType 없으면 검증 로직으로 분기
       const validation = validateQuestion(initialMessage);
 
-      // If question needs human feedback, show feedback request
       if (!validation.isValid) {
-        // Check if it's insufficient (needs clarification) or other issues
-        if (validation.reason === "insufficient" || validation.reason === "meaningless" || validation.reason === "out-of-scope" || validation.reason === "inappropriate" || validation.reason === "unethical") {
-          let feedbackReason: "invalid" | "insufficient" | "inappropriate" = "insufficient";
-          
-          if (validation.reason === "meaningless" || validation.reason === "out-of-scope") {
-            feedbackReason = "invalid";
-          } else if (validation.reason === "inappropriate" || validation.reason === "unethical") {
-            feedbackReason = "inappropriate";
-          } else if (validation.reason === "insufficient") {
-            feedbackReason = "insufficient";
-          }
-          
-          const feedbackMsg: Message = {
-            id: (Date.now() + 1).toString(),
-            text: "",
-            isUser: false,
-            needsFeedback: true,
-            feedbackReason: feedbackReason,
-            suggestedQuestions: getSuggestedQuestions(validation.reason),
-          };
-          setMessages((prev) => [...prev, feedbackMsg]);
-          return;  // Don't proceed with AI response
+        let feedbackReason: "invalid" | "insufficient" | "inappropriate" | "out-of-scope" = "insufficient";
+        if (validation.reason === "meaningless") {
+          feedbackReason = "invalid";
+        } else if (validation.reason === "out-of-scope") {
+          feedbackReason = "out-of-scope";
+        } else if (validation.reason === "inappropriate" || validation.reason === "unethical") {
+          feedbackReason = "inappropriate";
         }
+        const feedbackMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          text: "",
+          isUser: false,
+          needsFeedback: true,
+          feedbackReason: feedbackReason,
+          suggestedQuestions: getSuggestedQuestions(validation.reason),
+        };
+        setMessages((prev) => [...prev, feedbackMsg]);
+        return;
       }
 
-      // Step 1: 질문 입력 완료 -> Step 2: 법령 분석 시작
-      onStepChange?.(2);
-      setCurrentStep(2);
-
-      // Show loading state first
-      const loadingMsg: Message = {
+      // 검증 통과 → 첫 질문이라도 [4] 피드백 카드 노출
+      const feedbackMsg: Message = {
         id: (Date.now() + 1).toString(),
         text: "",
         isUser: false,
-        isLoading: true,
-        relatedLaws: relatedLaws, // 추천 질문의 련 법령 전달
+        needsFeedback: true,
+        feedbackReason: "insufficient",
+        suggestedQuestions: getSuggestedQuestions("insufficient"),
       };
-      setMessages((prev) => [...prev, loadingMsg]);
-
-      // After 16 seconds, replace with integrated response
-      setTimeout(() => {
-        const enhancedData = generateIntegratedResponse(initialMessage);
-        const aiMsg: Message = {
-          id: (Date.now() + 2).toString(),
-          text: "",
-          isUser: false,
-          isEnhancedResponse: true,
-          enhancedData: enhancedData,
-        };
-        setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-        setIsTyping(false);
-        
-        // Step 2: 법령 분석 완료 -> Step 3: 결과 확인
-        onStepChange?.(3);
-        setCurrentStep(3);
-      }, 16000); // 16초로 변경
+      setMessages((prev) => [...prev, feedbackMsg]);
     }
   }, [initialMessage, questionType]);
 
@@ -751,9 +704,37 @@ ${integratedData.aiOpinionSummary}
     const savedInput = inputValue;
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
-    
+
     // 메시지 발송 후 첨부파일 삭제
     setUploadedFiles([]);
+
+    // 후속 질문 유형 검증
+    const validation = validateQuestion(savedInput);
+
+    if (!validation.isValid) {
+      // 피드백 카드 노출
+      let feedbackReason: "invalid" | "insufficient" | "inappropriate" | "out-of-scope" = "insufficient";
+      if (validation.reason === "meaningless") {
+        feedbackReason = "invalid";
+      } else if (validation.reason === "out-of-scope") {
+        feedbackReason = "out-of-scope";
+      } else if (validation.reason === "inappropriate" || validation.reason === "unethical") {
+        feedbackReason = "inappropriate";
+      }
+      const feedbackMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "",
+        isUser: false,
+        needsFeedback: true,
+        feedbackReason: feedbackReason,
+        suggestedQuestions: getSuggestedQuestions(validation.reason || "insufficient"),
+      };
+      setMessages((prev) => [...prev, feedbackMsg]);
+      return;
+    }
+
+    // 유효한 후속 질문 → 질문 길이에 따라 [3-1] 또는 [3] 노출
+    const isSimpleFollowUp = savedInput.length < 20;
 
     // Show loading
     const loadingMsg: Message = {
@@ -761,21 +742,35 @@ ${integratedData.aiOpinionSummary}
       text: "",
       isUser: false,
       isLoading: true,
-      relatedLaws: relatedLaws, // 추천 질문의 관련 법령 전달
+      relatedLaws: relatedLaws,
     };
     setMessages((prev) => [...prev, loadingMsg]);
 
-    setTimeout(() => {
-      const enhancedData = generateIntegratedResponse(savedInput);
-      const aiMsg: Message = {
-        id: (Date.now() + 2).toString(),
-        text: "",
-        isUser: false,
-        isEnhancedResponse: true,
-        enhancedData: enhancedData,
-      };
-      setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-    }, 16000); // 후속 질문도 최초 질문과 동일한 16초 분석 시간 적용
+    if (isSimpleFollowUp) {
+      // [3-1] 간단 답변
+      setTimeout(() => {
+        const simpleMsg: Message = {
+          id: (Date.now() + 2).toString(),
+          text: "",
+          isUser: false,
+          relatedLaws: relatedLaws || [],
+        };
+        setMessages((prev) => prev.filter(m => !m.isLoading).concat(simpleMsg));
+      }, 2000);
+    } else {
+      // [3] 상세 답변
+      setTimeout(() => {
+        const enhancedData = generateIntegratedResponse(savedInput);
+        const aiMsg: Message = {
+          id: (Date.now() + 2).toString(),
+          text: "",
+          isUser: false,
+          isEnhancedResponse: true,
+          enhancedData: enhancedData,
+        };
+        setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+      }, 16000);
+    }
   };
 
   const handleViewOpinion = () => {
