@@ -1,13 +1,11 @@
-import { useState, useEffect } from "react";
-import {
-  Shield, FileText, Search, Filter, Download, ChevronDown, ChevronUp,
-  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle,
-  Database, Eye
+import { useState } from "react";
+import { 
+  Shield, FileText, Search, Filter, Download, ChevronDown, ChevronUp, 
+  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle, Database
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/app/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -26,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { PolicyRegistrationModal } from "@/app/components/policy-registration-modal";
+import { AutoPolicyReviewNotification } from "@/app/components/auto-policy-review-modal";
 import { toast } from "sonner";
 
 interface PolicyFile {
@@ -39,7 +38,7 @@ interface PolicyFile {
   uploadedBy: string;
   version: number;
   history: PolicyHistory[];
-  status: "pending" | "review" | "active" | "error"; // 상태 추가
+  status: "pending" | "active" | "error"; // 상태 추가
 }
 
 interface PolicyHistory {
@@ -48,20 +47,15 @@ interface PolicyHistory {
   action: "등록" | "수정" | "재업로드";
   changedBy: string;
   changes?: string;
-  status?: "pending" | "review" | "active" | "error"; // 히스토리 항목별 상태 추가
+  status?: "pending" | "active" | "error"; // 히스토리 항목별 상태 추가
 }
 
 interface PolicyManagementViewProps {
   isAdmin?: boolean;
-  reviewCompleteIds?: string[];
-  onNavigateToEmbedding?: (policy: { id: string; name: string; category: string }) => void;
+  onOpenEmbedding?: (policy: { id: string; name: string; category: string }) => void;
 }
 
-export function PolicyManagementView({
-  isAdmin = true,
-  reviewCompleteIds = [],
-  onNavigateToEmbedding,
-}: PolicyManagementViewProps) {
+export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: PolicyManagementViewProps) {
   // Mock data for existing policies
   const [policies, setPolicies] = useState<PolicyFile[]>(([
     {
@@ -235,43 +229,15 @@ export function PolicyManagementView({
       ],
       status: "active",
     },
-    // 검토 대기 문서 (AutoPolicyReviewModal에서 파싱 완료 알림)
-    {
-      id: "review-001",
-      name: "2024 더존비즈온 취업규칙 개정안.pdf",
-      size: 2048000,
-      type: "application/pdf",
-      category: "취업규칙",
-      uploadDate: "2026-03-19",
-      lastModified: "2026-03-19",
-      uploadedBy: "현재사용자",
-      version: 1,
-      history: [
-        { version: 1, date: "2026-03-19", action: "등록", changedBy: "현재사용자", status: "review" },
-      ],
-      status: "review",
-    },
   ]));
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("전체");
   const [expandedPolicy, setExpandedPolicy] = useState<string | null>(null);
   const [editingPolicy, setEditingPolicy] = useState<string | null>(null);
-
-  // AutoPolicyReviewModal에서 등록 완료된 정책 상태를 active로 업데이트
-  useEffect(() => {
-    if (reviewCompleteIds.length > 0) {
-      setPolicies((prev) =>
-        prev.map((p) =>
-          reviewCompleteIds.includes(p.id) ? { ...p, status: "active" } : p
-        )
-      );
-    }
-  }, [reviewCompleteIds]);
   const [deletingPolicy, setDeletingPolicy] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
-  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
 
   const categories = [
     "취업규칙",
@@ -290,7 +256,7 @@ export function PolicyManagementView({
     return matchesSearch && matchesCategory;
   });
 
-  const handleSubmitNewPolicy = (policyData: {
+  const handleSubmitPolicy = (policyData: {
     name: string;
     size: number;
     type: string;
@@ -318,8 +284,7 @@ export function PolicyManagementView({
     };
 
     setPolicies([newPolicy, ...policies]);
-    setShowRegistrationModal(false);
-    setShowAnalysisModal(true);
+    toast.success("정책 문서가 성공적으로 등록되었습니다.");
   };
 
   const handleEditCategory = (policyId: string, newCategory: string) => {
@@ -402,13 +367,6 @@ export function PolicyManagementView({
           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded text-xs font-medium whitespace-nowrap">
             <Clock className="w-3 h-3" />
             대기중
-          </span>
-        );
-      case "review":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-xs font-medium whitespace-nowrap">
-            <Eye className="w-3 h-3" />
-            검토 대기
           </span>
         );
       case "active":
@@ -527,7 +485,7 @@ export function PolicyManagementView({
                             <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium whitespace-nowrap">
                               {policy.category}
                             </span>
-                            {getStatusBadge(policy.status)}
+                            {getStatusBadge(displayInfo.status)}
                           </div>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                             <span>등록일: {displayInfo.date}</span>
@@ -539,22 +497,15 @@ export function PolicyManagementView({
 
                       {/* 액션 버튼 */}
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* 임베딩 수정: 등록완료(active) 정책에만 노출 */}
-                        {policy.status === "active" && onNavigateToEmbedding && (
+                        {/* 대기중 상태일 때만 분석 결과보기 버튼 표시 */}
+                        {displayInfo.status === "pending" && onOpenEmbedding && (
                           <Button
                             size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              onNavigateToEmbedding({
-                                id: policy.id,
-                                name: policy.name,
-                                category: policy.category,
-                              })
-                            }
-                            title="임베딩 데이터 수정"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={() => onOpenEmbedding({ id: policy.id, name: policy.name, category: policy.category })}
+                            className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium"
                           >
                             <Database className="w-4 h-4" />
+                            분석 결과보기
                           </Button>
                         )}
                         <Button
@@ -691,34 +642,10 @@ export function PolicyManagementView({
       <PolicyRegistrationModal
         isOpen={showRegistrationModal}
         onClose={() => setShowRegistrationModal(false)}
-        onSubmit={handleSubmitNewPolicy}
-        existingCategories={Array.from(new Set(policies.map(p => p.category)))}
-        existingPolicies={policies.map(p => ({ category: p.category, name: p.name }))}
+        onSubmit={handleSubmitPolicy}
       />
 
-      {/* 문서 분석 시작 안내 팝업 */}
-      <Dialog open={showAnalysisModal} onOpenChange={setShowAnalysisModal}>
-        <DialogContent className="sm:max-w-[440px]" onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-gray-900">
-              등록하신 문서 분석을 시작합니다
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-600 leading-relaxed mt-2">
-              등록하신 문서의 AI 분석 및 변환 작업을 진행하고 있습니다. 분석이 완료되면 별도로 안내해 드릴 예정이며, 이후 최종 확인 이후 사내 정책 문서로 등록이 완료됩니다.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4">
-            <Button
-              onClick={() => setShowAnalysisModal(false)}
-              className="bg-primary hover:bg-primary/90 text-white px-8"
-            >
-              확인
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 삭제 확인 다이얼로그 */}
+      {/* 삭제 확인 모달 */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -742,6 +669,17 @@ export function PolicyManagementView({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 테스트용: 정책 관리 화면 접속 시 무조건 표시 */}
+      <AutoPolicyReviewNotification 
+        isAdmin={true}
+        onReview={onOpenEmbedding ? () => {
+          const policy = policies.find(p => p.status === "pending");
+          if (policy) {
+            onOpenEmbedding({ id: policy.id, name: policy.name, category: policy.category });
+          }
+        } : undefined}
+      />
     </div>
   );
 }

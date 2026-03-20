@@ -1,31 +1,107 @@
 import { useState, useEffect } from "react";
-import { FileText, Clock, ArrowRight, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogDescription,
 } from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
 
-const SNOOZE_KEY = "snoozePolicyReview";
-
 interface AutoPolicyReviewModalProps {
-  onReview: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  policyName?: string;
 }
 
-export function AutoPolicyReviewModal({ onReview }: AutoPolicyReviewModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function AutoPolicyReviewModal({ 
+  isOpen, 
+  onClose,
+  policyName = "사내 정책 문서"
+}: AutoPolicyReviewModalProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent
+        className="sm:max-w-[520px] p-8 flex flex-col bg-card border-border"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="sr-only">
+          <DialogTitle>정책 등록 완료</DialogTitle>
+          <DialogDescription>
+            사내 정책 문서 등록이 완료되었습니다.
+          </DialogDescription>
+        </DialogHeader>
 
-  // 메인 화면 진입 시 스누즈 만료 여부 체크
+        {/* 상단 아이콘 + 제목 */}
+        <div className="flex flex-col items-center text-center space-y-4 mb-6">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <CheckCircle2 className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">
+            사내 정책 등록이 완료되었습니다
+          </h2>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+            노무도우미에서 새로 등록된 문서의 내용을 참조하여 노무도우미 답변을 제공합니다.
+          </p>
+        </div>
+
+        {/* 확인 버튼 */}
+        <Button
+          onClick={onClose}
+          className="w-full h-12 text-base font-semibold"
+          size="lg"
+        >
+          확인
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// 메인 화면과 정책 관리 화면에서 사용할 자동 표시 모달
+interface AutoPolicyReviewNotificationProps {
+  isAdmin: boolean;
+  onReview?: () => void;
+}
+
+const SNOOZE_KEY = "snoozePolicyReview";
+const COMPLETED_POLICIES_KEY = "completedPolicies";
+
+export function AutoPolicyReviewNotification({ 
+  isAdmin, 
+  onReview 
+}: AutoPolicyReviewNotificationProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [pendingPolicies, setPendingPolicies] = useState<string[]>([]);
+
+  // 메인 화면 진입 시 스누즈 만료 여부 체크 (테스트용: 항상 표시)
   useEffect(() => {
-    const snoozeUntil = localStorage.getItem(SNOOZE_KEY);
-    const now = Date.now();
-    if (!snoozeUntil || now > parseInt(snoozeUntil, 10)) {
-      setIsOpen(true);
-    }
-  }, []);
+    if (!isAdmin) return;
+
+    // 테스트용: 무조건 표시 (5개로 늘림)
+    const testPolicies = [
+      "2024 더존비즈온 취업규칙 개정안.pdf",
+      "급여규정_2024_v1.pdf",
+      "복리후생규정_개정안.hwp",
+      "인사관리규정_2024.pdf",
+      "재택근무운영지침_v2.docx"
+    ];
+    
+    setPendingPolicies(testPolicies);
+    setIsOpen(true);
+
+    // 실제 로직 (주석 처리)
+    // const snoozeUntil = localStorage.getItem(SNOOZE_KEY);
+    // const completedPolicies = JSON.parse(localStorage.getItem(COMPLETED_POLICIES_KEY) || "[]");
+    // const now = Date.now();
+
+    // // 완료된 정책이 있고, 스누즈 기간이 지났으면 모달 표시
+    // if (completedPolicies.length > 0 && (!snoozeUntil || now > parseInt(snoozeUntil, 10))) {
+    //   setPendingPolicies(completedPolicies);
+    //   setIsOpen(true);
+    // }
+  }, [isAdmin]);
 
   const handleSnooze = () => {
     localStorage.setItem(SNOOZE_KEY, (Date.now() + 60 * 60 * 1000).toString());
@@ -34,57 +110,95 @@ export function AutoPolicyReviewModal({ onReview }: AutoPolicyReviewModalProps) 
 
   const handleReview = () => {
     setIsOpen(false);
-    onReview();
+    // 검토 완료 처리
+    localStorage.removeItem(COMPLETED_POLICIES_KEY);
+    if (onReview) {
+      onReview();
+    }
   };
+
+  if (!isAdmin || pendingPolicies.length === 0) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent
-        className="sm:max-w-[400px] p-0 flex flex-col bg-white"
+        className="sm:max-w-[520px] p-8 flex flex-col bg-card border-border"
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-              <CheckCircle2 className="w-4 h-4 text-blue-600" />
-            </div>
-            <DialogTitle className="text-base font-bold text-gray-900">
-              정책 분석 완료 안내
-            </DialogTitle>
-          </div>
-          <p className="text-sm text-gray-500 leading-relaxed pl-10">
-            업로드하신 문서의 분석이 완료되었습니다.
-            <br />
-            검토를 완료해야 사내 정책으로 등록됩니다.
-          </p>
+        <DialogHeader className="sr-only">
+          <DialogTitle>정책 분석 완료</DialogTitle>
+          <DialogDescription>
+            정책 문서 분석이 완료되어 검토가 필요합니다.
+          </DialogDescription>
         </DialogHeader>
 
-        {/* 문서명 */}
-        <div className="mx-6 mb-4 flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-          <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
-          <span className="text-sm font-medium text-gray-700 truncate">
-            2024 더존비즈온 취업규칙 개정안.pdf
-          </span>
+        {/* 상단 아이콘 + 제목 */}
+        <div className="flex flex-col items-center text-center space-y-4 mb-6">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <CheckCircle2 className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">
+            정책 분석이 완료되었습니다
+          </h2>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+            업로드하신 문서의 분석이 완료되었습니다. 검토를 완료해야 사내 정책으로 등록됩니다.
+          </p>
         </div>
 
-        <DialogFooter className="px-6 pb-5 flex items-center justify-between sm:justify-between gap-2">
+        {/* 대기 중인 정책 목록 */}
+        {pendingPolicies.length > 0 && (
+          <div className="mb-6">
+            {/* 스크롤 영역: 최대 3개 높이로 고정 */}
+            <div 
+              className="max-h-[204px] overflow-y-auto space-y-2 pr-2"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(102, 102, 115, 0.3) transparent'
+              }}
+            >
+              {pendingPolicies.map((policy, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg px-4 py-3"
+                >
+                  <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                  <span className="text-sm font-medium text-foreground truncate">
+                    {policy}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 버튼 */}
+        <div className="flex gap-3">
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={handleSnooze}
-            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 text-sm font-normal px-2"
+            className="flex-1"
           >
-            <Clock className="w-3.5 h-3.5 mr-1" />
-            1시간 동안 보지 않기
+            1시간 후 다시 알림
           </Button>
           <Button
             onClick={handleReview}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5"
+            className="flex-1"
           >
             검토하기
-            <ArrowRight className="w-4 h-4 ml-1.5" />
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
+}
+
+// 완료된 정책을 로컬 스토리지에 추가하는 헬퍼 함수
+export function addCompletedPolicy(policyName: string) {
+  const completedPolicies = JSON.parse(localStorage.getItem(COMPLETED_POLICIES_KEY) || "[]");
+  if (!completedPolicies.includes(policyName)) {
+    completedPolicies.push(policyName);
+    localStorage.setItem(COMPLETED_POLICIES_KEY, JSON.stringify(completedPolicies));
+  }
 }
