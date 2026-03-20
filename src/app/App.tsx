@@ -145,20 +145,22 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Top Header */}
-      <TopHeader 
-        onNewChat={() => handleNavigation(handleNewChat)} 
-        onOpenHistory={handleOpenHistory}
-        onOpenPolicyUpload={() => {
-          if (currentView === "chat" && hasChatMessages) {
-            handleNavigation(handleOpenPolicyUpload);
-          } else {
-            handleOpenPolicyUpload();
-          }
-        }}
-        onLogoClick={handleLogoClick}
-        pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
-      />
+      {/* Top Header – embedding 상세 화면에서는 미노출 */}
+      {currentView !== "embedding" && (
+        <TopHeader
+          onNewChat={() => handleNavigation(handleNewChat)}
+          onOpenHistory={handleOpenHistory}
+          onOpenPolicyUpload={() => {
+            if (currentView === "chat" && hasChatMessages) {
+              handleNavigation(handleOpenPolicyUpload);
+            } else {
+              handleOpenPolicyUpload();
+            }
+          }}
+          onLogoClick={handleLogoClick}
+          pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
+        />
+      )}
 
       {/* Main Content */}
       {currentView === "home" && (

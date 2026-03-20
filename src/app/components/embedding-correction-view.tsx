@@ -340,14 +340,45 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
           </div>
         </div>
 
-        {/* 우측: 청크 리스트 */}
+        {/* 우측: 추출된 데이터 리스트 */}
         <div className="w-1/2 flex flex-col overflow-hidden bg-gray-50">
+          {/* 패널 헤더 */}
           <div className="px-5 py-2.5 border-b border-gray-200 flex items-center gap-2 flex-shrink-0 bg-gray-50">
             <Database className="w-4 h-4 text-blue-500" />
-            <span className="text-sm font-semibold text-gray-700">청크 데이터</span>
+            <span className="text-sm font-semibold text-gray-700">추출된 데이터</span>
             <span className="ml-auto text-xs text-gray-400">
               {(currentPage - 1) * CHUNKS_PER_PAGE + 1}–{Math.min(currentPage * CHUNKS_PER_PAGE, chunks.length)} / {chunks.length}개
             </span>
+          </div>
+
+          {/* ── 공통 툴바: 병합 / 분리 ── */}
+          <div className="px-5 py-2 border-b border-gray-200 flex items-center gap-2 flex-shrink-0 bg-white">
+            <span className="text-xs text-gray-400 font-medium mr-1">공통</span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-green-700 hover:border-green-400 disabled:opacity-40"
+              disabled={!selectedChunkId || chunks.findIndex((c) => c.id === selectedChunkId) >= chunks.length - 1}
+              onClick={() => selectedChunkId && mergeChunk(selectedChunkId)}
+              title="선택된 데이터를 다음 데이터와 병합"
+            >
+              <Merge className="w-3.5 h-3.5" />
+              병합
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-purple-700 hover:border-purple-400 disabled:opacity-40"
+              disabled={!selectedChunkId}
+              onClick={() => selectedChunkId && splitChunk(selectedChunkId)}
+              title="선택된 데이터를 2개로 분리"
+            >
+              <Scissors className="w-3.5 h-3.5" />
+              분리
+            </Button>
+            {!selectedChunkId && (
+              <span className="text-xs text-gray-400 ml-1">데이터를 선택하면 활성화됩니다</span>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -374,7 +405,7 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
                       <span className="text-xs text-gray-400">{chunk.tokens}t</span>
                     </div>
 
-                    {/* 액션 버튼 */}
+                    {/* 액션 버튼 – 수정 / 삭제만 */}
                     <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                       {!isEditing ? (
                         <>
@@ -386,25 +417,6 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
                             onClick={() => startEditing(chunk.id, chunk.content)}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            title="분해"
-                            className="h-7 w-7 p-0 text-gray-400 hover:text-purple-600"
-                            onClick={() => splitChunk(chunk.id)}
-                          >
-                            <Scissors className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            title="병합 (다음 청크와)"
-                            className="h-7 w-7 p-0 text-gray-400 hover:text-green-600"
-                            onClick={() => mergeChunk(chunk.id)}
-                            disabled={globalIndex >= chunks.length - 1}
-                          >
-                            <Merge className="w-3.5 h-3.5" />
                           </Button>
                           <Button
                             variant="ghost"
