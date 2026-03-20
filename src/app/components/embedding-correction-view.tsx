@@ -127,6 +127,7 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
   const [editContent, setEditContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
+  const [docViewPage, setDocViewPage] = useState(1); // 원문 독립 페이지 상태
 
   const docRef = useRef<HTMLDivElement>(null);
   const articleRefs = useRef<Record<string, HTMLSpanElement | null>>({});
@@ -134,16 +135,20 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
   const totalPages = Math.ceil(chunks.length / CHUNKS_PER_PAGE);
   const pageChunks = chunks.slice((currentPage - 1) * CHUNKS_PER_PAGE, currentPage * CHUNKS_PER_PAGE);
 
-  // 선택된 청크의 docPage
+  // 선택된 청크가 있으면 해당 docPage로 원문 자동 이동
   const selectedChunk = chunks.find((c) => c.id === selectedChunkId);
-  const activePage = selectedChunk?.docPage ?? pageChunks[0]?.docPage ?? 1;
-
-  // 청크 선택 시 원문 해당 구절 스크롤
   useEffect(() => {
-    if (selectedChunkId && articleRefs.current[selectedChunkId]) {
-      articleRefs.current[selectedChunkId]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (selectedChunk) {
+      setDocViewPage(selectedChunk.docPage);
     }
-  }, [selectedChunkId]);
+  }, [selectedChunk]);
+
+  // 원문 페이지 스크롤 맨 위로
+  useEffect(() => {
+    if (docRef.current) {
+      docRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [docViewPage]);
 
   // ── 청크 조작 ────────────────────────────────────────
   const startEditing = (chunkId: string, content: string) => {
@@ -299,11 +304,11 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
             <BookOpen className="w-4 h-4 text-gray-500" />
             <span className="text-sm font-semibold text-gray-700">원문 문서</span>
             <span className="ml-auto text-xs text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded">
-              {activePage} / {TOTAL_DOC_PAGES} 페이지
+              {docViewPage} / {TOTAL_DOC_PAGES} 페이지
             </span>
           </div>
           <div ref={docRef} className="flex-1 overflow-y-auto px-8 py-6">
-            {renderDocPage(MOCK_DOC_PAGES[activePage] ?? "")}
+            {renderDocPage(MOCK_DOC_PAGES[docViewPage] ?? "")}
           </div>
           {/* 원문 페이지 네비 */}
           <div className="border-t border-gray-100 px-5 py-2 flex items-center justify-center gap-2 flex-shrink-0 bg-gray-50">
@@ -311,20 +316,22 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0"
-              disabled={activePage <= 1}
+              disabled={docViewPage <= 1}
               onClick={() => {
+                setDocViewPage((p) => Math.max(1, p - 1));
                 setSelectedChunkId(null);
               }}
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-xs text-gray-500">원문 {activePage}페이지</span>
+            <span className="text-xs text-gray-500">원문 {docViewPage}페이지</span>
             <Button
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0"
-              disabled={activePage >= TOTAL_DOC_PAGES}
+              disabled={docViewPage >= TOTAL_DOC_PAGES}
               onClick={() => {
+                setDocViewPage((p) => Math.min(TOTAL_DOC_PAGES, p + 1));
                 setSelectedChunkId(null);
               }}
             >
