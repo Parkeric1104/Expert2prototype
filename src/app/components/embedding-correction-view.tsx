@@ -295,18 +295,19 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
     if (idx < 0) return;
     const orig = chunks[idx];
     const newChunks: EmbeddingChunk[] = [
-      { id: `${orig.id}-1`, article: splitParts[0].article, content: splitParts[0].content, tokens: Math.ceil(orig.tokens / 2), docPage: orig.docPage, noDocNav: true },
-      { id: `${orig.id}-2`, article: splitParts[1].article, content: splitParts[1].content, tokens: Math.floor(orig.tokens / 2), docPage: orig.docPage, noDocNav: true },
+      { id: `${orig.id}-s1-${Date.now()}`, article: splitParts[0].article, content: splitParts[0].content, tokens: Math.ceil(orig.tokens / 2), docPage: orig.docPage, noDocNav: true },
+      { id: `${orig.id}-s2-${Date.now()}`, article: splitParts[1].article, content: splitParts[1].content, tokens: Math.floor(orig.tokens / 2), docPage: orig.docPage, noDocNav: true },
     ];
     setChunks((prev) => {
       const copy = [...prev];
-      copy.splice(idx, 1, ...newChunks);
+      // 원본은 유지하고, 바로 아래에 분리된 2개 청크를 삽입
+      copy.splice(idx + 1, 0, ...newChunks);
       return copy;
     });
     setEditMode("normal");
     setSplitChunkId(null);
     setSelectedChunkId(null);
-    toast.success("데이터가 2개로 분리되었습니다.");
+    toast.success("기준 조항 아래에 2개 데이터가 추가되었습니다.");
   };
 
   const exitSplitMode = () => {
