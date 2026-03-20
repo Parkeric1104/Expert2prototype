@@ -382,10 +382,9 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-            {pageChunks.map((chunk, index) => {
+            {pageChunks.map((chunk) => {
               const isSelected = selectedChunkId === chunk.id;
               const isEditing = editingChunkId === chunk.id;
-              const globalIndex = (currentPage - 1) * CHUNKS_PER_PAGE + index;
 
               return (
                 <div
@@ -398,11 +397,9 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
                   {/* 청크 헤더 */}
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 font-mono">#{globalIndex + 1}</span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 text-xs font-bold border border-blue-100">
                         {chunk.article}
                       </span>
-                      <span className="text-xs text-gray-400">{chunk.tokens}t</span>
                     </div>
 
                     {/* 액션 버튼 – 수정 / 삭제만 */}
@@ -458,13 +455,6 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
                     </div>
                   )}
 
-                  {/* 원문 페이지 배지 */}
-                  {isSelected && (
-                    <div className="mt-2 flex items-center gap-1 text-xs text-blue-500">
-                      <FileText className="w-3 h-3" />
-                      원문 {chunk.docPage}페이지에서 발췌
-                    </div>
-                  )}
                 </div>
               );
             })}
