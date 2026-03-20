@@ -1,5 +1,5 @@
 import { MessageSquarePlus, History, FileStack } from "lucide-react";
-import logoIcon from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
+import logoIcon from "figma:asset/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 interface TopHeaderProps {
   onNewChat?: () => void;

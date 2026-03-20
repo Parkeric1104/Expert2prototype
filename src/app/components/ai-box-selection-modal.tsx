@@ -285,38 +285,11 @@ export function AIBoxSelectionModal({
           </div>
         </div>
 
-        {/* 선택된 AI BOX 영역 */}
-        <div className="px-6 py-4 border-t flex-shrink-0">
-          <p className="text-sm font-semibold mb-2">선택된 AI BOX</p>
-          {selectedBox ? (
-            <div className="border rounded-lg flex items-center px-4 py-3 gap-3">
-              <div className="w-5 h-5 bg-primary/20 rounded flex items-center justify-center flex-shrink-0">
-                <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" />
-                </svg>
-              </div>
-              <span className="flex-1 text-sm">{selectedBox.name}</span>
-              <span className="text-sm text-muted-foreground w-16">{selectedBox.registrant}</span>
-              <button
-                onClick={() => setSelectedBox(null)}
-                className="text-destructive hover:text-destructive/70 transition-colors"
-                aria-label="선택 해제"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <div className="border rounded-lg px-4 py-3 text-sm text-muted-foreground">
-              AI BOX를 선택해주세요.
-            </div>
-          )}
-        </div>
-
         <DialogFooter className="flex gap-2 px-6 py-4 border-t flex-shrink-0">
           <Button variant="outline" onClick={handleClose}>
             취소
           </Button>
-          <Button onClick={handleConfirm} disabled={!selectedBox}>
+          <Button onClick={handleConfirm}>
             확인
           </Button>
         </DialogFooter>
