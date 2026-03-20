@@ -283,8 +283,8 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
     const cutAt = cut > 0 ? cut : mid;
     setSplitChunkId(selectedChunkId);
     setSplitParts([
-      { article: chunk.article, content: chunk.content.slice(0, cutAt).trim() },
-      { article: `${chunk.article}(2)`, content: chunk.content.slice(cutAt).trim() },
+      { article: "", content: "" },
+      { article: "", content: "" },
     ]);
     setEditMode("split");
   };
@@ -528,14 +528,19 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
                     if (editMode === "split" && chunk.id === splitChunkId) {
                       return (
                         <div key={chunk.id} className="bg-white border border-purple-400 ring-1 ring-purple-200 rounded-xl p-4 shadow-sm">
-                          <div className="text-xs text-purple-700 font-semibold mb-3 flex items-center gap-1.5">
+                          <div className="text-xs text-purple-700 font-semibold mb-1 flex items-center gap-1.5">
                             <Scissors className="w-3.5 h-3.5" />
                             분리할 데이터 설정
                           </div>
+                          <p className="text-xs text-gray-400 mb-3">
+                            분리될 각 데이터의 조항명과 내용을 직접 입력해 주세요.
+                          </p>
                           <div className="space-y-3">
                             {splitParts.map((part, partIdx) => (
                               <div key={partIdx} className="border border-purple-200 rounded-lg p-3 bg-purple-50/40">
-                                <div className="text-xs text-purple-600 font-medium mb-2">분리 {partIdx + 1}</div>
+                                <div className="text-xs text-purple-600 font-semibold mb-2">
+                                  분리 {partIdx + 1}
+                                </div>
                                 <input
                                   type="text"
                                   value={part.article}
@@ -544,8 +549,8 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
                                     updated[partIdx] = { ...updated[partIdx], article: e.target.value };
                                     setSplitParts(updated);
                                   }}
-                                  placeholder="조항명 입력"
-                                  className="w-full text-xs border border-gray-200 rounded-md px-2.5 py-1.5 mb-2 focus:outline-none focus:border-purple-400 bg-white"
+                                  placeholder="조항명을 입력하세요 (예: 제1조(목적))"
+                                  className="w-full text-xs border border-gray-200 rounded-md px-2.5 py-1.5 mb-2 focus:outline-none focus:border-purple-400 bg-white placeholder:text-gray-300"
                                 />
                                 <Textarea
                                   value={part.content}
@@ -554,8 +559,8 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
                                     updated[partIdx] = { ...updated[partIdx], content: e.target.value };
                                     setSplitParts(updated);
                                   }}
-                                  placeholder="내용 입력"
-                                  className="min-h-[64px] text-xs border-gray-200 focus-visible:ring-purple-400 resize-none"
+                                  placeholder="해당 조항의 내용을 입력하세요"
+                                  className="min-h-[64px] text-xs border-gray-200 focus-visible:ring-purple-400 resize-none placeholder:text-gray-300"
                                 />
                               </div>
                             ))}
