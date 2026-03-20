@@ -166,7 +166,7 @@ export function AIBoxSelectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl h-[65vh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-5xl h-[75vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
           <DialogTitle className="text-xl font-bold">AI Box 선택</DialogTitle>
           <DialogDescription className="sr-only">
@@ -177,7 +177,7 @@ export function AIBoxSelectionModal({
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col min-h-0">
-            <div className="flex-shrink-0 px-6">
+            <div className="flex-shrink-0 px-6 pt-3">
               <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
                 <TabsTrigger 
                   value="my" 
@@ -224,36 +224,65 @@ export function AIBoxSelectionModal({
             </div>
 
             <TabsContent value="my" className="flex-1 m-0 overflow-hidden flex flex-col">
-              <div className="flex-1 overflow-hidden px-6 pt-4 pb-3">
+              <div className="flex-1 overflow-y-auto px-6 pt-4 pb-3">
                 <AIBoxListWithCheckbox boxes={currentBoxes} onSelect={handleBoxSelect} selectedId={selectedBox?.id} />
               </div>
               {totalPages > 1 && (
-                <div className="px-6 pb-4">
+                <div className="px-6 pb-3 flex-shrink-0">
                   <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
                 </div>
               )}
             </TabsContent>
             <TabsContent value="shared" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
-              <div className="flex-1 overflow-hidden px-6 pt-4 pb-3">
+              <div className="flex-1 overflow-y-auto px-6 pt-4 pb-3">
                 <AIBoxListWithCheckbox boxes={currentBoxes} onSelect={handleBoxSelect} selectedId={selectedBox?.id} />
               </div>
               {totalPages > 1 && (
-                <div className="px-6 pb-4">
+                <div className="px-6 pb-3 flex-shrink-0">
                   <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
                 </div>
               )}
             </TabsContent>
             <TabsContent value="favorite" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
-              <div className="flex-1 overflow-hidden px-6 pt-4 pb-3">
+              <div className="flex-1 overflow-y-auto px-6 pt-4 pb-3">
                 <AIBoxListWithCheckbox boxes={currentBoxes} onSelect={handleBoxSelect} selectedId={selectedBox?.id} />
               </div>
               {totalPages > 1 && (
-                <div className="px-6 pb-4">
+                <div className="px-6 pb-3 flex-shrink-0">
                   <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
                 </div>
               )}
             </TabsContent>
           </Tabs>
+
+          {/* Selected AI Box Section */}
+          <div className="flex-shrink-0 px-6 py-4 border-t bg-muted/30">
+            <h3 className="text-sm font-semibold mb-3">선택된 AI BOX</h3>
+            {selectedBox ? (
+              <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-primary/20 rounded flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3 h-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium">{selectedBox.name}</span>
+                  <span className="text-sm text-muted-foreground">{selectedBox.registrant}</span>
+                </div>
+                <button
+                  onClick={() => setSelectedBox(null)}
+                  className="text-destructive hover:text-destructive/80 transition-colors"
+                  aria-label="선택 해제"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="p-3 bg-card border border-dashed rounded-lg text-center text-sm text-muted-foreground">
+                AI Box를 선택해주세요.
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 선택된 AI BOX 영역 */}
@@ -296,62 +325,6 @@ export function AIBoxSelectionModal({
   );
 }
 
-function AIBoxList({ 
-  boxes, 
-  onSelect, 
-  selectedIds 
-}: { 
-  boxes: AIBox[]; 
-  onSelect: (box: AIBox) => void; 
-  selectedIds: string[];
-}) {
-  if (boxes.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-        <FolderOpen className="w-12 h-12 mb-3 opacity-30" />
-        <p className="text-sm">등록된 AI Box가 없습니다.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="border rounded-lg overflow-hidden">
-      <div className="flex items-center px-4 py-2 bg-muted border-b text-sm font-semibold">
-        <span>• AI Box 목록</span>
-      </div>
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 border-b">
-          <tr>
-            <th className="text-left px-4 py-2 font-semibold">이름</th>
-            <th className="text-left px-4 py-2 font-semibold w-24">등록자</th>
-          </tr>
-        </thead>
-        <tbody>
-          {boxes.map((box) => {
-            const isSelected = selectedIds.includes(box.id);
-            return (
-              <tr
-                key={box.id}
-                onClick={() => onSelect(box)}
-                className={`border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors ${
-                  isSelected ? "bg-primary/5" : ""
-                }`}
-              >
-                <td className="px-4 py-3">
-                  <div className="break-words">{box.name}</div>
-                </td>
-                <td className="px-4 py-3 align-top w-24">
-                  <div className="truncate" title={box.registrant}>{box.registrant}</div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 function AIBoxListWithCheckbox({
   boxes,
   onSelect,
@@ -363,16 +336,16 @@ function AIBoxListWithCheckbox({
 }) {
   if (boxes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-lg">
-        <p className="text-sm">AI Box를 선택해주세요.</p>
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <p className="text-sm">검색 결과가 없습니다.</p>
       </div>
     );
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-lg overflow-hidden h-full flex flex-col">
       <table className="w-full text-sm">
-        <thead className="bg-muted border-b">
+        <thead className="bg-muted border-b sticky top-0">
           <tr>
             <th className="w-12"></th>
             <th className="text-left px-4 py-2 font-semibold">이름</th>

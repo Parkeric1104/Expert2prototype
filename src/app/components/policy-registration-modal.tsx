@@ -49,6 +49,10 @@ export function PolicyRegistrationModal({
   const [showAIBoxModal, setShowAIBoxModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleAIBoxSelect = (box: AIBox | null) => {
+    setSelectedAIBoxes(box ? [box] : []);
+  };
+
   const categories = [
     "취업규칙",
     "단체협약",
@@ -365,7 +369,7 @@ export function PolicyRegistrationModal({
       <AIBoxSelectionModal
         isOpen={showAIBoxModal}
         onClose={() => setShowAIBoxModal(false)}
-        onSelect={setSelectedAIBoxes}
+        onSelect={handleAIBoxSelect}
       />
     </Dialog>
   );
