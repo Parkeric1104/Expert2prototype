@@ -256,7 +256,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
     return matchesSearch && matchesCategory;
   });
 
-  const handleSubmitNewPolicy = (policyData: {
+  const handleSubmitPolicy = (policyData: {
     name: string;
     size: number;
     type: string;
@@ -497,6 +497,17 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
 
                       {/* 액션 버튼 */}
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        {/* 대기중 상태일 때만 분석 결과보기 버튼 표시 */}
+                        {displayInfo.status === "pending" && onOpenEmbedding && (
+                          <Button
+                            size="sm"
+                            onClick={() => onOpenEmbedding({ id: policy.id, name: policy.name, category: policy.category })}
+                            className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium"
+                          >
+                            <Database className="w-4 h-4" />
+                            분석 결과보기
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="ghost"
@@ -537,16 +548,6 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                             <ChevronDown className="w-4 h-4" />
                           )}
                         </Button>
-                        {onOpenEmbedding && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onOpenEmbedding({ id: policy.id, name: policy.name, category: policy.category })}
-                            title="임베딩 열기"
-                          >
-                            <Database className="w-4 h-4" />
-                          </Button>
-                        )}
                       </div>
                     </div>
 
@@ -641,12 +642,10 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
       <PolicyRegistrationModal
         isOpen={showRegistrationModal}
         onClose={() => setShowRegistrationModal(false)}
-        onSubmit={handleSubmitNewPolicy}
-        existingCategories={Array.from(new Set(policies.map(p => p.category)))}
-        existingPolicies={policies.map(p => ({ category: p.category, name: p.name }))}
+        onSubmit={handleSubmitPolicy}
       />
 
-      {/* 삭제 확인 다이얼로그 */}
+      {/* 삭제 확인 모달 */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -670,6 +669,17 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 테스트용: 정책 관리 화면 접속 시 무조건 표시 */}
+      <AutoPolicyReviewNotification 
+        isAdmin={true}
+        onReview={onOpenEmbedding ? () => {
+          const policy = policies.find(p => p.status === "pending");
+          if (policy) {
+            onOpenEmbedding({ id: policy.id, name: policy.name, category: policy.category });
+          }
+        } : undefined}
+      />
     </div>
   );
 }

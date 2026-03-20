@@ -6,9 +6,16 @@ interface TopHeaderProps {
   onOpenHistory?: () => void;
   onOpenPolicyUpload?: () => void;
   onLogoClick?: () => void;
+  pendingPoliciesCount?: number;
 }
 
-export function TopHeader({ onNewChat, onOpenHistory, onOpenPolicyUpload, onLogoClick }: TopHeaderProps) {
+export function TopHeader({ 
+  onNewChat, 
+  onOpenHistory, 
+  onOpenPolicyUpload, 
+  onLogoClick,
+  pendingPoliciesCount = 0
+}: TopHeaderProps) {
   return (
     <header className="bg-card border-b border-border">
       <div className="h-16 flex items-center justify-between px-10">
@@ -43,10 +50,15 @@ export function TopHeader({ onNewChat, onOpenHistory, onOpenPolicyUpload, onLogo
           </button>
           <button 
             onClick={onOpenPolicyUpload}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors relative"
           >
             <FileStack className="w-4 h-4" />
             <span className="text-sm">정책 관리</span>
+            {pendingPoliciesCount > 0 && (
+              <span className="absolute -top-1 -right-2 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                {pendingPoliciesCount > 99 ? '99+' : pendingPoliciesCount}
+              </span>
+            )}
           </button>
         </nav>
       </div>

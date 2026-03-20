@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TopHeader } from "@/app/components/top-header";
 import { ModernHomeView } from "@/app/components/modern-home-view";
 import { ModernChatInterface } from "@/app/components/modern-chat-interface";
@@ -6,7 +6,6 @@ import { PolicyManagementView } from "@/app/components/policy-management-view";
 import { EmbeddingCorrectionView, EmbeddingCorrectionPolicy } from "@/app/components/embedding-correction-view";
 import { LawSelectionModal } from "@/app/components/law-selection-modal";
 import { EnhancedChatHistoryModal } from "@/app/components/enhanced-chat-history-modal";
-import { AutoPolicyReviewNotification } from "@/app/components/auto-policy-review-modal";
 import { Toaster } from "@/app/components/ui/sonner";
 import {
   AlertDialog,
@@ -34,6 +33,19 @@ export default function App() {
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<EmbeddingCorrectionPolicy | null>(null);
+  const [pendingPoliciesCount, setPendingPoliciesCount] = useState<number>(0);
+
+  // pending 정책 개수 확인 (테스트용: 3개)
+  useEffect(() => {
+    if (isAdmin) {
+      // 실제로는 localStorage나 API에서 가져옴
+      // const completedPolicies = JSON.parse(localStorage.getItem("completedPolicies") || "[]");
+      // setPendingPoliciesCount(completedPolicies.length);
+      
+      // 테스트용: 3개 고정
+      setPendingPoliciesCount(3);
+    }
+  }, [isAdmin]);
 
   const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string) => {
     setChatQuery(query);
@@ -92,6 +104,8 @@ export default function App() {
   const handleBackFromEmbedding = () => {
     setSelectedPolicy(null);
     setCurrentView("policy");
+    // 정책 저장 완료 시 pending 카운트 감소
+    setPendingPoliciesCount((prev) => Math.max(0, prev - 1));
   };
 
   const handleReviewCompletedPolicies = () => {
@@ -143,22 +157,16 @@ export default function App() {
           }
         }}
         onLogoClick={handleLogoClick}
+        pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
       />
 
       {/* Main Content */}
       {currentView === "home" && (
-        <>
-          <ModernHomeView
-            onStartChat={handleStartChat}
-            onOpenLawSelector={handleOpenLawSelector}
-            selectedLaws={selectedLaws}
-          />
-          {/* 메인 화면에서 HR 담당자에게만 정책 검토 알림 표시 */}
-          <AutoPolicyReviewNotification 
-            isAdmin={isAdmin}
-            onReview={handleReviewCompletedPolicies}
-          />
-        </>
+        <ModernHomeView
+          onStartChat={handleStartChat}
+          onOpenLawSelector={handleOpenLawSelector}
+          selectedLaws={selectedLaws}
+        />
       )}
 
       {currentView === "chat" && (

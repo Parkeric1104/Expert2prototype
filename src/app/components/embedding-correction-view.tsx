@@ -429,7 +429,7 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
             <div className="w-px h-5 bg-border" />
             <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
               <Database className="w-5 h-5 text-primary" />
-              임베딩 청크 관리
+              문서 분석 결과 상세
             </h1>
             <span className="text-sm text-muted-foreground truncate max-w-[240px]">{policy.name}</span>
           </div>

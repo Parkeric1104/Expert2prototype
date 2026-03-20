@@ -75,19 +75,32 @@ export function AutoPolicyReviewNotification({
   const [isOpen, setIsOpen] = useState(false);
   const [pendingPolicies, setPendingPolicies] = useState<string[]>([]);
 
-  // 메인 화면 진입 시 스누즈 만료 여부 체크
+  // 메인 화면 진입 시 스누즈 만료 여부 체크 (테스트용: 항상 표시)
   useEffect(() => {
     if (!isAdmin) return;
 
-    const snoozeUntil = localStorage.getItem(SNOOZE_KEY);
-    const completedPolicies = JSON.parse(localStorage.getItem(COMPLETED_POLICIES_KEY) || "[]");
-    const now = Date.now();
+    // 테스트용: 무조건 표시 (5개로 늘림)
+    const testPolicies = [
+      "2024 더존비즈온 취업규칙 개정안.pdf",
+      "급여규정_2024_v1.pdf",
+      "복리후생규정_개정안.hwp",
+      "인사관리규정_2024.pdf",
+      "재택근무운영지침_v2.docx"
+    ];
+    
+    setPendingPolicies(testPolicies);
+    setIsOpen(true);
 
-    // 완료된 정책이 있고, 스누즈 기간이 지났으면 모달 표시
-    if (completedPolicies.length > 0 && (!snoozeUntil || now > parseInt(snoozeUntil, 10))) {
-      setPendingPolicies(completedPolicies);
-      setIsOpen(true);
-    }
+    // 실제 로직 (주석 처리)
+    // const snoozeUntil = localStorage.getItem(SNOOZE_KEY);
+    // const completedPolicies = JSON.parse(localStorage.getItem(COMPLETED_POLICIES_KEY) || "[]");
+    // const now = Date.now();
+
+    // // 완료된 정책이 있고, 스누즈 기간이 지났으면 모달 표시
+    // if (completedPolicies.length > 0 && (!snoozeUntil || now > parseInt(snoozeUntil, 10))) {
+    //   setPendingPolicies(completedPolicies);
+    //   setIsOpen(true);
+    // }
   }, [isAdmin]);
 
   const handleSnooze = () => {
@@ -136,23 +149,27 @@ export function AutoPolicyReviewNotification({
 
         {/* 대기 중인 정책 목록 */}
         {pendingPolicies.length > 0 && (
-          <div className="mb-6 space-y-2">
-            {pendingPolicies.slice(0, 3).map((policy, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg px-4 py-3"
-              >
-                <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                <span className="text-sm font-medium text-foreground truncate">
-                  {policy}
-                </span>
-              </div>
-            ))}
-            {pendingPolicies.length > 3 && (
-              <p className="text-xs text-muted-foreground text-center pt-1">
-                외 {pendingPolicies.length - 3}건
-              </p>
-            )}
+          <div className="mb-6">
+            {/* 스크롤 영역: 최대 3개 높이로 고정 */}
+            <div 
+              className="max-h-[204px] overflow-y-auto space-y-2 pr-2"
+              style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(102, 102, 115, 0.3) transparent'
+              }}
+            >
+              {pendingPolicies.map((policy, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg px-4 py-3"
+                >
+                  <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                  <span className="text-sm font-medium text-foreground truncate">
+                    {policy}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
