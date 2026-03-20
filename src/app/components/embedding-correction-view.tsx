@@ -414,26 +414,20 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
           </div>
 
           {/* ── 공통 툴바 (모드별) ── */}
-          {editMode === "normal" && (
+          {editMode === "normal" && selectedChunkId && (
             <div className="px-5 py-2 border-b border-gray-200 flex items-center gap-2 flex-shrink-0 bg-white">
-              <span className="text-xs text-gray-400 font-medium mr-1">공통</span>
               <Button variant="outline" size="sm"
-                className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-green-700 hover:border-green-400 disabled:opacity-40"
-                disabled={!selectedChunkId}
+                className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-green-700 hover:border-green-400"
                 onClick={enterMergeMode}>
                 <Merge className="w-3.5 h-3.5" />
                 병합
               </Button>
               <Button variant="outline" size="sm"
-                className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-purple-700 hover:border-purple-400 disabled:opacity-40"
-                disabled={!selectedChunkId}
+                className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-purple-700 hover:border-purple-400"
                 onClick={enterSplitMode}>
                 <Scissors className="w-3.5 h-3.5" />
                 분리
               </Button>
-              {!selectedChunkId && (
-                <span className="text-xs text-gray-400 ml-1">데이터를 선택하면 활성화됩니다</span>
-              )}
             </div>
           )}
 
