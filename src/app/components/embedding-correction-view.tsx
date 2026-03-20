@@ -123,6 +123,7 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
   // Normal mode
   const [selectedChunkId, setSelectedChunkId] = useState<string | null>(null);
   const [editingChunkId, setEditingChunkId] = useState<string | null>(null);
+  const [editArticle, setEditArticle] = useState("");
   const [editContent, setEditContent] = useState("");
 
   // Merge mode
@@ -202,13 +203,14 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
   };
 
   // ── 수정 ──────────────────────────────────────────────
-  const startEditing = (chunkId: string, content: string) => {
+  const startEditing = (chunkId: string, article: string, content: string) => {
     setEditingChunkId(chunkId);
+    setEditArticle(article);
     setEditContent(content);
   };
 
   const saveEditing = (chunkId: string) => {
-    setChunks((prev) => prev.map((c) => (c.id === chunkId ? { ...c, content: editContent } : c)));
+    setChunks((prev) => prev.map((c) => (c.id === chunkId ? { ...c, article: editArticle, content: editContent } : c)));
     setEditingChunkId(null);
     toast.success("내용이 수정되었습니다.");
   };
@@ -580,15 +582,27 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
                         onClick={() => !isEditing && handleChunkClick(chunk)}>
                         {/* 카드 헤더 */}
                         <div className="flex justify-between items-center mb-2">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 text-xs font-bold border border-blue-100">
-                            {chunk.article}
-                          </span>
-                          <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editArticle}
+                              onChange={(e) => setEditArticle(e.target.value)}
+                              placeholder="조항명 입력"
+                              className="flex-1 text-xs font-bold border border-blue-300 rounded-md px-2.5 py-1 mr-2 focus:outline-none focus:border-blue-500 bg-blue-50/30"
+                              onClick={(e) => e.stopPropagation()}
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 text-xs font-bold border border-blue-100">
+                              {chunk.article}
+                            </span>
+                          )}
+                          <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                             {!isEditing ? (
                               <>
                                 <Button variant="ghost" size="sm" title="수정"
                                   className="h-7 w-7 p-0 text-gray-400 hover:text-blue-600"
-                                  onClick={() => startEditing(chunk.id, chunk.content)}>
+                                  onClick={() => startEditing(chunk.id, chunk.article, chunk.content)}>
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button variant="ghost" size="sm" title="삭제"
@@ -615,7 +629,6 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
                             value={editContent}
                             onChange={(e) => setEditContent(e.target.value)}
                             className="min-h-[72px] text-sm p-2.5 border-blue-300 focus-visible:ring-blue-500 bg-blue-50/30"
-                            autoFocus
                             onClick={(e) => e.stopPropagation()}
                           />
                         ) : (
