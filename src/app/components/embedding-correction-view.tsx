@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft, Database, FileText, Hash, Edit3, Save,
   CheckCircle2, BookOpen, Trash2, Merge, Scissors,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Check, X,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -14,7 +14,8 @@ interface EmbeddingChunk {
   article: string;
   content: string;
   tokens: number;
-  docPage: number; // 원문 문서 페이지 번호
+  docPage: number;
+  noDocNav?: boolean; // split으로 생성된 청크는 원문 자동 이동 없음
 }
 
 export interface EmbeddingCorrectionPolicy {
@@ -27,6 +28,8 @@ interface EmbeddingCorrectionViewProps {
   policy: EmbeddingCorrectionPolicy;
   onBack: () => void;
 }
+
+type EditMode = "normal" | "merge" | "split";
 
 // ── 목 데이터 ─────────────────────────────────────────
 const CHUNKS_PER_PAGE = 4;
@@ -109,48 +112,96 @@ const MOCK_DOC_PAGES: Record<number, string> = {
 
 const TOTAL_DOC_PAGES = 10;
 
-// ── 헬퍼: 텍스트 내 article 키워드 강조 ────────────────
-function highlightArticle(text: string, article: string | null) {
-  if (!article) return text;
-  // article에서 조항 번호만 추출 (예: "제1조")
-  const match = article.match(/제\d+조/);
-  if (!match) return text;
-  return text; // 하이라이트는 CSS로 처리
-}
-
 // ── 메인 컴포넌트 ──────────────────────────────────────
 export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionViewProps) {
   const [chunks, setChunks] = useState<EmbeddingChunk[]>(ALL_MOCK_CHUNKS);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // ── 모드 ───────────────────────────────────────────────
+  const [editMode, setEditMode] = useState<EditMode>("normal");
+
+  // Normal mode
   const [selectedChunkId, setSelectedChunkId] = useState<string | null>(null);
   const [editingChunkId, setEditingChunkId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
-  const [docViewPage, setDocViewPage] = useState(1); // 원문 독립 페이지 상태
 
+  // Merge mode
+  const [mergeBaseId, setMergeBaseId] = useState<string | null>(null);
+  const [mergeTargetIds, setMergeTargetIds] = useState<string[]>([]);
+
+  // Split mode
+  const [splitChunkId, setSplitChunkId] = useState<string | null>(null);
+  const [splitParts, setSplitParts] = useState<{ article: string; content: string }[]>([
+    { article: "", content: "" },
+    { article: "", content: "" },
+  ]);
+
+  // ── 원문 뷰어 ──────────────────────────────────────────
+  const [docViewPage, setDocViewPage] = useState(1);
   const docRef = useRef<HTMLDivElement>(null);
-  const articleRefs = useRef<Record<string, HTMLSpanElement | null>>({});
+
+  // ── 스크롤 기반 페이지 트래킹 ─────────────────────────
+  const [visiblePage, setVisiblePage] = useState(1);
+  const chunkListRef = useRef<HTMLDivElement>(null);
+  const pageMarkerRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const totalPages = Math.ceil(chunks.length / CHUNKS_PER_PAGE);
-  const pageChunks = chunks.slice((currentPage - 1) * CHUNKS_PER_PAGE, currentPage * CHUNKS_PER_PAGE);
 
-  // 선택된 청크가 있으면 해당 docPage로 원문 자동 이동
-  const selectedChunk = chunks.find((c) => c.id === selectedChunkId);
-  useEffect(() => {
-    if (selectedChunk) {
-      setDocViewPage(selectedChunk.docPage);
-    }
-  }, [selectedChunk]);
-
-  // 원문 페이지 스크롤 맨 위로
+  // 원문 페이지 변경 시 스크롤 맨 위로
   useEffect(() => {
     if (docRef.current) {
       docRef.current.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [docViewPage]);
 
-  // ── 청크 조작 ────────────────────────────────────────
+  // IntersectionObserver: 스크롤 시 하단 인디케이터 자동 페이지 업데이트
+  useEffect(() => {
+    const listEl = chunkListRef.current;
+    if (!listEl) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const intersecting = entries
+          .filter((e) => e.isIntersecting)
+          .map((e) => parseInt(e.target.getAttribute("data-page") ?? "1"));
+        if (intersecting.length > 0) {
+          setVisiblePage(Math.min(...intersecting));
+        }
+      },
+      {
+        root: listEl,
+        threshold: 0,
+        rootMargin: "0px 0px -75% 0px", // 컨테이너 상단 25% 진입 시 감지
+      }
+    );
+
+    pageMarkerRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, [chunks.length]);
+
+  // 페이지 버튼 클릭 시 해당 위치로 스크롤
+  const scrollToPage = (page: number) => {
+    const marker = pageMarkerRefs.current[page - 1];
+    if (marker) {
+      marker.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // ── 청크 클릭 (Normal mode) ────────────────────────────
+  const handleChunkClick = (chunk: EmbeddingChunk) => {
+    if (editingChunkId) return;
+    const nextSelected = selectedChunkId === chunk.id ? null : chunk.id;
+    setSelectedChunkId(nextSelected);
+    // noDocNav가 아닌 경우에만 원문 페이지 이동
+    if (nextSelected && !chunk.noDocNav) {
+      setDocViewPage(chunk.docPage);
+    }
+  };
+
+  // ── 수정 ──────────────────────────────────────────────
   const startEditing = (chunkId: string, content: string) => {
     setEditingChunkId(chunkId);
     setEditContent(content);
@@ -159,61 +210,109 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
   const saveEditing = (chunkId: string) => {
     setChunks((prev) => prev.map((c) => (c.id === chunkId ? { ...c, content: editContent } : c)));
     setEditingChunkId(null);
-    toast.success("청크 내용이 수정되었습니다.");
+    toast.success("내용이 수정되었습니다.");
   };
 
   const deleteChunk = (chunkId: string) => {
     setChunks((prev) => prev.filter((c) => c.id !== chunkId));
     if (selectedChunkId === chunkId) setSelectedChunkId(null);
-    toast.success("청크가 삭제되었습니다.");
+    toast.success("데이터가 삭제되었습니다.");
   };
 
-  const mergeChunk = (chunkId: string) => {
-    const idx = chunks.findIndex((c) => c.id === chunkId);
-    if (idx < 0 || idx >= chunks.length - 1) {
-      toast.error("병합할 다음 청크가 없습니다.");
-      return;
-    }
-    const curr = chunks[idx];
-    const next = chunks[idx + 1];
+  // ── 병합 모드 ──────────────────────────────────────────
+  const enterMergeMode = () => {
+    if (!selectedChunkId) return;
+    setMergeBaseId(selectedChunkId);
+    setMergeTargetIds([]);
+    setEditMode("merge");
+  };
+
+  const toggleMergeTarget = (chunkId: string) => {
+    if (chunkId === mergeBaseId) return;
+    setMergeTargetIds((prev) =>
+      prev.includes(chunkId) ? prev.filter((id) => id !== chunkId) : [...prev, chunkId]
+    );
+  };
+
+  const executeMerge = () => {
+    if (!mergeBaseId || mergeTargetIds.length === 0) return;
+    const allIds = new Set([mergeBaseId, ...mergeTargetIds]);
+    // 문서 순서 유지
+    const ordered = chunks.filter((c) => allIds.has(c.id));
     const merged: EmbeddingChunk = {
-      ...curr,
-      content: `${curr.content}\n\n${next.content}`,
-      tokens: curr.tokens + next.tokens,
+      id: `merged-${Date.now()}`,
+      article: ordered[0].article,
+      content: ordered.map((c) => c.content).join("\n\n"),
+      tokens: ordered.reduce((sum, c) => sum + c.tokens, 0),
+      docPage: ordered[0].docPage,
     };
     setChunks((prev) => {
-      const copy = [...prev];
-      copy.splice(idx, 2, merged);
-      return copy;
+      const result: EmbeddingChunk[] = [];
+      let inserted = false;
+      for (const c of prev) {
+        if (allIds.has(c.id)) {
+          if (!inserted) { result.push(merged); inserted = true; }
+        } else {
+          result.push(c);
+        }
+      }
+      return result;
     });
-    setMergeTargetId(null);
-    toast.success(`${curr.article}와 ${next.article}이 병합되었습니다.`);
+    setEditMode("normal");
+    setMergeBaseId(null);
+    setMergeTargetIds([]);
+    setSelectedChunkId(null);
+    toast.success(`${ordered.length}개 데이터가 병합되었습니다.`);
   };
 
-  const splitChunk = (chunkId: string) => {
-    const idx = chunks.findIndex((c) => c.id === chunkId);
+  const exitMergeMode = () => {
+    setEditMode("normal");
+    setMergeBaseId(null);
+    setMergeTargetIds([]);
+  };
+
+  // ── 분리 모드 ──────────────────────────────────────────
+  const enterSplitMode = () => {
+    if (!selectedChunkId) return;
+    const chunk = chunks.find((c) => c.id === selectedChunkId);
+    if (!chunk) return;
+    const mid = Math.floor(chunk.content.length / 2);
+    const cut = chunk.content.indexOf(" ", mid);
+    const cutAt = cut > 0 ? cut : mid;
+    setSplitChunkId(selectedChunkId);
+    setSplitParts([
+      { article: chunk.article, content: chunk.content.slice(0, cutAt).trim() },
+      { article: `${chunk.article}(2)`, content: chunk.content.slice(cutAt).trim() },
+    ]);
+    setEditMode("split");
+  };
+
+  const executeSplit = () => {
+    if (!splitChunkId) return;
+    const idx = chunks.findIndex((c) => c.id === splitChunkId);
     if (idx < 0) return;
-    const curr = chunks[idx];
-    const mid = Math.floor(curr.content.length / 2);
-    const splitPoint = curr.content.indexOf(" ", mid);
-    if (splitPoint < 0) {
-      toast.error("분해 가능한 위치를 찾지 못했습니다.");
-      return;
-    }
-    const part1 = curr.content.slice(0, splitPoint).trim();
-    const part2 = curr.content.slice(splitPoint).trim();
+    const orig = chunks[idx];
     const newChunks: EmbeddingChunk[] = [
-      { ...curr, id: `${curr.id}-a`, content: part1, tokens: Math.ceil(curr.tokens / 2) },
-      { ...curr, id: `${curr.id}-b`, article: `${curr.article}(분해)`, content: part2, tokens: Math.floor(curr.tokens / 2) },
+      { id: `${orig.id}-1`, article: splitParts[0].article, content: splitParts[0].content, tokens: Math.ceil(orig.tokens / 2), docPage: orig.docPage, noDocNav: true },
+      { id: `${orig.id}-2`, article: splitParts[1].article, content: splitParts[1].content, tokens: Math.floor(orig.tokens / 2), docPage: orig.docPage, noDocNav: true },
     ];
     setChunks((prev) => {
       const copy = [...prev];
       copy.splice(idx, 1, ...newChunks);
       return copy;
     });
-    toast.success(`${curr.article}이 2개로 분해되었습니다.`);
+    setEditMode("normal");
+    setSplitChunkId(null);
+    setSelectedChunkId(null);
+    toast.success("데이터가 2개로 분리되었습니다.");
   };
 
+  const exitSplitMode = () => {
+    setEditMode("normal");
+    setSplitChunkId(null);
+  };
+
+  // ── 저장 ──────────────────────────────────────────────
   const handleSaveAll = () => {
     setIsSaving(true);
     setTimeout(() => {
@@ -223,31 +322,13 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
     }, 800);
   };
 
-  // ── 원문 렌더링: 선택 청크 키워드 하이라이트 ────────────
-  const renderDocPage = (pageText: string) => {
-    if (!selectedChunk) {
-      return <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">{pageText}</pre>;
-    }
-    const keyword = selectedChunk.article.match(/제\d+조/)?.[0];
-    if (!keyword) {
-      return <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">{pageText}</pre>;
-    }
-    const parts = pageText.split(new RegExp(`(${keyword})`, "g"));
-    return (
-      <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">
-        {parts.map((part, i) =>
-          part === keyword ? (
-            <mark key={i} className="bg-yellow-200 text-yellow-900 rounded px-0.5">
-              {part}
-            </mark>
-          ) : (
-            <span key={i}>{part}</span>
-          )
-        )}
-      </pre>
-    );
-  };
+  // ── 페이지 그룹 (연속 스크롤 + 페이지 마커용) ──────────
+  const pageGroups = Array.from({ length: totalPages }, (_, i) => ({
+    page: i + 1,
+    chunks: chunks.slice(i * CHUNKS_PER_PAGE, (i + 1) * CHUNKS_PER_PAGE),
+  }));
 
+  // ── 렌더 ──────────────────────────────────────────────
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
 
@@ -266,11 +347,7 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
             </h1>
             <span className="text-sm text-muted-foreground truncate max-w-[240px]">{policy.name}</span>
           </div>
-          <Button
-            onClick={handleSaveAll}
-            disabled={isSaving}
-            className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 flex-shrink-0"
-          >
+          <Button onClick={handleSaveAll} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 flex-shrink-0">
             <CheckCircle2 className="w-4 h-4" />
             {isSaving ? "저장 중..." : "수정 완료"}
           </Button>
@@ -283,9 +360,7 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
           <span className="flex items-center gap-1.5 text-xs text-gray-500">
             <FileText className="w-3.5 h-3.5 text-blue-400" />
             <span className="font-medium text-gray-700">카테고리</span>
-            <span className="ml-1 px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-semibold">
-              {policy.category}
-            </span>
+            <span className="ml-1 px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-semibold">{policy.category}</span>
           </span>
           <span className="flex items-center gap-1.5 text-xs text-gray-500">
             <Hash className="w-3.5 h-3.5 text-gray-400" />
@@ -308,189 +383,277 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
             </span>
           </div>
           <div ref={docRef} className="flex-1 overflow-y-auto px-8 py-6">
-            {renderDocPage(MOCK_DOC_PAGES[docViewPage] ?? "")}
+            <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">
+              {MOCK_DOC_PAGES[docViewPage] ?? ""}
+            </pre>
           </div>
           {/* 원문 페이지 네비 */}
           <div className="border-t border-gray-100 px-5 py-2 flex items-center justify-center gap-2 flex-shrink-0 bg-gray-50">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0"
-              disabled={docViewPage <= 1}
-              onClick={() => {
-                setDocViewPage((p) => Math.max(1, p - 1));
-                setSelectedChunkId(null);
-              }}
-            >
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={docViewPage <= 1}
+              onClick={() => setDocViewPage((p) => Math.max(1, p - 1))}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <span className="text-xs text-gray-500">원문 {docViewPage}페이지</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0"
-              disabled={docViewPage >= TOTAL_DOC_PAGES}
-              onClick={() => {
-                setDocViewPage((p) => Math.min(TOTAL_DOC_PAGES, p + 1));
-                setSelectedChunkId(null);
-              }}
-            >
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={docViewPage >= TOTAL_DOC_PAGES}
+              onClick={() => setDocViewPage((p) => Math.min(TOTAL_DOC_PAGES, p + 1))}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* 우측: 추출된 데이터 리스트 */}
+        {/* 우측: 추출된 데이터 */}
         <div className="w-1/2 flex flex-col overflow-hidden bg-gray-50">
+
           {/* 패널 헤더 */}
           <div className="px-5 py-2.5 border-b border-gray-200 flex items-center gap-2 flex-shrink-0 bg-gray-50">
             <Database className="w-4 h-4 text-blue-500" />
             <span className="text-sm font-semibold text-gray-700">추출된 데이터</span>
-            <span className="ml-auto text-xs text-gray-400">
-              {(currentPage - 1) * CHUNKS_PER_PAGE + 1}–{Math.min(currentPage * CHUNKS_PER_PAGE, chunks.length)} / {chunks.length}개
-            </span>
+            <span className="ml-auto text-xs text-gray-400">{chunks.length}개</span>
           </div>
 
-          {/* ── 공통 툴바: 병합 / 분리 ── */}
-          <div className="px-5 py-2 border-b border-gray-200 flex items-center gap-2 flex-shrink-0 bg-white">
-            <span className="text-xs text-gray-400 font-medium mr-1">공통</span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-green-700 hover:border-green-400 disabled:opacity-40"
-              disabled={!selectedChunkId || chunks.findIndex((c) => c.id === selectedChunkId) >= chunks.length - 1}
-              onClick={() => selectedChunkId && mergeChunk(selectedChunkId)}
-              title="선택된 데이터를 다음 데이터와 병합"
-            >
-              <Merge className="w-3.5 h-3.5" />
-              병합
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-purple-700 hover:border-purple-400 disabled:opacity-40"
-              disabled={!selectedChunkId}
-              onClick={() => selectedChunkId && splitChunk(selectedChunkId)}
-              title="선택된 데이터를 2개로 분리"
-            >
-              <Scissors className="w-3.5 h-3.5" />
-              분리
-            </Button>
-            {!selectedChunkId && (
-              <span className="text-xs text-gray-400 ml-1">데이터를 선택하면 활성화됩니다</span>
-            )}
-          </div>
+          {/* ── 공통 툴바 (모드별) ── */}
+          {editMode === "normal" && (
+            <div className="px-5 py-2 border-b border-gray-200 flex items-center gap-2 flex-shrink-0 bg-white">
+              <span className="text-xs text-gray-400 font-medium mr-1">공통</span>
+              <Button variant="outline" size="sm"
+                className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-green-700 hover:border-green-400 disabled:opacity-40"
+                disabled={!selectedChunkId}
+                onClick={enterMergeMode}>
+                <Merge className="w-3.5 h-3.5" />
+                병합
+              </Button>
+              <Button variant="outline" size="sm"
+                className="h-7 px-3 text-xs gap-1.5 text-gray-600 hover:text-purple-700 hover:border-purple-400 disabled:opacity-40"
+                disabled={!selectedChunkId}
+                onClick={enterSplitMode}>
+                <Scissors className="w-3.5 h-3.5" />
+                분리
+              </Button>
+              {!selectedChunkId && (
+                <span className="text-xs text-gray-400 ml-1">데이터를 선택하면 활성화됩니다</span>
+              )}
+            </div>
+          )}
 
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-            {pageChunks.map((chunk) => {
-              const isSelected = selectedChunkId === chunk.id;
-              const isEditing = editingChunkId === chunk.id;
+          {editMode === "merge" && (
+            <div className="px-5 py-2 border-b border-amber-200 flex items-center gap-2 flex-shrink-0 bg-amber-50">
+              <Merge className="w-3.5 h-3.5 text-amber-600" />
+              <span className="text-xs text-amber-700 font-semibold">병합 모드</span>
+              <span className="text-xs text-amber-600">
+                {mergeTargetIds.length === 0
+                  ? "병합할 데이터를 추가로 선택하세요"
+                  : `${mergeTargetIds.length + 1}개 선택됨`}
+              </span>
+              <div className="ml-auto flex items-center gap-1.5">
+                <Button size="sm"
+                  className="h-7 px-3 text-xs bg-amber-500 hover:bg-amber-600 text-white gap-1 disabled:opacity-40"
+                  disabled={mergeTargetIds.length === 0}
+                  onClick={executeMerge}>
+                  <Check className="w-3 h-3" />
+                  선택된 {mergeTargetIds.length + 1}개 병합하기
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-500 hover:text-gray-800" onClick={exitMergeMode}>
+                  <X className="w-3.5 h-3.5" />
+                  취소
+                </Button>
+              </div>
+            </div>
+          )}
 
-              return (
+          {editMode === "split" && (
+            <div className="px-5 py-2 border-b border-purple-200 flex items-center gap-2 flex-shrink-0 bg-purple-50">
+              <Scissors className="w-3.5 h-3.5 text-purple-600" />
+              <span className="text-xs text-purple-700 font-semibold">분리 모드</span>
+              <span className="text-xs text-purple-600">조항명과 내용을 수정 후 분리를 완료하세요</span>
+              <div className="ml-auto flex items-center gap-1.5">
+                <Button size="sm"
+                  className="h-7 px-3 text-xs bg-purple-600 hover:bg-purple-700 text-white gap-1"
+                  onClick={executeSplit}>
+                  <Check className="w-3 h-3" />
+                  분리 완료
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-gray-500 hover:text-gray-800" onClick={exitSplitMode}>
+                  <X className="w-3.5 h-3.5" />
+                  취소
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* ── 청크 리스트 (연속 스크롤) ── */}
+          <div ref={chunkListRef} className="flex-1 overflow-y-auto px-4 py-4">
+            {pageGroups.map(({ page, chunks: groupChunks }) => (
+              <div key={page}>
+                {/* 페이지 마커 – IntersectionObserver가 감지 */}
                 <div
-                  key={chunk.id}
-                  className={`bg-white border rounded-xl p-4 shadow-sm cursor-pointer transition-all ${
-                    isSelected ? "border-blue-400 ring-1 ring-blue-300" : "border-gray-200 hover:border-gray-300"
-                  }`}
-                  onClick={() => !isEditing && setSelectedChunkId(isSelected ? null : chunk.id)}
-                >
-                  {/* 청크 헤더 */}
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 text-xs font-bold border border-blue-100">
-                        {chunk.article}
-                      </span>
-                    </div>
+                  ref={(el) => { pageMarkerRefs.current[page - 1] = el; }}
+                  data-page={page}
+                  className="h-0 w-full"
+                />
+                <div className="space-y-3 mb-3">
+                  {groupChunks.map((chunk) => {
 
-                    {/* 액션 버튼 – 수정 / 삭제만 */}
-                    <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                      {!isEditing ? (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            title="수정"
-                            className="h-7 w-7 p-0 text-gray-400 hover:text-blue-600"
-                            onClick={() => startEditing(chunk.id, chunk.content)}
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            title="삭제"
-                            className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
-                            onClick={() => deleteChunk(chunk.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setEditingChunkId(null)}>
-                            취소
-                          </Button>
-                          <Button size="sm" className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700" onClick={() => saveEditing(chunk.id)}>
-                            <Save className="w-3 h-3 mr-1" />저장
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                    /* ── 병합 모드 카드 ── */
+                    if (editMode === "merge") {
+                      const isBase = chunk.id === mergeBaseId;
+                      const isTarget = mergeTargetIds.includes(chunk.id);
+                      return (
+                        <div key={chunk.id}
+                          className={`bg-white border rounded-xl p-4 shadow-sm cursor-pointer transition-all ${
+                            isBase
+                              ? "border-amber-400 ring-1 ring-amber-300"
+                              : isTarget
+                              ? "border-green-400 ring-1 ring-green-300"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                          onClick={() => toggleMergeTarget(chunk.id)}>
+                          <div className="flex items-center gap-2 mb-2">
+                            {isBase && (
+                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold border border-amber-200">기준</span>
+                            )}
+                            {isTarget && (
+                              <span className="w-4 h-4 flex items-center justify-center bg-green-500 rounded-full flex-shrink-0">
+                                <Check className="w-2.5 h-2.5 text-white" />
+                              </span>
+                            )}
+                            {!isBase && !isTarget && (
+                              <div className="w-4 h-4 border-2 border-gray-300 rounded flex-shrink-0" />
+                            )}
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 text-xs font-bold border border-blue-100">
+                              {chunk.article}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600 line-clamp-2 pl-6">{chunk.content}</div>
+                        </div>
+                      );
+                    }
 
-                  {/* 청크 내용 */}
-                  {isEditing ? (
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="min-h-[72px] text-sm p-2.5 border-blue-300 focus-visible:ring-blue-500 bg-blue-50/30"
-                      autoFocus
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <div className={`text-sm leading-relaxed p-2.5 rounded-lg border ${
-                      isSelected ? "bg-blue-50/50 border-blue-100 text-blue-900" : "bg-gray-50 border-gray-100 text-gray-700"
-                    }`}>
-                      {chunk.content}
-                    </div>
-                  )}
+                    /* ── 분리 모드 카드 (대상 청크만 에디터) ── */
+                    if (editMode === "split" && chunk.id === splitChunkId) {
+                      return (
+                        <div key={chunk.id} className="bg-white border border-purple-400 ring-1 ring-purple-200 rounded-xl p-4 shadow-sm">
+                          <div className="text-xs text-purple-700 font-semibold mb-3 flex items-center gap-1.5">
+                            <Scissors className="w-3.5 h-3.5" />
+                            분리할 데이터 설정
+                          </div>
+                          <div className="space-y-3">
+                            {splitParts.map((part, partIdx) => (
+                              <div key={partIdx} className="border border-purple-200 rounded-lg p-3 bg-purple-50/40">
+                                <div className="text-xs text-purple-600 font-medium mb-2">분리 {partIdx + 1}</div>
+                                <input
+                                  type="text"
+                                  value={part.article}
+                                  onChange={(e) => {
+                                    const updated = [...splitParts];
+                                    updated[partIdx] = { ...updated[partIdx], article: e.target.value };
+                                    setSplitParts(updated);
+                                  }}
+                                  placeholder="조항명 입력"
+                                  className="w-full text-xs border border-gray-200 rounded-md px-2.5 py-1.5 mb-2 focus:outline-none focus:border-purple-400 bg-white"
+                                />
+                                <Textarea
+                                  value={part.content}
+                                  onChange={(e) => {
+                                    const updated = [...splitParts];
+                                    updated[partIdx] = { ...updated[partIdx], content: e.target.value };
+                                    setSplitParts(updated);
+                                  }}
+                                  placeholder="내용 입력"
+                                  className="min-h-[64px] text-xs border-gray-200 focus-visible:ring-purple-400 resize-none"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
 
+                    /* ── 일반 카드 ── */
+                    const isSelected = selectedChunkId === chunk.id;
+                    const isEditing = editingChunkId === chunk.id;
+
+                    return (
+                      <div key={chunk.id}
+                        className={`bg-white border rounded-xl p-4 shadow-sm cursor-pointer transition-all ${
+                          isSelected ? "border-blue-400 ring-1 ring-blue-300" : "border-gray-200 hover:border-gray-300"
+                        }`}
+                        onClick={() => !isEditing && handleChunkClick(chunk)}>
+                        {/* 카드 헤더 */}
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 text-xs font-bold border border-blue-100">
+                            {chunk.article}
+                          </span>
+                          <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                            {!isEditing ? (
+                              <>
+                                <Button variant="ghost" size="sm" title="수정"
+                                  className="h-7 w-7 p-0 text-gray-400 hover:text-blue-600"
+                                  onClick={() => startEditing(chunk.id, chunk.content)}>
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="sm" title="삭제"
+                                  className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
+                                  onClick={() => deleteChunk(chunk.id)}>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs"
+                                  onClick={() => setEditingChunkId(null)}>취소</Button>
+                                <Button size="sm" className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700"
+                                  onClick={() => saveEditing(chunk.id)}>
+                                  <Save className="w-3 h-3 mr-1" />저장
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        {/* 카드 내용 */}
+                        {isEditing ? (
+                          <Textarea
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            className="min-h-[72px] text-sm p-2.5 border-blue-300 focus-visible:ring-blue-500 bg-blue-50/30"
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <div className={`text-sm leading-relaxed p-2.5 rounded-lg border ${
+                            isSelected
+                              ? "bg-blue-50/50 border-blue-100 text-blue-900"
+                              : "bg-gray-50 border-gray-100 text-gray-700"
+                          }`}>
+                            {chunk.content}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
 
-          {/* ── 하단 페이지네이션 ── */}
-          <div className="border-t border-gray-200 px-5 py-3 flex items-center justify-center gap-2 flex-shrink-0 bg-white">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0"
-              disabled={currentPage <= 1}
-              onClick={() => { setCurrentPage((p) => p - 1); setSelectedChunkId(null); }}
-            >
+          {/* ── 하단 페이지 인디케이터 (스크롤 연동) ── */}
+          <div className="border-t border-gray-200 px-5 py-3 flex items-center justify-center gap-1.5 flex-shrink-0 bg-white">
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
+              disabled={visiblePage <= 1}
+              onClick={() => scrollToPage(visiblePage - 1)}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => { setCurrentPage(page); setSelectedChunkId(null); }}
+              <button key={page}
+                onClick={() => scrollToPage(page)}
                 className={`h-7 w-7 rounded-md text-xs font-medium transition-colors ${
-                  page === currentPage
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
+                  page === visiblePage ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"
+                }`}>
                 {page}
               </button>
             ))}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 p-0"
-              disabled={currentPage >= totalPages}
-              onClick={() => { setCurrentPage((p) => p + 1); setSelectedChunkId(null); }}
-            >
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
+              disabled={visiblePage >= totalPages}
+              onClick={() => scrollToPage(visiblePage + 1)}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
