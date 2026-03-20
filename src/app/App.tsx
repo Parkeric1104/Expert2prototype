@@ -3,8 +3,10 @@ import { TopHeader } from "@/app/components/top-header";
 import { ModernHomeView } from "@/app/components/modern-home-view";
 import { ModernChatInterface } from "@/app/components/modern-chat-interface";
 import { PolicyManagementView } from "@/app/components/policy-management-view";
+import { EmbeddingCorrectionView, EmbeddingCorrectionPolicy } from "@/app/components/embedding-correction-view";
 import { LawSelectionModal } from "@/app/components/law-selection-modal";
 import { EnhancedChatHistoryModal } from "@/app/components/enhanced-chat-history-modal";
+import { AutoPolicyReviewNotification } from "@/app/components/auto-policy-review-modal";
 import { Toaster } from "@/app/components/ui/sonner";
 import {
   AlertDialog,
@@ -18,7 +20,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy">("home");
+  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding">("home");
   const [chatQuery, setChatQuery] = useState<string>("");
   const [selectedLaws, setSelectedLaws] = useState<string[]>([]);
   const [relatedLaws, setRelatedLaws] = useState<string[]>([]);
@@ -31,6 +33,7 @@ export default function App() {
   const [hasChatMessages, setHasChatMessages] = useState(false);
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
+  const [selectedPolicy, setSelectedPolicy] = useState<EmbeddingCorrectionPolicy | null>(null);
 
   const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string) => {
     setChatQuery(query);
@@ -78,6 +81,20 @@ export default function App() {
   };
 
   const handleOpenPolicyUpload = () => {
+    setCurrentView("policy");
+  };
+
+  const handleOpenEmbedding = (policy: EmbeddingCorrectionPolicy) => {
+    setSelectedPolicy(policy);
+    setCurrentView("embedding");
+  };
+
+  const handleBackFromEmbedding = () => {
+    setSelectedPolicy(null);
+    setCurrentView("policy");
+  };
+
+  const handleReviewCompletedPolicies = () => {
     setCurrentView("policy");
   };
 
@@ -130,11 +147,18 @@ export default function App() {
 
       {/* Main Content */}
       {currentView === "home" && (
-        <ModernHomeView
-          onStartChat={handleStartChat}
-          onOpenLawSelector={handleOpenLawSelector}
-          selectedLaws={selectedLaws}
-        />
+        <>
+          <ModernHomeView
+            onStartChat={handleStartChat}
+            onOpenLawSelector={handleOpenLawSelector}
+            selectedLaws={selectedLaws}
+          />
+          {/* 메인 화면에서 HR 담당자에게만 정책 검토 알림 표시 */}
+          <AutoPolicyReviewNotification 
+            isAdmin={isAdmin}
+            onReview={handleReviewCompletedPolicies}
+          />
+        </>
       )}
 
       {currentView === "chat" && (
@@ -153,6 +177,14 @@ export default function App() {
       {currentView === "policy" && (
         <PolicyManagementView
           isAdmin={isAdmin}
+          onOpenEmbedding={handleOpenEmbedding}
+        />
+      )}
+
+      {currentView === "embedding" && selectedPolicy && (
+        <EmbeddingCorrectionView
+          policy={selectedPolicy}
+          onBack={handleBackFromEmbedding}
         />
       )}
 

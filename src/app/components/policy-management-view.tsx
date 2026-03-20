@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { 
   Shield, FileText, Search, Filter, Download, ChevronDown, ChevronUp, 
-  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle
+  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle, Database
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { PolicyRegistrationModal } from "@/app/components/policy-registration-modal";
+import { AutoPolicyReviewNotification } from "@/app/components/auto-policy-review-modal";
 import { toast } from "sonner";
 
 interface PolicyFile {
@@ -51,9 +52,10 @@ interface PolicyHistory {
 
 interface PolicyManagementViewProps {
   isAdmin?: boolean;
+  onOpenEmbedding?: (policy: { id: string; name: string; category: string }) => void;
 }
 
-export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewProps) {
+export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: PolicyManagementViewProps) {
   // Mock data for existing policies
   const [policies, setPolicies] = useState<PolicyFile[]>(([
     {
@@ -535,6 +537,16 @@ export function PolicyManagementView({ isAdmin = true }: PolicyManagementViewPro
                             <ChevronDown className="w-4 h-4" />
                           )}
                         </Button>
+                        {onOpenEmbedding && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onOpenEmbedding({ id: policy.id, name: policy.name, category: policy.category })}
+                            title="임베딩 열기"
+                          >
+                            <Database className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
 
