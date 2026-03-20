@@ -7,6 +7,7 @@ import {
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/app/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -270,6 +271,7 @@ export function PolicyManagementView({
   const [deletingPolicy, setDeletingPolicy] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
 
   const categories = [
     "취업규칙",
@@ -316,7 +318,8 @@ export function PolicyManagementView({
     };
 
     setPolicies([newPolicy, ...policies]);
-    toast.success("정책 문서가 성공적으로 등록되었습니다.");
+    setShowRegistrationModal(false);
+    setShowAnalysisModal(true);
   };
 
   const handleEditCategory = (policyId: string, newCategory: string) => {
@@ -692,6 +695,28 @@ export function PolicyManagementView({
         existingCategories={Array.from(new Set(policies.map(p => p.category)))}
         existingPolicies={policies.map(p => ({ category: p.category, name: p.name }))}
       />
+
+      {/* 문서 분석 시작 안내 팝업 */}
+      <Dialog open={showAnalysisModal} onOpenChange={setShowAnalysisModal}>
+        <DialogContent className="sm:max-w-[440px]" onInteractOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-gray-900">
+              등록하신 문서 분석을 시작합니다
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600 leading-relaxed mt-2">
+              등록하신 문서의 AI 분석 및 변환 작업을 진행하고 있습니다. 분석이 완료되면 별도로 안내해 드릴 예정이며, 이후 최종 확인 이후 사내 정책 문서로 등록이 완료됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button
+              onClick={() => setShowAnalysisModal(false)}
+              className="bg-primary hover:bg-primary/90 text-white px-8"
+            >
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 삭제 확인 다이얼로그 */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
