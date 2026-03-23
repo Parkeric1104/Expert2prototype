@@ -79,28 +79,21 @@ export function AutoPolicyReviewNotification({
   useEffect(() => {
     if (!isAdmin) return;
 
-    // 테스트용: 무조건 표시 (5개로 늘림)
+    // 스누즈 체크: 1시간 이내면 표시 안 함
+    const snoozeUntil = localStorage.getItem(SNOOZE_KEY);
+    const now = Date.now();
+    if (snoozeUntil && now < parseInt(snoozeUntil, 10)) return;
+
+    // 테스트용 대기 정책 목록
     const testPolicies = [
       "2024 더존비즈온 취업규칙 개정안.pdf",
       "급여규정_2024_v1.pdf",
       "복리후생규정_개정안.hwp",
       "인사관리규정_2024.pdf",
-      "재택근무운영지침_v2.docx"
     ];
-    
+
     setPendingPolicies(testPolicies);
     setIsOpen(true);
-
-    // 실제 로직 (주석 처리)
-    // const snoozeUntil = localStorage.getItem(SNOOZE_KEY);
-    // const completedPolicies = JSON.parse(localStorage.getItem(COMPLETED_POLICIES_KEY) || "[]");
-    // const now = Date.now();
-
-    // // 완료된 정책이 있고, 스누즈 기간이 지났으면 모달 표시
-    // if (completedPolicies.length > 0 && (!snoozeUntil || now > parseInt(snoozeUntil, 10))) {
-    //   setPendingPolicies(completedPolicies);
-    //   setIsOpen(true);
-    // }
   }, [isAdmin]);
 
   const handleSnooze = () => {

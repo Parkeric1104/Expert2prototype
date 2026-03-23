@@ -13,6 +13,7 @@ import {
 } from "@/app/components/ui/select";
 import { toast } from "sonner";
 import { AIBoxSelectionModal } from "@/app/components/ai-box-selection-modal";
+import { PolicyAnalysisStartModal } from "@/app/components/policy-analysis-start-modal";
 
 interface AIBox {
   id: string;
@@ -47,6 +48,7 @@ export function PolicyRegistrationModal({
   const [customCategoryError, setCustomCategoryError] = useState<string>("");
   const [selectedAIBoxes, setSelectedAIBoxes] = useState<AIBox[]>([]);
   const [showAIBoxModal, setShowAIBoxModal] = useState(false);
+  const [showAnalysisStartModal, setShowAnalysisStartModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAIBoxSelect = (box: AIBox | null) => {
@@ -152,12 +154,6 @@ export function PolicyRegistrationModal({
       category: selectedCategory === "직접입력" ? customCategory.trim() : selectedCategory,
     });
 
-    const message = uploadedFile 
-      ? `${uploadedFile.name} 파일이 등록되었습니다.`
-      : `AI Box ${selectedAIBoxes.length}개가 연결되었습니다.`;
-    
-    toast.success(message);
-
     // Reset form
     setUploadedFile(null);
     setSelectedCategory("");
@@ -165,6 +161,9 @@ export function PolicyRegistrationModal({
     setCustomCategoryError("");
     setSelectedAIBoxes([]);
     onClose();
+    
+    // 분석 시작 팝업 표시
+    setShowAnalysisStartModal(true);
   };
 
   const handleClose = () => {
@@ -370,6 +369,10 @@ export function PolicyRegistrationModal({
         isOpen={showAIBoxModal}
         onClose={() => setShowAIBoxModal(false)}
         onSelect={handleAIBoxSelect}
+      />
+      <PolicyAnalysisStartModal
+        isOpen={showAnalysisStartModal}
+        onClose={() => setShowAnalysisStartModal(false)}
       />
     </Dialog>
   );

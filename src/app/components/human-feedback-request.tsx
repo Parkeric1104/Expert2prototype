@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertCircle, XCircle, Shield, HelpCircle, Sparkles } from "lucide-react";
 
 interface HumanFeedbackRequestProps {
-  reason: "invalid" | "insufficient" | "inappropriate" | "out-of-scope";
+  reason: "invalid" | "insufficient" | "inappropriate";
   originalQuestion: string;
   onSubmitRevision: (revisedQuestion: string) => void;
   suggestedQuestions?: string[];
@@ -27,18 +27,13 @@ export function HumanFeedbackRequest({
         };
       case "insufficient":
         return {
-          title: "조금 더 자세히 알려주세요",
+          title: "질문을 한번 더 확인해주세요",
           description: "",
         };
       case "inappropriate":
         return {
-          title: "답변할 수 없는 범위입니다",
+          title: "답변할 수 없는 질문입니다",
           description: "이 질문은 법적·윤리적 책임 문제로 인해 답변이 제한됩니다.",
-        };
-      case "out-of-scope":
-        return {
-          title: "노무/인사 영역 외 질문입니다",
-          description: "이 서비스는 노무·인사 관련 질문에만 답변할 수 있습니다.",
         };
     }
   };
@@ -107,8 +102,6 @@ export function HumanFeedbackRequest({
         return "bg-[#EFF6FF]";
       case "inappropriate":
         return "bg-[#FFE8F0]";
-      case "out-of-scope":
-        return "bg-[#FFF3E0]";
     }
   };
 
@@ -117,11 +110,9 @@ export function HumanFeedbackRequest({
       case "invalid":
         return "border-[#FFE0A3]";
       case "insufficient":
-        return "border-[#BEDBFF]";
+        return "bg-[#BEDBFF]";
       case "inappropriate":
         return "border-[#FFD0E0]";
-      case "out-of-scope":
-        return "border-[#FFCC80]";
     }
   };
 
@@ -133,8 +124,6 @@ export function HumanFeedbackRequest({
         return "text-[#155DFC]";
       case "inappropriate":
         return "text-[#E91E63]";
-      case "out-of-scope":
-        return "text-[#F57C00]";
     }
   };
 
@@ -146,8 +135,6 @@ export function HumanFeedbackRequest({
         return HelpCircle;
       case "inappropriate":
         return Shield;
-      case "out-of-scope":
-        return AlertCircle;
     }
   };
 
@@ -208,18 +195,20 @@ export function HumanFeedbackRequest({
         </div>
       )}
 
-      {/* 입력한 질문으로 이어서 질문하기 버튼 - insufficient(조금 더 자세히)만 노출 */}
-      {reason === "insufficient" && <button
-        onClick={() => {
-          setIsSubmitting(true);
-          onSubmitRevision(originalQuestion);
-        }}
-        disabled={isSubmitting}
-        className="w-full mt-4 px-6 py-4 bg-[#6366F1] hover:bg-[#5558E3] text-white font-semibold rounded-2xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        style={{ wordBreak: 'keep-all' }}
-      >
-        입력한 질문으로 이어서 질문하기
-      </button>}
+      {/* 입력한 질문으로 이어서 질문하기 버튼 - insufficient만 노출 */}
+      {reason === "insufficient" && (
+        <button
+          onClick={() => {
+            setIsSubmitting(true);
+            onSubmitRevision(originalQuestion);
+          }}
+          disabled={isSubmitting}
+          className="w-full mt-4 px-6 py-4 bg-[#6366F1] hover:bg-[#5558E3] text-white font-semibold rounded-2xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ wordBreak: 'keep-all' }}
+        >
+          입력한 질문으로 이어서 질문하기
+        </button>
+      )}
     </div>
   );
 }
