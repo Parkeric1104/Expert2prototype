@@ -146,13 +146,6 @@ export function AutoPolicyReviewNotification({
           </div>
         </div>
 
-        {/* 진행 표시 (2개 이상일 때만) */}
-        {pendingPolicies.length > 1 && (
-          <p className="text-xs text-muted-foreground text-center mb-4">
-            {currentIndex + 1} / {pendingPolicies.length}
-          </p>
-        )}
-
         {/* 확인하기 버튼 */}
         <Button
           onClick={handleConfirm}
