@@ -65,24 +65,19 @@ interface AutoPolicyReviewNotificationProps {
   onReview?: () => void;
 }
 
-const SNOOZE_KEY = "snoozePolicyReview";
 const COMPLETED_POLICIES_KEY = "completedPolicies";
 
-export function AutoPolicyReviewNotification({ 
-  isAdmin, 
-  onReview 
+export function AutoPolicyReviewNotification({
+  isAdmin,
+  onReview
 }: AutoPolicyReviewNotificationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [pendingPolicies, setPendingPolicies] = useState<string[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // 메인 화면 진입 시 스누즈 만료 여부 체크 (테스트용: 항상 표시)
+  // 메인 화면 진입 시 대기 정책 목록 로드
   useEffect(() => {
     if (!isAdmin) return;
-
-    // 스누즈 체크: 1시간 이내면 표시 안 함
-    const snoozeUntil = localStorage.getItem(SNOOZE_KEY);
-    const now = Date.now();
-    if (snoozeUntil && now < parseInt(snoozeUntil, 10)) return;
 
     // 테스트용 대기 정책 목록
     const testPolicies = [
@@ -93,20 +88,21 @@ export function AutoPolicyReviewNotification({
     ];
 
     setPendingPolicies(testPolicies);
+    setCurrentIndex(0);
     setIsOpen(true);
   }, [isAdmin]);
 
-  const handleSnooze = () => {
-    localStorage.setItem(SNOOZE_KEY, (Date.now() + 60 * 60 * 1000).toString());
-    setIsOpen(false);
-  };
-
-  const handleReview = () => {
-    setIsOpen(false);
-    // 검토 완료 처리
-    localStorage.removeItem(COMPLETED_POLICIES_KEY);
-    if (onReview) {
-      onReview();
+  const handleConfirm = () => {
+    if (currentIndex < pendingPolicies.length - 1) {
+      // 다음 파일 팝업으로 이동
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      // 마지막 파일 확인 후 → 검토 흐름 시작
+      setIsOpen(false);
+      localStorage.removeItem(COMPLETED_POLICIES_KEY);
+      if (onReview) {
+        onReview();
+      }
     }
   };
 
@@ -136,52 +132,35 @@ export function AutoPolicyReviewNotification({
             정책 분석이 완료되었습니다
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
-            업로드하신 문서의 분석이 완료되었습니다. 검토를 완료해야 사내 정책으로 등록됩니다.
+            업로드하신 문서의 분석이 완료되었습니다. 최종 확인을 완료해야 사내 정책으로 등록됩니다.
           </p>
         </div>
 
-        {/* 대기 중인 정책 목록 */}
-        {pendingPolicies.length > 0 && (
-          <div className="mb-6">
-            {/* 스크롤 영역: 최대 3개 높이로 고정 */}
-            <div 
-              className="max-h-[204px] overflow-y-auto space-y-2 pr-2"
-              style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(102, 102, 115, 0.3) transparent'
-              }}
-            >
-              {pendingPolicies.map((policy, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg px-4 py-3"
-                >
-                  <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                  <span className="text-sm font-medium text-foreground truncate">
-                    {policy}
-                  </span>
-                </div>
-              ))}
-            </div>
+        {/* 현재 파일 (순차 노출) */}
+        <div className="mb-4">
+          <div className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg px-4 py-3">
+            <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+            <span className="text-sm font-medium text-foreground truncate">
+              {pendingPolicies[currentIndex]}
+            </span>
           </div>
+        </div>
+
+        {/* 진행 표시 (2개 이상일 때만) */}
+        {pendingPolicies.length > 1 && (
+          <p className="text-xs text-muted-foreground text-center mb-4">
+            {currentIndex + 1} / {pendingPolicies.length}
+          </p>
         )}
 
-        {/* 버튼 */}
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={handleSnooze}
-            className="flex-1"
-          >
-            1시간 후 다시 알림
-          </Button>
-          <Button
-            onClick={handleReview}
-            className="flex-1"
-          >
-            검토하기
-          </Button>
-        </div>
+        {/* 확인하기 버튼 */}
+        <Button
+          onClick={handleConfirm}
+          className="w-full h-12 text-base font-semibold"
+          size="lg"
+        >
+          확인하기
+        </Button>
       </DialogContent>
     </Dialog>
   );
