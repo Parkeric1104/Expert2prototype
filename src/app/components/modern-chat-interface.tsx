@@ -227,6 +227,25 @@ export function ModernChatInterface({
     return "노동법 일반";
   };
 
+  // 의견서 검토유형 자동 분류 (PRD: 단순문의 / 리스크검토 / 법률검토 / 기타)
+  const detectReviewType = (message: string): string => {
+    const lower = message.toLowerCase();
+
+    // 리스크검토: 위험·예방·대응·위반 관련 키워드
+    const riskKeywords = ["리스크", "위험", "예방", "대비", "대응", "가능성", "분석", "검토", "적법", "위반", "불법", "제재"];
+    if (riskKeywords.some(kw => lower.includes(kw))) return "리스크 검토";
+
+    // 법률검토: 해고·계약·판례 등 법적 판단이 필요한 키워드
+    const legalKeywords = ["해고", "징계", "계약", "정당", "판례", "소송", "처벌", "권리", "의무", "손해배상", "근거", "법령", "규정"];
+    if (legalKeywords.some(kw => lower.includes(kw))) return "법률 검토";
+
+    // 단순문의: 정보·절차·기간 등 단순 조회성 키워드
+    const simpleKeywords = ["언제", "어떻게", "방법", "절차", "기간", "일수", "계산", "얼마", "조건", "기준", "알려", "궁금", "몇 일", "몇일", "며칠"];
+    if (simpleKeywords.some(kw => lower.includes(kw))) return "단순 문의";
+
+    return "기타";
+  };
+
   // Helper to generate question summary (max 20 characters)
   const generateQuestionSummary = (message: string): string => {
     // Remove unnecessary whitespace and newlines
@@ -794,7 +813,7 @@ ${integratedData.aiOpinionSummary}
       date: formattedDate,
       client: "[회사명]",
       manager: "[직함 / 성명]",
-      reviewType: "사전 리스크 검토",
+      reviewType: detectReviewType(userMessage),
       reviewTarget: userMessage.substring(0, 30) + "...",
       version: "v1.0",
       facts: [

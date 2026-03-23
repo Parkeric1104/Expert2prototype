@@ -51,8 +51,8 @@ export function PolicyRegistrationModal({
   const [showAnalysisStartModal, setShowAnalysisStartModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAIBoxSelect = (box: AIBox | null) => {
-    setSelectedAIBoxes(box ? [box] : []);
+  const handleAIBoxSelect = (boxes: AIBox[]) => {
+    setSelectedAIBoxes(boxes);
   };
 
   const categories = [
