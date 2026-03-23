@@ -65,7 +65,7 @@ interface AutoPolicyReviewNotificationProps {
   onReview?: () => void;
 }
 
-const COMPLETED_POLICIES_KEY = "completedPolicies";
+const SEEN_POLICIES_KEY = "seenPolicies";
 
 export function AutoPolicyReviewNotification({
   isAdmin,
@@ -73,13 +73,12 @@ export function AutoPolicyReviewNotification({
 }: AutoPolicyReviewNotificationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [pendingPolicies, setPendingPolicies] = useState<string[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // 메인 화면 진입 시 대기 정책 목록 로드
+  // 진입 시 & 문서 추가 시: 미확인 문서가 있으면 팝업 노출
   useEffect(() => {
     if (!isAdmin) return;
 
-    // 테스트용 대기 정책 목록
+    // 테스트용 대기 정책 목록 (실제 개발 시 API로 대체)
     const testPolicies = [
       "2024 더존비즈온 취업규칙 개정안.pdf",
       "급여규정_2024_v1.pdf",
@@ -87,28 +86,30 @@ export function AutoPolicyReviewNotification({
       "인사관리규정_2024.pdf",
     ];
 
-    setPendingPolicies(testPolicies);
-    setCurrentIndex(0);
-    setIsOpen(true);
+    // 이미 확인한 목록과 비교 → 새 문서가 있을 때만 팝업 노출
+    const seenPolicies: string[] = JSON.parse(localStorage.getItem(SEEN_POLICIES_KEY) || "[]");
+    const hasNewPolicies = testPolicies.some((p) => !seenPolicies.includes(p));
+
+    if (hasNewPolicies) {
+      setPendingPolicies(testPolicies);
+      setIsOpen(true);
+    }
   }, [isAdmin]);
 
   const handleConfirm = () => {
-    if (currentIndex < pendingPolicies.length - 1) {
-      // 다음 파일 팝업으로 이동
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      // 마지막 파일 확인 후 → 검토 흐름 시작
-      setIsOpen(false);
-      localStorage.removeItem(COMPLETED_POLICIES_KEY);
-      if (onReview) {
-        onReview();
-      }
+    // 현재 목록 전체를 "확인 완료"로 저장
+    localStorage.setItem(SEEN_POLICIES_KEY, JSON.stringify(pendingPolicies));
+    setIsOpen(false);
+    if (onReview) {
+      onReview();
     }
   };
 
   if (!isAdmin || pendingPolicies.length === 0) {
     return null;
   }
+
+  const hasScroll = pendingPolicies.length > 3;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -136,14 +137,22 @@ export function AutoPolicyReviewNotification({
           </p>
         </div>
 
-        {/* 현재 파일 (순차 노출) */}
-        <div className="mb-4">
-          <div className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg px-4 py-3">
-            <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-            <span className="text-sm font-medium text-foreground truncate">
-              {pendingPolicies[currentIndex]}
-            </span>
-          </div>
+        {/* 분석 완료 문서 목록 */}
+        <div
+          className={`mb-6 space-y-2 ${hasScroll ? "max-h-[204px] overflow-y-auto pr-2" : ""}`}
+          style={hasScroll ? { scrollbarWidth: "thin", scrollbarColor: "rgba(102,102,115,0.3) transparent" } : undefined}
+        >
+          {pendingPolicies.map((policy, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg px-4 py-3"
+            >
+              <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+              <span className="text-sm font-medium text-foreground truncate">
+                {policy}
+              </span>
+            </div>
+          ))}
         </div>
 
         {/* 확인하기 버튼 */}
@@ -159,11 +168,10 @@ export function AutoPolicyReviewNotification({
   );
 }
 
-// 완료된 정책을 로컬 스토리지에 추가하는 헬퍼 함수
-export function addCompletedPolicy(policyName: string) {
-  const completedPolicies = JSON.parse(localStorage.getItem(COMPLETED_POLICIES_KEY) || "[]");
-  if (!completedPolicies.includes(policyName)) {
-    completedPolicies.push(policyName);
-    localStorage.setItem(COMPLETED_POLICIES_KEY, JSON.stringify(completedPolicies));
-  }
+// 신규 문서 추가 시 팝업 재노출을 트리거하는 헬퍼 함수
+// 실제 개발에서는 API 응답 후 호출 → seenPolicies에 없는 문서가 생기면 팝업 재노출
+export function markPolicyAsNew(policyName: string) {
+  const seen: string[] = JSON.parse(localStorage.getItem(SEEN_POLICIES_KEY) || "[]");
+  const filtered = seen.filter((p) => p !== policyName);
+  localStorage.setItem(SEEN_POLICIES_KEY, JSON.stringify(filtered));
 }
