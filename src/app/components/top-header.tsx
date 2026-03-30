@@ -1,5 +1,4 @@
 import { MessageSquarePlus, History, FileStack } from "lucide-react";
-import logoIcon from "figma:asset/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 interface TopHeaderProps {
   onNewChat?: () => void;
@@ -24,11 +23,9 @@ export function TopHeader({
           onClick={onLogoClick}
           className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
         >
-          <img 
-            src={logoIcon} 
-            alt="노무도우미 로고" 
-            className="w-10 h-10 object-contain"
-          />
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <FileStack className="w-5 h-5 text-primary" />
+          </div>
           <h1 className="text-lg font-bold text-primary">노무도우미</h1>
         </button>
 
