@@ -147,8 +147,8 @@ export default function App() {
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Top Header – embedding 상세 화면에서는 미노출 */}
       {currentView !== "embedding" && (
-        <TopHeader 
-          onNewChat={() => handleNavigation(handleNewChat)} 
+        <TopHeader
+          onNewChat={() => handleNavigation(handleNewChat)}
           onOpenHistory={handleOpenHistory}
           onOpenPolicyUpload={() => {
             if (currentView === "chat" && hasChatMessages) {
