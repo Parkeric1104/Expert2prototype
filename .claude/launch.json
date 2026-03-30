@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["/Users/dupark26/Documents/Expert2prototype/node_modules/.bin/vite"],
+      "port": 5173
+    }
+  ]
+}
