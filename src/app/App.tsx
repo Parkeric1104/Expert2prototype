@@ -6,6 +6,7 @@ import { PolicyManagementView } from "@/app/components/policy-management-view";
 import { EmbeddingCorrectionView, EmbeddingCorrectionPolicy } from "@/app/components/embedding-correction-view";
 import { LawSelectionModal } from "@/app/components/law-selection-modal";
 import { EnhancedChatHistoryModal } from "@/app/components/enhanced-chat-history-modal";
+import { HistorySidebarPanel } from "@/app/components/history-sidebar-panel";
 import { Toaster } from "@/app/components/ui/sonner";
 import {
   AlertDialog,
@@ -26,6 +27,7 @@ export default function App() {
   const [questionType, setQuestionType] = useState<string | undefined>(undefined);
   const [showLawModal, setShowLawModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [isRefiningSearch, setIsRefiningSearch] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isAdmin] = useState<boolean>(true);
@@ -92,8 +94,20 @@ export default function App() {
     setShowHistoryModal(true);
   };
 
+  const handleToggleSidebar = () => {
+    setShowSidebar(!showSidebar);
+  };
+
   const handleOpenPolicyUpload = () => {
     setCurrentView("policy");
+  };
+
+  const handleViewChatHistory = (chatId: string) => {
+    // 채팅 이력 보기 (읽기 전용)
+    console.log("Viewing chat history:", chatId);
+    // 여기서는 실제로 해당 채팅을 불러와서 읽기 전용으로 표시
+    // 현재는 콘솔 로그만 출력
+    setShowSidebar(false);
   };
 
   const handleOpenEmbedding = (policy: EmbeddingCorrectionPolicy) => {
@@ -120,6 +134,11 @@ export default function App() {
     // 실제로는 chatId로 해당 대화를 불러옴
     console.log("Selected chat:", chatId);
     // For demo, just show a placeholder
+  };
+
+  const handleOpenManual = () => {
+    console.log("사용자 매뉴얼 열기");
+    // 실제 구현에서는 매뉴얼 페이지나 모달을 엽니다
   };
 
   const handleNavigation = (action: () => void) => {
@@ -158,9 +177,32 @@ export default function App() {
             }
           }}
           onLogoClick={handleLogoClick}
+          onToggleSidebar={handleToggleSidebar}
           pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
+          isSidebarOpen={showSidebar}
         />
       )}
+
+      {/* History Sidebar Panel */}
+      <HistorySidebarPanel
+        isOpen={showSidebar}
+        onClose={() => setShowSidebar(false)}
+        onNewChat={() => {
+          handleNavigation(handleNewChat);
+          setShowSidebar(false);
+        }}
+        onOpenManual={handleOpenManual}
+        onOpenPolicyList={() => {
+          if (currentView === "chat" && hasChatMessages) {
+            handleNavigation(handleOpenPolicyUpload);
+          } else {
+            handleOpenPolicyUpload();
+          }
+          setShowSidebar(false);
+        }}
+        onViewChatHistory={handleViewChatHistory}
+        pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
+      />
 
       {/* Main Content */}
       {currentView === "home" && (
