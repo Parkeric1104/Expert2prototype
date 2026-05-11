@@ -25,6 +25,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { PolicyRegistrationModal } from "@/app/components/policy-registration-modal";
 import { AutoPolicyReviewNotification } from "@/app/components/auto-policy-review-modal";
+import { PolicyCoachMark, useCoachMark } from "@/app/components/policy-coach-mark";
 import { toast } from "sonner";
 
 interface PolicyFile {
@@ -56,6 +57,8 @@ interface PolicyManagementViewProps {
 }
 
 export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: PolicyManagementViewProps) {
+  const { showCoach, startCoach, stopCoach } = useCoachMark();
+
   // Mock data for existing policies
   const [policies, setPolicies] = useState<PolicyFile[]>(([
     {
@@ -421,14 +424,26 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                 등록된 정책 문서를 관리하고 새로운 문서를 추가할 수 있습니다.
               </p>
             </div>
-            <Button
-              onClick={() => setShowRegistrationModal(true)}
-              className="gap-2"
-              size="lg"
-            >
-              <Plus className="w-5 h-5" />
-              등록하기
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={startCoach}
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground text-xs gap-1.5"
+              >
+                <span>❓</span>
+                둘러보기
+              </Button>
+              <Button
+                id="coach-register-btn"
+                onClick={() => setShowRegistrationModal(true)}
+                className="gap-2"
+                size="lg"
+              >
+                <Plus className="w-5 h-5" />
+                등록하기
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -437,7 +452,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* 검색 및 필터 */}
-          <div className="flex gap-3">
+          <div id="coach-search-area" className="flex gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -464,7 +479,11 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
 
           {/* 정책 목록 */}
           <div className="space-y-3">
-            {filteredPolicies.map((policy) => {
+            {(() => {
+              const firstPendingId = filteredPolicies.find(
+                (p) => getDisplayInfo(p).status === "pending"
+              )?.id;
+              return filteredPolicies.map((policy, index) => {
               const displayInfo = getDisplayInfo(policy);
               
               return (
@@ -478,7 +497,10 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <FileText className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
                         <div className="flex-1 min-w-0 space-y-2">
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div
+                            id={index === 0 ? "coach-status-area" : undefined}
+                            className="flex items-center gap-2 flex-wrap"
+                          >
                             <h3 className="font-semibold text-foreground truncate">
                               {policy.name}
                             </h3>
@@ -500,6 +522,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                         {/* 대기중 상태일 때만 분석 결과보기 버튼 표시 */}
                         {displayInfo.status === "pending" && onOpenEmbedding && (
                           <Button
+                            id={policy.id === firstPendingId ? "coach-analysis-btn" : undefined}
                             size="sm"
                             onClick={() => onOpenEmbedding({ id: policy.id, name: policy.name, category: policy.category })}
                             className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium"
@@ -537,6 +560,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                           <Trash2 className="w-4 h-4" />
                         </Button>
                         <Button
+                          id={index === 0 ? "coach-history-btn" : undefined}
                           size="sm"
                           variant="ghost"
                           onClick={() => toggleExpand(policy.id)}
@@ -626,7 +650,8 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                   )}
                 </div>
               );
-            })}
+            });
+            })()}
 
             {filteredPolicies.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
@@ -671,7 +696,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
       </AlertDialog>
 
       {/* 테스트용: 정책 관리 화면 접속 시 무조건 표시 */}
-      <AutoPolicyReviewNotification 
+      <AutoPolicyReviewNotification
         isAdmin={true}
         onReview={onOpenEmbedding ? () => {
           const policy = policies.find(p => p.status === "pending");
@@ -680,6 +705,9 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
           }
         } : undefined}
       />
+
+      {/* 코치마크 */}
+      <PolicyCoachMark show={showCoach} onClose={stopCoach} />
     </div>
   );
 }
