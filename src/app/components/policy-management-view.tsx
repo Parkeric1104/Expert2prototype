@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { 
-  Shield, FileText, Search, Filter, Download, ChevronDown, ChevronUp, 
-  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle, Database
+import { useState, useEffect } from "react";
+import {
+  Shield, FileText, Search, Filter, Download, ChevronDown, ChevronUp,
+  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle, Database, HelpCircle
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -25,6 +25,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { PolicyRegistrationModal } from "@/app/components/policy-registration-modal";
 import { AutoPolicyReviewNotification } from "@/app/components/auto-policy-review-modal";
+import { PolicyCoachmark } from "@/app/components/policy-coachmark";
 import { toast } from "sonner";
 
 interface PolicyFile {
@@ -238,6 +239,39 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
   const [deletingPolicy, setDeletingPolicy] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [showCoachmark, setShowCoachmark] = useState(false);
+
+  // 코치마크 표시 여부 확인 (로컬스토리지)
+  useEffect(() => {
+    const hasSeenCoachmark = localStorage.getItem("policy-coachmark-completed");
+    // 정책이 있고, 코치마크를 아직 보지 않았을 때만 표시
+    if (!hasSeenCoachmark && policies.length > 0) {
+      // 페이지 로드 후 1초 뒤에 코치마크 표시 (DOM이 완전히 렌더링되도록)
+      const timer = setTimeout(() => {
+        setShowCoachmark(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [policies.length]);
+
+  const handleCoachmarkComplete = () => {
+    localStorage.setItem("policy-coachmark-completed", "true");
+    setShowCoachmark(false);
+    toast.success("가이드 투어가 완료되었습니다!");
+  };
+
+  const handleCoachmarkSkip = () => {
+    localStorage.setItem("policy-coachmark-completed", "true");
+    setShowCoachmark(false);
+  };
+
+  const handleRestartCoachmark = () => {
+    localStorage.removeItem("policy-coachmark-completed");
+    setShowCoachmark(false);
+    setTimeout(() => {
+      setShowCoachmark(true);
+    }, 200);
+  };
 
   const categories = [
     "취업규칙",
@@ -421,14 +455,27 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                 등록된 정책 문서를 관리하고 새로운 문서를 추가할 수 있습니다.
               </p>
             </div>
-            <Button
-              onClick={() => setShowRegistrationModal(true)}
-              className="gap-2"
-              size="lg"
-            >
-              <Plus className="w-5 h-5" />
-              등록하기
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleRestartCoachmark}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+                title="가이드 투어 다시 보기"
+              >
+                <HelpCircle className="w-5 h-5" />
+                도움말
+              </Button>
+              <Button
+                onClick={() => setShowRegistrationModal(true)}
+                className="gap-2"
+                size="lg"
+                data-coachmark="register-button"
+              >
+                <Plus className="w-5 h-5" />
+                등록하기
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -438,7 +485,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
         <div className="max-w-6xl mx-auto space-y-6">
           {/* 검색 및 필터 */}
           <div className="flex gap-3">
-            <div className="flex-1 relative">
+            <div className="flex-1 relative" data-coachmark="search-input">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="정책 이름 또는 카테고리로 검색..."
@@ -448,7 +495,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
               />
             </div>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px]" data-coachmark="filter-select">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
@@ -463,14 +510,16 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
           </div>
 
           {/* 정책 목록 */}
-          <div className="space-y-3">
-            {filteredPolicies.map((policy) => {
+          <div className="space-y-3" data-coachmark="policy-list">
+            {filteredPolicies.map((policy, index) => {
               const displayInfo = getDisplayInfo(policy);
-              
+              const isFirstPolicy = index === 0;
+
               return (
                 <div
                   key={policy.id}
                   className="border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-colors bg-card"
+                  data-policy-item={isFirstPolicy ? "first" : undefined}
                 >
                   {/* 정책 헤더 */}
                   <div className="p-4">
@@ -485,7 +534,9 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                             <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs font-medium whitespace-nowrap">
                               {policy.category}
                             </span>
-                            {getStatusBadge(displayInfo.status)}
+                            <span data-coachmark={isFirstPolicy ? "status-badge" : undefined}>
+                              {getStatusBadge(displayInfo.status)}
+                            </span>
                           </div>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                             <span>등록일: {displayInfo.date}</span>
@@ -503,6 +554,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                             size="sm"
                             onClick={() => onOpenEmbedding({ id: policy.id, name: policy.name, category: policy.category })}
                             className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-white font-medium"
+                            data-coachmark={isFirstPolicy ? "analysis-button" : undefined}
                           >
                             <Database className="w-4 h-4" />
                             분석 결과보기
@@ -513,6 +565,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                           variant="ghost"
                           onClick={() => handleDownloadPolicy(policy)}
                           title="다운로드"
+                          data-coachmark={isFirstPolicy ? "download-button" : undefined}
                         >
                           <Download className="w-4 h-4" />
                         </Button>
@@ -521,6 +574,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                           variant="ghost"
                           onClick={() => setEditingPolicy(policy.id)}
                           title="수정"
+                          data-coachmark={isFirstPolicy ? "edit-button" : undefined}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -533,6 +587,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                           }}
                           title="삭제"
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          data-coachmark={isFirstPolicy ? "delete-button" : undefined}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -541,6 +596,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
                           variant="ghost"
                           onClick={() => toggleExpand(policy.id)}
                           title="히스토리 보기"
+                          data-coachmark={isFirstPolicy ? "history-button" : undefined}
                         >
                           {expandedPolicy === policy.id ? (
                             <ChevronUp className="w-4 h-4" />
@@ -671,7 +727,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
       </AlertDialog>
 
       {/* 테스트용: 정책 관리 화면 접속 시 무조건 표시 */}
-      <AutoPolicyReviewNotification 
+      <AutoPolicyReviewNotification
         isAdmin={true}
         onReview={onOpenEmbedding ? () => {
           const policy = policies.find(p => p.status === "pending");
@@ -680,6 +736,14 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
           }
         } : undefined}
       />
+
+      {/* 코치마크 */}
+      {showCoachmark && (
+        <PolicyCoachmark
+          onComplete={handleCoachmarkComplete}
+          onSkip={handleCoachmarkSkip}
+        />
+      )}
     </div>
   );
 }
