@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { RotatingTitle } from "@/app/components/rotating-title";
 import { CreditStatus } from "@/app/components/credit-status";
-import { Send, Paperclip, X, FileText } from "lucide-react";
+import { Send, Paperclip, X, FileText, Info } from "lucide-react";
 import { 
   Scale, 
   Calendar, 
@@ -203,25 +203,35 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
         <div className="w-full max-w-[800px] bg-card border border-border rounded-3xl shadow-md flex flex-col overflow-hidden">
           {/* File Upload Preview (inside input area) */}
           {uploadedFiles.length > 0 && (
-            <div className="px-4 pt-3 pb-3 flex flex-wrap gap-1.5 bg-primary/5 border-b border-border/50">
-              {uploadedFiles.map((file, index) => (
-                <div
-                  key={index}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-full"
-                >
-                  <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                  <span className="text-xs font-medium text-foreground truncate max-w-[120px]">
-                    {file.name}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFile(index)}
-                    className="flex-shrink-0 w-4 h-4 bg-indigo-200 dark:bg-indigo-800 hover:bg-indigo-300 dark:hover:bg-indigo-700 rounded-full flex items-center justify-center transition-colors"
+            <div className="flex flex-col bg-primary/5 border-b border-border/50">
+              <div className="px-4 pt-3 pb-2 flex flex-wrap gap-1.5">
+                {uploadedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-full"
                   >
-                    <X className="w-2.5 h-2.5 text-indigo-700 dark:text-indigo-200" />
-                  </button>
-                </div>
-              ))}
+                    <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                    <span className="text-xs font-medium text-foreground truncate max-w-[120px]">
+                      {file.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="flex-shrink-0 w-4 h-4 bg-indigo-200 dark:bg-indigo-800 hover:bg-indigo-300 dark:hover:bg-indigo-700 rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-2.5 h-2.5 text-indigo-700 dark:text-indigo-200" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {/* File upload guide message */}
+              <div className="mx-4 mb-3 px-3 py-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800/50 rounded-xl flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 leading-relaxed">
+                  파일 첨부 시 <span className="font-semibold">노무 관련 질문</span>으로 라우팅됩니다.
+                  <br />세법 관련 질문은 파일을 제거한 후 질문해 주세요.
+                </p>
+              </div>
             </div>
           )}
 
@@ -243,7 +253,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
 
             {/* Center: Textarea Field */}
             <textarea
-              placeholder="무엇이 궁금하신가요?"
+              placeholder={uploadedFiles.length > 0 ? "첨부된 파일에 대해 궁금한 점을 질문해 주세요..." : "무엇이 궁금하신가요?"}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {

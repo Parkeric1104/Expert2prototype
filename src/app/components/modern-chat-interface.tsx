@@ -30,7 +30,8 @@ import {
   Award,
   DollarSign,
   ClipboardCheck,
-  UserCheck
+  UserCheck,
+  Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { getDummyResponse } from "@/app/data/dummy-responses";
@@ -1185,6 +1186,7 @@ ${integratedData.aiOpinionSummary}
   const getPlaceholder = (): string => {
     if (isDebateInProgress) return "AI 심층분석 진행 중...";
     if (isAnswerLoading) return "답변 생성 중...";
+    if (uploadedFiles.length > 0) return "첨부된 파일에 대해 궁금한 점을 질문해 주세요...";
     return "추가 질문을 입력하세요...";
   };
 
@@ -1379,6 +1381,17 @@ ${integratedData.aiOpinionSummary}
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* File upload guide message */}
+            {uploadedFiles.length > 0 && (
+              <div className="mx-4 mb-1 px-3 py-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800/50 rounded-xl flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 leading-relaxed">
+                  파일 첨부 시 <span className="font-semibold">노무 관련 질문</span>으로 라우팅됩니다.
+                  <br />세법 관련 질문은 파일을 제거한 후 질문해 주세요.
+                </p>
               </div>
             )}
 
