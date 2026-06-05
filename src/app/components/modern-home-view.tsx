@@ -1,14 +1,14 @@
 import { useState, useRef } from "react";
 import { RotatingTitle } from "@/app/components/rotating-title";
 import { CreditStatus } from "@/app/components/credit-status";
-import { Send, Paperclip, X, FileText, Info } from "lucide-react";
-import { 
-  Scale, 
-  Calendar, 
-  Clock, 
-  Shield, 
-  Users, 
-  Briefcase, 
+import { Send, Paperclip, X, FileText, File, AlertCircle, CheckCircle2, Info } from "lucide-react";
+import {
+  Scale,
+  Calendar,
+  Clock,
+  Shield,
+  Users,
+  Briefcase,
   BookOpen,
   Award,
   DollarSign,
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 interface ModernHomeViewProps {
-  onStartChat: (query: string, selectedLaws: string[], relatedLaws?: string[], questionType?: string) => void;
+  onStartChat: (query: string, selectedLaws: string[], relatedLaws?: string[], questionType?: string, chatMode?: "search" | "opinion") => void;
   onOpenLawSelector: () => void;
   selectedLaws: string[];
 }
@@ -41,7 +41,24 @@ const FLOATING_ICONS = [
 export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }: ModernHomeViewProps) {
   const [inputValue, setInputValue] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [chatMode, setChatMode] = useState<"search" | "opinion">("search");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 파일 크기 포맷팅
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  // 파일 타입별 아이콘 반환
+  const getFileIcon = (fileName: string) => {
+    if (fileName.endsWith('.pdf')) return '📄';
+    if (fileName.endsWith('.docx')) return '📝';
+    if (fileName.endsWith('.hwp')) return '📋';
+    return '📎';
+  };
 
   const prompts = [
     // 🟢 간단한 답변 테스트 - Simple Response Card
@@ -122,9 +139,19 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     ];
 
     const validFiles: { name: string; size: number }[] = [];
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
+
     for (const file of files) {
       if (!allowedTypes.includes(file.type) && !file.name.endsWith('.hwp')) {
-        alert('지원되 않는 파일 형식입니다. PDF, DOCX, HWP 파일만 업로드 가능합니다.');
+        alert('지원되지 않는 파일 형식입니다. PDF, DOCX, HWP 파일만 업로드 가능합니다.');
+        return;
+      }
+      if (file.size > maxFileSize) {
+        alert(`파일 크기는 10MB 이하만 가능합니다. (${file.name})`);
+        return;
+      }
+      if (uploadedFiles.length + validFiles.length >= 5) {
+        alert('최대 5개 파일까지만 첨부 가능합니다.');
         return;
       }
       validFiles.push({ name: file.name, size: file.size });
@@ -137,6 +164,38 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     }
   };
 
+  // 드래그 앤 드롭 핸들러
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    const dataTransfer = new DataTransfer();
+    for (let i = 0; i < files.length; i++) {
+      dataTransfer.items.add(files[i]);
+    }
+
+    const input = fileInputRef.current;
+    if (input) {
+      input.files = dataTransfer.files;
+      const event = new Event('change', { bubbles: true });
+      input.dispatchEvent(event);
+      handleFileUpload({ target: input } as any);
+    }
+  };
+
   const handleRemoveFile = (index: number) => {
     const newFiles = uploadedFiles.filter((_, i) => i !== index);
     setUploadedFiles(newFiles);
@@ -145,7 +204,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (inputValue.trim()) {
-      onStartChat(inputValue, selectedLaws);
+      onStartChat(inputValue, selectedLaws, undefined, undefined, chatMode);
       setInputValue("");
       setUploadedFiles([]); // Clear file on submit
     }
@@ -153,7 +212,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
 
   const handlePromptClick = (promptText: string, relatedLaws: string[], questionType: string) => {
     // 질문을 직접 채팅으로 전송 (questionType 포함)
-    onStartChat(promptText, selectedLaws, relatedLaws, questionType);
+    onStartChat(promptText, selectedLaws, relatedLaws, questionType, chatMode);
   };
 
   return (
@@ -200,38 +259,129 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
         <RotatingTitle />
 
         {/* Integrated Search Bar with Files Inside */}
-        <div className="w-full max-w-[800px] bg-card border border-border rounded-3xl shadow-md flex flex-col overflow-hidden">
+        <div
+          className={`w-full max-w-[800px] bg-card border-2 rounded-3xl shadow-md flex flex-col overflow-hidden transition-all relative ${
+            isDragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-border'
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {/* 드래그 앤 드롭 오버레이 */}
+          {isDragging && (
+            <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-50 flex items-center justify-center rounded-3xl border-2 border-primary border-dashed">
+              <div className="flex flex-col items-center gap-3">
+                <Paperclip className="w-12 h-12 text-primary animate-bounce" />
+                <p className="text-sm font-semibold text-primary">파일을 여기에 놓으세요</p>
+                <p className="text-xs text-muted-foreground">PDF, DOCX, HWP (최대 5개, 10MB)</p>
+              </div>
+            </div>
+          )}
+
+          {/* Mode Selector - 입력 영역 최상단 */}
+          <div className="px-4 pt-4 pb-3 border-b border-border/50 bg-muted/20">
+            <div className="flex items-center justify-between gap-4">
+              {/* 모드 토글 */}
+              <div className="inline-flex items-center gap-1.5 p-1 bg-background rounded-xl border border-border/50">
+                <button
+                  onClick={() => setChatMode("search")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    chatMode === "search"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5" />
+                    검색 모드
+                  </span>
+                </button>
+                <button
+                  onClick={() => setChatMode("opinion")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    chatMode === "opinion"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    의견서 작성
+                  </span>
+                </button>
+              </div>
+
+              {/* 모드 설명 */}
+              <div className="flex-1 text-right">
+                {chatMode === "search" ? (
+                  <p className="text-xs text-muted-foreground">
+                    💡 멀티턴 질문 후 <strong className="text-foreground">종합 의견서</strong> 작성
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    📝 각 답변마다 <strong className="text-foreground">개별 의견서</strong> 작성 (2턴 후 첨부 제한)
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* File Upload Preview (inside input area) */}
           {uploadedFiles.length > 0 && (
-            <div className="flex flex-col bg-primary/5 border-b border-border/50">
-              <div className="px-4 pt-3 pb-2 flex flex-wrap gap-1.5">
+            <div className="px-4 pt-4 pb-3 bg-gradient-to-r from-primary/5 to-indigo-50/50 dark:from-primary/10 dark:to-indigo-950/30 border-b border-border/50">
+              {/* 안내 메시지 */}
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-semibold text-green-600 dark:text-green-400">{uploadedFiles.length}개 파일</span>이 첨부되었습니다. 문서 내용을 분석하여 답변에 반영합니다.
+                </p>
+              </div>
+
+              {/* 파일 목록 */}
+              <div className="flex flex-wrap gap-2">
                 {uploadedFiles.map((file, index) => (
                   <div
                     key={index}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-full"
+                    className="group inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-900 border border-indigo-200 dark:border-indigo-800 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-700 transition-all shadow-sm hover:shadow-md"
                   >
-                    <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                    <span className="text-xs font-medium text-foreground truncate max-w-[120px]">
-                      {file.name}
-                    </span>
+                    <span className="text-lg flex-shrink-0">{getFileIcon(file.name)}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-medium text-foreground truncate max-w-[150px]">
+                        {file.name}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatFileSize(file.size)}
+                      </span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => handleRemoveFile(index)}
-                      className="flex-shrink-0 w-4 h-4 bg-indigo-200 dark:bg-indigo-800 hover:bg-indigo-300 dark:hover:bg-indigo-700 rounded-full flex items-center justify-center transition-colors"
+                      className="flex-shrink-0 w-5 h-5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-all opacity-70 group-hover:opacity-100"
+                      title="파일 삭제"
                     >
-                      <X className="w-2.5 h-2.5 text-indigo-700 dark:text-indigo-200" />
+                      <X className="w-3 h-3 text-red-600 dark:text-red-400" />
                     </button>
                   </div>
                 ))}
               </div>
-              {/* File upload guide message */}
-              <div className="mx-4 mb-3 px-3 py-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-800/50 rounded-xl flex items-start gap-2">
+
+              {/* 노무 라우팅 안내 */}
+              <div className="flex items-start gap-1.5 mt-3 px-1">
                 <Info className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-indigo-600 dark:text-indigo-400 leading-relaxed">
-                  파일 첨부 시 <span className="font-semibold">노무 관련 질문</span>으로 라우팅됩니다.
-                  <br />세법 관련 질문은 파일을 제거한 후 질문해 주세요.
+                <p className="text-[11px] text-indigo-600 dark:text-indigo-400 leading-relaxed">
+                  파일 첨부 시 <span className="font-semibold">노무 관련 질문</span>으로 라우팅됩니다. 세법 관련 질문은 파일을 제거한 후 질문해 주세요.
                 </p>
               </div>
+
+              {/* 파일 제한 안내 */}
+              {uploadedFiles.length < 5 && (
+                <div className="flex items-start gap-1.5 mt-1.5 px-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-muted-foreground/80">
+                    최대 5개, 파일당 10MB 이하 (PDF, DOCX, HWP) • 드래그하여 파일 추가 가능
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -253,7 +403,11 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
 
             {/* Center: Textarea Field */}
             <textarea
-              placeholder={uploadedFiles.length > 0 ? "첨부된 파일에 대해 궁금한 점을 질문해 주세요..." : "무엇이 궁금하신가요?"}
+              placeholder={
+                uploadedFiles.length > 0
+                  ? "첨부된 파일에 대해 궁금한 점을 질문해 주세요..."
+                  : "무엇이 궁금하신가요? (문서를 첨부하면 더 정확한 답변을 받을 수 있습니다)"
+              }
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
@@ -284,14 +438,28 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               className="hidden"
               multiple
             />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-10 h-10 bg-muted hover:bg-muted/80 rounded-full transition-colors flex items-center justify-center flex-shrink-0 mt-1"
-              title="파일 첨부 (PDF, DOCX, HWP)"
-            >
-              <Paperclip className="w-5 h-5" />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadedFiles.length >= 5}
+                className={`w-10 h-10 rounded-full transition-all flex items-center justify-center flex-shrink-0 ${
+                  uploadedFiles.length >= 5
+                    ? 'bg-muted/50 cursor-not-allowed opacity-50'
+                    : uploadedFiles.length > 0
+                    ? 'bg-primary/10 hover:bg-primary/20 text-primary'
+                    : 'bg-muted hover:bg-muted/80'
+                }`}
+                title={uploadedFiles.length >= 5 ? '최대 5개까지 첨부 가능' : '파일 첨부 (PDF, DOCX, HWP)'}
+              >
+                <Paperclip className={`w-5 h-5 ${uploadedFiles.length > 0 ? 'text-primary' : ''}`} />
+              </button>
+              {uploadedFiles.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md animate-pulse">
+                  {uploadedFiles.length}
+                </span>
+              )}
+            </div>
 
             {/* Right: Send Button */}
             <button
@@ -340,20 +508,45 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
           }
         }
 
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        /* 파일 카드 애니메이션 */
+        .group {
+          animation: slideIn 0.3s ease-out;
+        }
+
         /* 커스텀 스크롤바 스타일 */
         textarea::-webkit-scrollbar {
           width: 6px;
         }
-        
+
         textarea::-webkit-scrollbar-track {
           background: transparent;
         }
-        
+
         textarea::-webkit-scrollbar-thumb {
           background: rgba(99, 102, 241, 0.3);
           border-radius: 3px;
         }
-        
+
         textarea::-webkit-scrollbar-thumb:hover {
           background: rgba(99, 102, 241, 0.5);
         }

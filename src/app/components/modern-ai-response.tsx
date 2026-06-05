@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { 
-  Scale, FileText, BookOpen, 
-  Copy, CheckCheck, ThumbsUp, ThumbsDown, Share2,
+import {
+  Scale, FileText, BookOpen,
+  Copy, CheckCheck, ThumbsUp, ThumbsDown,
   AlertCircle, Sparkles, ArrowRight, Check
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { AnswerDetailSidebar } from "@/app/components/answer-detail-sidebar";
+import { OpinionFeedbackModal } from "@/app/components/opinion-feedback-modal";
 import { toast } from "sonner";
 
 interface Source {
@@ -36,6 +37,7 @@ interface ModernAIResponseProps {
   hasAIOpinion?: boolean;
   questionSummary?: string; // 질문 요약 추가
   onOpenDetailView?: () => void; // 상세 답변 보기 콜백 추가
+  showActionButtons?: boolean; // 액션 버튼 표시 여부 (검색 모드 vs 의견서 작성 모드)
 }
 
 export function ModernAIResponse({
@@ -52,9 +54,12 @@ export function ModernAIResponse({
   hasAIOpinion = false,
   questionSummary,
   onOpenDetailView,
+  showActionButtons = true, // 기본값은 true (의견서 작성 모드)
 }: ModernAIResponseProps) {
   const [copied, setCopied] = useState(false);
   const [showDetailSidebar, setShowDetailSidebar] = useState(false);
+  const [thumbFeedback, setThumbFeedback] = useState<"up" | "down" | null>(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   const handleCopy = () => {
     let fullText = `
@@ -138,6 +143,20 @@ ${reviewContent}
     toast.info("공유 기능은 곧 제공될 예정입니다");
   };
 
+  const handleThumbsUp = () => {
+    setThumbFeedback("up");
+    setShowFeedbackModal(true);
+  };
+
+  const handleThumbsDown = () => {
+    setThumbFeedback("down");
+    setShowFeedbackModal(true);
+  };
+
+  const handleFeedbackComplete = () => {
+    setShowFeedbackModal(false);
+  };
+
   const handleOpenDetail = () => {
     if (onOpenDetailView) {
       onOpenDetailView();
@@ -149,49 +168,57 @@ ${reviewContent}
   return (
     <>
       <div className="flex justify-start mb-6">
-        {/* 답변 컨테이너 */}
-        <div className="max-w-[650px] flex flex-col gap-2">
-          {/* 답변 버블 */}
-          <div className="rounded-2xl px-5 py-3.5 bg-muted/50 text-foreground">
+        {/* 답변 컨테이너 - Toss Style Card */}
+        <div
+          className="max-w-[650px] flex flex-col gap-2 rounded-[20px] px-6 py-5"
+          style={{
+            background: '#FFFFFF',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+          }}
+        >
+          {/* 답변 콘텐츠 */}
+          <div className="text-foreground">
             {/* 분석 완료 메시지 */}
-            <div className="mb-3 pb-3 border-b border-border/50">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="mb-4 pb-3" style={{ borderBottom: '1px solid #FAFAFB' }}>
+              <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-green-500" />
-                <p className="text-xs text-muted-foreground font-medium">
+                <p className="text-xs font-medium" style={{ color: '#8B95A1' }}>
                   질문 분석이 완료되었습니다
                 </p>
               </div>
             </div>
 
             {/* 결론 */}
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Scale className="w-4 h-4 text-indigo-500" />
-                <h3 className="text-sm font-bold text-foreground">결론</h3>
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Scale className="w-4 h-4" style={{ color: '#3182F6' }} />
+                <h3 className="text-sm font-bold" style={{ color: '#191F28' }}>결론</h3>
               </div>
-              <p className="text-sm leading-relaxed text-foreground whitespace-pre-line">
+              <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#191F28', lineHeight: '1.6' }}>
                 {conclusion}
               </p>
             </div>
 
-            {/* 상세 답변 보기 버튼 */}
-            <Button
+            {/* 상세 답변 보기 버튼 - Toss Style */}
+            <button
               onClick={handleOpenDetail}
-              variant="outline"
-              size="sm"
-              className="w-full gap-2 mt-2 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20"
+              className="w-full px-4 py-3 rounded-xl flex items-center justify-center gap-2 transition-all hover:opacity-80"
+              style={{
+                background: '#F2F4F6',
+                color: '#4E5968',
+              }}
             >
               <BookOpen className="w-4 h-4" />
-              <span className="text-xs font-semibold">상세 답변 보기</span>
+              <span className="text-sm font-bold">상세 답변 보기</span>
               <ArrowRight className="w-4 h-4" />
-            </Button>
+            </button>
 
-            {/* Disclaimer */}
+            {/* Disclaimer - Toss Style */}
             {disclaimer && (
-              <div className="mt-3 pt-3 border-t border-border/50">
-                <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+              <div className="mt-4 pt-3" style={{ borderTop: '1px solid #FAFAFB' }}>
+                <div className="flex items-start gap-2 p-3 rounded-xl" style={{ background: '#FFF9E6' }}>
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: '#F59E0B' }} />
+                  <p className="text-xs leading-relaxed" style={{ color: '#92400E' }}>
                     {disclaimer}
                   </p>
                 </div>
@@ -201,47 +228,98 @@ ${reviewContent}
         </div>
       </div>
 
-      {/* Action Buttons - 메시지 밖 영역 */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        {/* 1. 법령 재선택 버튼: AI 심층분석 버튼 선택 후에는 미노출 */}
-        {onRefineSearch && !hasAIOpinion && (
-          <Button
-            onClick={onRefineSearch}
-            variant="outline"
-            size="sm"
-            className="gap-1.5 h-9 text-xs border-border bg-background hover:bg-muted"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            법령 재선택
-          </Button>
-        )}
-        
-        {/* 2. 의견서 작성 버튼: 항상 노출 */}
-        {onDraftDocument && (
-          <Button
-            onClick={onDraftDocument}
-            variant="outline"
-            size="sm"
-            className="gap-1.5 h-9 text-xs border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            의견서 작성
-          </Button>
-        )}
-        
-        {/* 3. AI 심층분석 버튼: 선택 후에는 비노출 */}
-        {onRequestAIOpinion && !hasAIOpinion && (
-          <Button
-            onClick={onRequestAIOpinion}
-            variant="outline"
-            size="sm"
-            className="gap-1.5 h-9 text-xs border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-950/30"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            AI 심층분석
-          </Button>
-        )}
-      </div>
+      {/* Action Buttons - Toss Style Card Integration (의견서 작성 모드에서만 표시) */}
+      {showActionButtons && (
+        <div className="mb-6">
+          {/* Toss Style Divider */}
+          <div className="h-px" style={{ background: '#FAFAFB' }} />
+
+          {/* Action Button Zone */}
+          <div className="pt-4 flex items-center justify-between">
+            {/* Left: Action Buttons */}
+            <div className="flex items-center gap-3">
+              {/* 법령 재선택 버튼 */}
+              {onRefineSearch && !hasAIOpinion && (
+                <button
+                  onClick={onRefineSearch}
+                  className="flex items-center gap-1.5 text-sm font-medium transition-all hover:opacity-70"
+                  style={{ color: '#4E5968' }}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  법령 재선택
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {/* AI 심층분석 버튼 */}
+              {onRequestAIOpinion && !hasAIOpinion && (
+                <button
+                  onClick={onRequestAIOpinion}
+                  className="flex items-center gap-1.5 text-sm font-medium transition-all hover:opacity-70"
+                  style={{ color: '#4E5968' }}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  AI 심층분석
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Right: Primary Action + Feedback */}
+            <div className="flex items-center gap-3">
+              {/* 피드백 버튼 */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleThumbsUp}
+                  className={`p-1.5 rounded-lg text-xs transition-all ${
+                    thumbFeedback === "up"
+                      ? "bg-green-100 dark:bg-green-950/30 text-green-600 dark:text-green-400"
+                      : "text-muted-foreground hover:bg-muted/50"
+                  }`}
+                  aria-label="도움이 됐어요"
+                >
+                  <ThumbsUp className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleThumbsDown}
+                  className={`p-1.5 rounded-lg text-xs transition-all ${
+                    thumbFeedback === "down"
+                      ? "bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400"
+                      : "text-muted-foreground hover:bg-muted/50"
+                  }`}
+                  aria-label="아쉬워요"
+                >
+                  <ThumbsDown className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* 의견서 작성 버튼 - Toss Primary Action */}
+              {onDraftDocument && (
+                <button
+                  onClick={onDraftDocument}
+                  className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:opacity-90"
+                  style={{
+                    background: '#E8F3FF',
+                    color: '#1B64DA',
+                  }}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    의견서 작성
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 피드백 모달 */}
+      <OpinionFeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        onComplete={handleFeedbackComplete}
+      />
 
       {/* Answer Detail Sidebar */}
       <AnswerDetailSidebar
