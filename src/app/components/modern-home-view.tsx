@@ -273,119 +273,94 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
             </div>
           )}
 
-          <div className="flex items-center px-4 py-3.5 gap-2.5 min-h-[60px]">
-            {/* 법령 선택 칩 */}
+          {/* 텍스트 입력 영역 */}
+          <textarea
+            placeholder="궁금한 점을 편하게 작성해 주세요."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
+            rows={1}
+            className="w-full bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground resize-none overflow-y-auto px-5 pt-4 pb-2"
+            style={{ minHeight: '52px', maxHeight: '120px' }}
+            onInput={(e) => {
+              const t = e.target as HTMLTextAreaElement;
+              t.style.height = 'auto';
+              t.style.height = Math.min(t.scrollHeight, 120) + 'px';
+            }}
+          />
+
+          {/* 파일 칩 */}
+          {uploadedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 px-5 pb-2">
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="inline-flex items-center gap-1.5 h-7 px-2.5 bg-muted/70 rounded-lg">
+                  <span className="text-xs">{getFileIcon(file.name)}</span>
+                  <span className="text-xs font-medium text-foreground truncate max-w-[80px]">{file.name}</span>
+                  <button type="button" onClick={() => handleRemoveFile(index)} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 하단 툴바: 좌(설정) — 우(액션) */}
+          <div className="flex items-center gap-2 px-3 pb-3 pt-1">
+
+            {/* 좌: 법령 선택 */}
             <button
               onClick={onOpenLawSelector}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted hover:bg-muted/70 rounded-lg text-sm font-medium text-foreground whitespace-nowrap flex-shrink-0 transition-colors"
+              className="h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors whitespace-nowrap"
             >
-              <span className="text-sm">⚖️</span>
-              <span>
-                {selectedLaws.length === 0 || selectedLaws.length === 15
-                  ? "전체"
-                  : `${selectedLaws.length}개`}
-              </span>
-              <ChevronDown className="w-3 h-3 text-muted-foreground" />
+              <span>⚖️</span>
+              <span>{selectedLaws.length === 0 || selectedLaws.length === 15 ? "전체 법령" : `${selectedLaws.length}개 법령`}</span>
+              <ChevronDown className="w-3 h-3" />
             </button>
 
-            {/* 구분선 */}
-            <div className="w-px h-4 bg-border flex-shrink-0" />
-
-            {/* 파일 칩 - 인라인 */}
-            {uploadedFiles.map((file, index) => (
-              <div
-                key={index}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/70 rounded-lg flex-shrink-0"
-              >
-                <span className="text-sm">{getFileIcon(file.name)}</span>
-                <span className="text-xs font-medium text-foreground truncate max-w-[80px]">
-                  {file.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveFile(index)}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-
-            {/* 텍스트 입력 */}
-            <textarea
-              placeholder="궁금한 점을 편하게 작성해 주세요."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              rows={1}
-              className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground resize-none overflow-y-auto"
-              style={{ minHeight: '28px', maxHeight: '120px' }}
-              onInput={(e) => {
-                const t = e.target as HTMLTextAreaElement;
-                t.style.height = 'auto';
-                t.style.height = Math.min(t.scrollHeight, 120) + 'px';
-              }}
-            />
-
-            {/* 모드 토글 */}
-            <div className="inline-flex items-center p-0.5 bg-muted/60 rounded-lg flex-shrink-0">
+            {/* 좌: 모드 토글 */}
+            <div className="h-8 inline-flex items-center p-0.5 bg-muted/60 rounded-lg">
               <button
                 onClick={() => setChatMode("search")}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                  chatMode === "search"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
+                  chatMode === "search" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
-              >
-                검색
-              </button>
+              >검색</button>
               <button
                 onClick={() => setChatMode("opinion")}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                  chatMode === "opinion"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
+                  chatMode === "opinion" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
-              >
-                의견서
-              </button>
+              >의견서</button>
             </div>
 
-            {/* 파일 첨부 버튼 */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept=".pdf,.docx,.hwp"
-              className="hidden"
-              multiple
-            />
+            <div className="flex-1" />
+
+            {/* 우: 파일 첨부 */}
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".pdf,.docx,.hwp" className="hidden" multiple />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadedFiles.length >= 5}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                uploadedFiles.length >= 5
-                  ? 'opacity-30 cursor-not-allowed text-muted-foreground'
-                  : uploadedFiles.length > 0
-                  ? 'text-primary bg-primary/10 hover:bg-primary/15'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+              className={`h-8 w-8 rounded-xl flex items-center justify-center transition-colors ${
+                uploadedFiles.length >= 5 ? 'opacity-30 cursor-not-allowed text-muted-foreground'
+                : uploadedFiles.length > 0 ? 'text-primary bg-primary/10 hover:bg-primary/15'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
               }`}
               title="파일 첨부 (PDF, DOCX, HWP)"
             >
               <Paperclip className="w-4 h-4" />
             </button>
 
-            {/* 전송 버튼 */}
+            {/* 우: 전송 */}
             <button
               onClick={handleSubmit}
               disabled={!inputValue.trim()}
-              className="w-9 h-9 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+              className="h-8 w-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
             >
               <ArrowUp className="w-4 h-4" />
             </button>
