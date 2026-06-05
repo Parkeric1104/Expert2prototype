@@ -294,36 +294,21 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
             }}
           />
 
-          {/* 파일 칩 */}
-          {uploadedFiles.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 px-5 pb-2">
-              {uploadedFiles.map((file, index) => (
-                <div key={index} className="inline-flex items-center gap-1.5 h-7 px-2.5 bg-muted/70 rounded-lg">
-                  <span className="text-xs">{getFileIcon(file.name)}</span>
-                  <span className="text-xs font-medium text-foreground truncate max-w-[80px]">{file.name}</span>
-                  <button type="button" onClick={() => handleRemoveFile(index)} className="text-muted-foreground hover:text-foreground">
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* 툴바: [⚖️법령] [검색|의견서] | [파일칩…] [flex] [📎] [↑] */}
+          <div className="flex items-center gap-1.5 px-3 pb-3 pt-1 min-h-[44px]">
 
-          {/* 하단 툴바: 좌(설정) — 우(액션) */}
-          <div className="flex items-center gap-2 px-3 pb-3 pt-1">
-
-            {/* 좌: 법령 선택 */}
+            {/* 좌 고정: 법령 선택 */}
             <button
               onClick={onOpenLawSelector}
-              className="h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors whitespace-nowrap"
+              className="h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors whitespace-nowrap flex-shrink-0"
             >
               <span>⚖️</span>
               <span>{selectedLaws.length === 0 || selectedLaws.length === 15 ? "전체 법령" : `${selectedLaws.length}개 법령`}</span>
               <ChevronDown className="w-3 h-3" />
             </button>
 
-            {/* 좌: 모드 토글 */}
-            <div className="h-8 inline-flex items-center p-0.5 bg-muted/60 rounded-lg">
+            {/* 좌 고정: 모드 토글 */}
+            <div className="h-8 inline-flex items-center p-0.5 bg-muted/60 rounded-lg flex-shrink-0">
               <button
                 onClick={() => setChatMode("search")}
                 className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
@@ -338,15 +323,29 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               >의견서</button>
             </div>
 
+            {/* 구분선 */}
+            <div className="w-px h-4 bg-border flex-shrink-0 mx-0.5" />
+
+            {/* 중간 가변: 파일 칩 */}
+            {uploadedFiles.map((file, index) => (
+              <div key={index} className="inline-flex items-center gap-1.5 h-7 px-2.5 bg-muted/70 rounded-lg flex-shrink-0">
+                <span className="text-xs">{getFileIcon(file.name)}</span>
+                <span className="text-xs font-medium text-foreground truncate max-w-[80px]">{file.name}</span>
+                <button type="button" onClick={() => handleRemoveFile(index)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+
             <div className="flex-1" />
 
-            {/* 우: 파일 첨부 */}
+            {/* 우 고정: 파일 첨부 */}
             <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".pdf,.docx,.hwp" className="hidden" multiple />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadedFiles.length >= 5}
-              className={`h-8 w-8 rounded-xl flex items-center justify-center transition-colors ${
+              className={`h-8 w-8 rounded-xl flex items-center justify-center transition-colors flex-shrink-0 ${
                 uploadedFiles.length >= 5 ? 'opacity-30 cursor-not-allowed text-muted-foreground'
                 : uploadedFiles.length > 0 ? 'text-primary bg-primary/10 hover:bg-primary/15'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
@@ -356,11 +355,11 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               <Paperclip className="w-4 h-4" />
             </button>
 
-            {/* 우: 전송 */}
+            {/* 우 고정: 전송 */}
             <button
               onClick={handleSubmit}
               disabled={!inputValue.trim()}
-              className="h-8 w-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+              className="h-8 w-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
             >
               <ArrowUp className="w-4 h-4" />
             </button>
