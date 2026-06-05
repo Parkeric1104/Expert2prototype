@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { RotatingTitle } from "@/app/components/rotating-title";
 import { CreditStatus } from "@/app/components/credit-status";
-import { Send, Paperclip, X, FileText, File, AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight } from "lucide-react";
 import {
   Scale,
   Calendar,
@@ -43,7 +43,9 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [chatMode, setChatMode] = useState<"search" | "opinion">("search");
+  const [selectedCategory, setSelectedCategory] = useState("전체");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const CATEGORIES = ["전체", "근로시간", "임금·퇴직", "채용·해고", "산재"];
 
   // 파일 크기 포맷팅
   const formatFileSize = (bytes: number): string => {
@@ -61,71 +63,53 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
   };
 
   const prompts = [
-    // 🟢 간단한 답변 테스트 - Simple Response Card
     {
       text: "연차 사용 시 회사가 사용 사유를 물어봐도 되나요?",
       displayText: "🟢 연차 사용 시 회사가 사용 사유를 물어봐도 되나요? (간단 답변)",
       questionType: "simple",
-      laws: [
-        "근로기준법 제60조",
-        "근로기준법 시행령 제30조",
-        "대법원 2017다232132 판결"
-      ]
+      category: "근로시간",
+      laws: ["근로기준법 제60조", "근로기준법 시행령 제30조", "대법원 2017다232132 판결"]
     },
-    // ✅ 정상 질문 - 명확하고 상세한 질문
     {
       text: "점심시간에 회사 구내식당으로 이동 중 넘어져 발목을 다쳤어요. 산재 인정될까요?",
       displayText: "점심시간에 회사 구내식당으로 이동 중 넘어져 발목을 다쳤어요. 산재 인정될까요? (정상 질문)",
       questionType: "normal",
-      laws: [
-        "산업재해보상보험법 제37조",
-        "산업재해보상보험법 제5조",
-        "근로기준법 제54조",
-        "대법원 2017두74719 판결",
-        "대법원 2014두3923 판결",
-        "산업안전보건법 제5조",
-        "고용노동부 업무상재해 인정기준"
-      ]
+      category: "산재",
+      laws: ["산업재해보상보험법 제37조", "산업재해보상보험법 제5조", "근로기준법 제54조", "대법원 2017두74719 판결", "대법원 2014두3923 판결", "산업안전보건법 제5조", "고용노동부 업무상재해 인정기준"]
     },
-    // ⚠️ 정보 부족 - 휴먼 피드백 케이스
     {
       text: "퇴직금을 받을 수 있나요?",
       displayText: "퇴직금을 받을 수 있나요? (정보 부족)",
       questionType: "insufficient",
-      laws: [
-        "근로자퇴직급여보장법 제8조",
-        "근로기준법 제34조"
-      ]
+      category: "임금·퇴직",
+      laws: ["근로자퇴직급여보장법 제8조", "근로기준법 제34조"]
     },
-    // ❓ 의미없는 질문 - 휴먼 피드백 케이스
     {
       text: "안녕하세요",
       displayText: "안녕하세요 (의미없는 질문)",
       questionType: "meaningless",
+      category: "전체",
       laws: []
     },
-    // 🚫 범위 밖 질문 - 휴먼 피드백 케이스
     {
       text: "배우자 명의 주택을 담보로 제가 대출받았는데 장기주택저당차입금 이자상환액 소득공제 받을 수 있나요?",
       displayText: "배우자 명의 주택을 담보로 제가 대출받았는데 장기주택저당차입금 이자상환액 소득공제 받을 수 있나요? (범위 밖)",
       questionType: "out-of-scope",
-      laws: [
-        "소득세법 제52조",
-        "소득세법 시행령 제111조",
-        "조세특례제한법 제95조"
-      ]
+      category: "임금·퇴직",
+      laws: ["소득세법 제52조", "소득세법 시행령 제111조", "조세특례제한법 제95조"]
     },
-    // ⛔ 부적절한 질문 - 휴먼 피드백 케이스
     {
       text: "직원을 해고하지 않고 스스로 나가게 만드는 방법이 있을까요?",
       displayText: "직원을 해고하지 않고 스스로 나가게 만드는 방법이 있을까요? (부적절한 질문)",
       questionType: "inappropriate",
-      laws: [
-        "근로기준법 제23조",
-        "근로기준법 제76조"
-      ]
+      category: "채용·해고",
+      laws: ["근로기준법 제23조", "근로기준법 제76조"]
     },
   ];
+
+  const filteredPrompts = selectedCategory === "전체"
+    ? prompts
+    : prompts.filter(p => p.category === selectedCategory);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -254,160 +238,82 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
       </div>
 
       {/* 메인 컨텐츠 */}
-      <div className="w-full max-w-4xl flex flex-col items-center gap-10 relative z-10">
-        {/* Rotating Main Title */}
-        <RotatingTitle />
+      <div className="w-full max-w-[680px] flex flex-col items-center gap-7 relative z-10 py-8">
 
-        {/* Integrated Search Bar with Files Inside */}
+        {/* Avatar + 인사말 */}
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-[88px] h-[88px] rounded-full bg-primary/10 flex items-center justify-center shadow-sm">
+            <span className="text-5xl">⚖️</span>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-foreground">
+              안녕하세요, <span className="text-primary">노무도우미</span>입니다.
+            </p>
+            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+              복잡한 노무 문제로 고민이신가요?<br />저에게 편하게 질문해 주세요.
+            </p>
+          </div>
+        </div>
+
+        {/* 입력 카드 - 단일 행 */}
         <div
-          className={`w-full max-w-[800px] bg-card border-2 rounded-3xl shadow-md flex flex-col overflow-hidden transition-all relative ${
-            isDragging ? 'border-primary bg-primary/5 scale-[1.02]' : 'border-border'
+          className={`w-full bg-card border rounded-2xl shadow-sm overflow-hidden transition-all relative ${
+            isDragging ? 'border-primary bg-primary/5 scale-[1.01] shadow-md' : 'border-border/60'
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {/* 드래그 앤 드롭 오버레이 */}
           {isDragging && (
-            <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-50 flex items-center justify-center rounded-3xl border-2 border-primary border-dashed">
-              <div className="flex flex-col items-center gap-3">
-                <Paperclip className="w-12 h-12 text-primary animate-bounce" />
+            <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl border-2 border-primary border-dashed">
+              <div className="flex flex-col items-center gap-2">
+                <Paperclip className="w-8 h-8 text-primary animate-bounce" />
                 <p className="text-sm font-semibold text-primary">파일을 여기에 놓으세요</p>
-                <p className="text-xs text-muted-foreground">PDF, DOCX, HWP (최대 5개, 10MB)</p>
               </div>
             </div>
           )}
 
-          {/* Mode Selector - 입력 영역 최상단 */}
-          <div className="px-4 pt-4 pb-3 border-b border-border/50 bg-muted/20">
-            <div className="flex items-center justify-between gap-4">
-              {/* 모드 토글 */}
-              <div className="inline-flex items-center gap-1.5 p-1 bg-background rounded-xl border border-border/50">
-                <button
-                  onClick={() => setChatMode("search")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    chatMode === "search"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5" />
-                    검색 모드
-                  </span>
-                </button>
-                <button
-                  onClick={() => setChatMode("opinion")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    chatMode === "opinion"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5" />
-                    의견서 작성
-                  </span>
-                </button>
-              </div>
-
-              {/* 모드 설명 */}
-              <div className="flex-1 text-right">
-                {chatMode === "search" ? (
-                  <p className="text-xs text-muted-foreground">
-                    💡 멀티턴 질문 후 <strong className="text-foreground">종합 의견서</strong> 작성
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    📝 각 답변마다 <strong className="text-foreground">개별 의견서</strong> 작성 (2턴 후 첨부 제한)
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* File Upload Preview (inside input area) */}
-          {uploadedFiles.length > 0 && (
-            <div className="px-4 pt-4 pb-3 bg-gradient-to-r from-primary/5 to-indigo-50/50 dark:from-primary/10 dark:to-indigo-950/30 border-b border-border/50">
-              {/* 안내 메시지 */}
-              <div className="flex items-center gap-2 mb-3 px-1">
-                <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-semibold text-green-600 dark:text-green-400">{uploadedFiles.length}개 파일</span>이 첨부되었습니다. 문서 내용을 분석하여 답변에 반영합니다.
-                </p>
-              </div>
-
-              {/* 파일 목록 */}
-              <div className="flex flex-wrap gap-2">
-                {uploadedFiles.map((file, index) => (
-                  <div
-                    key={index}
-                    className="group inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-900 border border-indigo-200 dark:border-indigo-800 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-700 transition-all shadow-sm hover:shadow-md"
-                  >
-                    <span className="text-lg flex-shrink-0">{getFileIcon(file.name)}</span>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-medium text-foreground truncate max-w-[150px]">
-                        {file.name}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatFileSize(file.size)}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFile(index)}
-                      className="flex-shrink-0 w-5 h-5 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-full flex items-center justify-center transition-all opacity-70 group-hover:opacity-100"
-                      title="파일 삭제"
-                    >
-                      <X className="w-3 h-3 text-red-600 dark:text-red-400" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {/* 노무 라우팅 안내 */}
-              <div className="flex items-start gap-1.5 mt-3 px-1">
-                <Info className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0 mt-0.5" />
-                <p className="text-[11px] text-indigo-600 dark:text-indigo-400 leading-relaxed">
-                  파일 첨부 시 <span className="font-semibold">노무 관련 질문</span>으로 라우팅됩니다. 세법 관련 질문은 파일을 제거한 후 질문해 주세요.
-                </p>
-              </div>
-
-              {/* 파일 제한 안내 */}
-              {uploadedFiles.length < 5 && (
-                <div className="flex items-start gap-1.5 mt-1.5 px-1">
-                  <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-muted-foreground/80">
-                    최대 5개, 파일당 10MB 이하 (PDF, DOCX, HWP) • 드래그하여 파일 추가 가능
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Input Row */}
-          <div className="min-h-16 flex items-start gap-4 px-3 py-3">
-            {/* Left: Law Selector Button */}
+          <div className="flex items-center px-4 py-3.5 gap-2.5 min-h-[60px]">
+            {/* 법령 선택 칩 */}
             <button
               onClick={onOpenLawSelector}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 hover:bg-primary/10 rounded-full transition-colors whitespace-nowrap flex-shrink-0 mt-1"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted hover:bg-muted/70 rounded-lg text-sm font-medium text-foreground whitespace-nowrap flex-shrink-0 transition-colors"
             >
-              <span className="text-base">⚖️</span>
-              <span className="text-sm font-bold text-primary">
+              <span className="text-sm">⚖️</span>
+              <span>
                 {selectedLaws.length === 0 || selectedLaws.length === 15
-                  ? "전체 법령"
-                  : `${selectedLaws.length}개 법령`}
+                  ? "전체"
+                  : `${selectedLaws.length}개`}
               </span>
-              <span className="text-xs text-primary">▼</span>
+              <ChevronDown className="w-3 h-3 text-muted-foreground" />
             </button>
 
-            {/* Center: Textarea Field */}
+            {/* 구분선 */}
+            <div className="w-px h-4 bg-border flex-shrink-0" />
+
+            {/* 파일 칩 - 인라인 */}
+            {uploadedFiles.map((file, index) => (
+              <div
+                key={index}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/70 rounded-lg flex-shrink-0"
+              >
+                <span className="text-sm">{getFileIcon(file.name)}</span>
+                <span className="text-xs font-medium text-foreground truncate max-w-[80px]">
+                  {file.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFile(index)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+
+            {/* 텍스트 입력 */}
             <textarea
-              placeholder={
-                uploadedFiles.length > 0
-                  ? "첨부된 파일에 대해 궁금한 점을 질문해 주세요..."
-                  : "무엇이 궁금하신가요? (문서를 첨부하면 더 정확한 답변을 받을 수 있습니다)"
-              }
+              placeholder="궁금한 점을 편하게 작성해 주세요."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => {
@@ -417,19 +323,16 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
                 }
               }}
               rows={1}
-              className="flex-1 bg-transparent border-none outline-none text-base text-foreground placeholder:text-muted-foreground resize-none overflow-y-auto py-2.5"
-              style={{
-                minHeight: '40px',
-                maxHeight: '200px',
-              }}
+              className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground resize-none overflow-y-auto"
+              style={{ minHeight: '28px', maxHeight: '120px' }}
               onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = Math.min(target.scrollHeight, 200) + 'px';
+                const t = e.target as HTMLTextAreaElement;
+                t.style.height = 'auto';
+                t.style.height = Math.min(t.scrollHeight, 120) + 'px';
               }}
             />
 
-            {/* File Upload Button */}
+            {/* 파일 첨부 버튼 */}
             <input
               type="file"
               ref={fileInputRef}
@@ -438,53 +341,73 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               className="hidden"
               multiple
             />
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadedFiles.length >= 5}
-                className={`w-10 h-10 rounded-full transition-all flex items-center justify-center flex-shrink-0 ${
-                  uploadedFiles.length >= 5
-                    ? 'bg-muted/50 cursor-not-allowed opacity-50'
-                    : uploadedFiles.length > 0
-                    ? 'bg-primary/10 hover:bg-primary/20 text-primary'
-                    : 'bg-muted hover:bg-muted/80'
-                }`}
-                title={uploadedFiles.length >= 5 ? '최대 5개까지 첨부 가능' : '파일 첨부 (PDF, DOCX, HWP)'}
-              >
-                <Paperclip className={`w-5 h-5 ${uploadedFiles.length > 0 ? 'text-primary' : ''}`} />
-              </button>
-              {uploadedFiles.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md animate-pulse">
-                  {uploadedFiles.length}
-                </span>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadedFiles.length >= 5}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                uploadedFiles.length >= 5
+                  ? 'opacity-30 cursor-not-allowed text-muted-foreground'
+                  : uploadedFiles.length > 0
+                  ? 'text-primary bg-primary/10 hover:bg-primary/15'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+              }`}
+              title="파일 첨부 (PDF, DOCX, HWP)"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
 
-            {/* Right: Send Button */}
+            {/* 전송 버튼 */}
             <button
               onClick={handleSubmit}
               disabled={!inputValue.trim()}
-              className="w-12 h-12 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+              className="w-9 h-9 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
             >
-              <Send className="w-5 h-5" />
+              <ArrowUp className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Recommended Prompts: Sentence Style */}
-        <div className="w-full flex flex-col items-center gap-4">
-          {/* 서브타이틀 */}
-          <h3 className="text-sm font-medium text-muted-foreground">추천질문(답변 유형 테스트 질문)</h3>
-          
-          <div className="flex flex-col gap-2 w-full max-w-[800px]">
-            {prompts.map((prompt, index) => (
+        {/* 노무 라우팅 안내 - 카드 밖, 파일 첨부 시에만 */}
+        {uploadedFiles.length > 0 && (
+          <div className="w-full flex items-center gap-1.5 px-1 -mt-3">
+            <Info className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
+            <p className="text-xs text-muted-foreground/80">
+              파일 첨부 시 노무 관련 질문으로 분류됩니다. 세법 관련 질문은 파일을 제거한 후 질문해 주세요.
+            </p>
+          </div>
+        )}
+
+        {/* 추천 질문 - 카테고리 탭 */}
+        <div className="w-full flex flex-col gap-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-sm font-semibold text-foreground whitespace-nowrap">이런 질문도 있어요</span>
+            <div className="flex gap-1.5 flex-wrap">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    selectedCategory === cat
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {filteredPrompts.map((prompt, index) => (
               <button
                 key={index}
                 onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType)}
-                className="text-muted-foreground hover:text-primary transition-colors text-center px-2"
+                className="flex items-center justify-between w-full px-5 py-4 bg-card border border-border/60 rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
               >
-                <span className="text-sm">{prompt.displayText}</span>
+                <span className="text-sm text-foreground leading-snug">{prompt.text}</span>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0 ml-4 transition-colors" />
               </button>
             ))}
           </div>
