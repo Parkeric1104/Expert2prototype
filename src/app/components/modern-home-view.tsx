@@ -273,33 +273,6 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
             </div>
           )}
 
-          {/* 모드 선택 */}
-          <div className="flex items-center gap-0 border-b border-border/40">
-            <button
-              onClick={() => setChatMode("search")}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-semibold transition-all border-b-2 ${
-                chatMode === "search"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <span>🔍 검색</span>
-              <span className="text-[10px] font-normal text-muted-foreground">대화형 · 세션 의견서</span>
-            </button>
-            <div className="w-px h-8 bg-border/40" />
-            <button
-              onClick={() => setChatMode("opinion")}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-semibold transition-all border-b-2 ${
-                chatMode === "opinion"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <span>📝 의견서 작성</span>
-              <span className="text-[10px] font-normal text-muted-foreground">구조화 답변 · 답변별 의견서</span>
-            </button>
-          </div>
-
           <div className="flex items-center px-4 py-3.5 gap-2.5 min-h-[60px]">
             {/* 법령 선택 칩 */}
             <button
@@ -358,6 +331,30 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
                 t.style.height = Math.min(t.scrollHeight, 120) + 'px';
               }}
             />
+
+            {/* 모드 토글 */}
+            <div className="inline-flex items-center p-0.5 bg-muted/60 rounded-lg flex-shrink-0">
+              <button
+                onClick={() => setChatMode("search")}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  chatMode === "search"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                검색
+              </button>
+              <button
+                onClick={() => setChatMode("opinion")}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  chatMode === "opinion"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                의견서
+              </button>
+            </div>
 
             {/* 파일 첨부 버튼 */}
             <input
