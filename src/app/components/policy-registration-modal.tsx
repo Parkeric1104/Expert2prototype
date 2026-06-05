@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, FileText, X, Shield, Box, AlertCircle } from "lucide-react";
+import { Upload, FileText, X, Shield, Box, AlertCircle, Info } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/app/components/ui/dialog";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
@@ -347,6 +347,38 @@ export function PolicyRegistrationModal({
               </div>
             )}
           </div>
+
+          {/* 넛지 안내 — 파일 또는 AI Box 업로드 시 노출 */}
+          {(uploadedFile || selectedAIBoxes.length > 0) && (
+            <div
+              className="flex items-start gap-2.5"
+              style={{
+                backgroundColor: "#EEF2FF",
+                borderRadius: "8px",
+                padding: "12px 16px",
+              }}
+            >
+              <Info
+                style={{
+                  width: "14px",
+                  height: "14px",
+                  color: "#6B7280",
+                  flexShrink: 0,
+                  marginTop: "1px",
+                }}
+              />
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#4B5563",
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
+                업로드된 문서 데이터는 <strong style={{ fontWeight: 600, color: "#3730A3" }}>'노무도우미'</strong> 질의응답 시에만 맞춤 참조 데이터로 활용됩니다.
+              </p>
+            </div>
+          )}
 
           {/* 액션 버튼 */}
           <div className="flex justify-end gap-2 pt-4 border-t">

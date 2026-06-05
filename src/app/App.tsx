@@ -36,6 +36,7 @@ export default function App() {
   const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<EmbeddingCorrectionPolicy | null>(null);
   const [pendingPoliciesCount, setPendingPoliciesCount] = useState<number>(0);
+  const [chatMode, setChatMode] = useState<"search" | "opinion">("search"); // 검색 모드 vs 의견서 작성 모드
 
   // pending 정책 개수 확인 (테스트용: 3개)
   useEffect(() => {
@@ -49,11 +50,12 @@ export default function App() {
     }
   }, [isAdmin]);
 
-  const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string) => {
+  const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string, mode?: "search" | "opinion") => {
     setChatQuery(query);
     setSelectedLaws(laws);
     setRelatedLaws(promptRelatedLaws || []); // 추천 질문의 관련 법령 저장
     setQuestionType(promptQuestionType); // 질문 유형 저장
+    setChatMode(mode || "search"); // 모드 설정 (기본값: 검색 모드)
     setCurrentView("chat");
     setCurrentStep(1); // 질문 입력 단계
   };
@@ -223,6 +225,7 @@ export default function App() {
           onMessagesChange={setHasChatMessages}
           relatedLaws={relatedLaws}
           questionType={questionType}
+          chatMode={chatMode}
         />
       )}
 
