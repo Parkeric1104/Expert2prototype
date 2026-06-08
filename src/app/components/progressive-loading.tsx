@@ -243,20 +243,6 @@ export function ProgressiveLoadingBubble({ relatedLaws, onStop, onAnswerPreparat
             </div>
           </div>
 
-          {/* Stop Button */}
-          {onStop && (
-            <div className="mt-5 pt-4 border-t border-border">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowStopDialog(true)}
-                className="w-full gap-2 text-muted-foreground hover:text-destructive hover:border-destructive"
-              >
-                <StopCircle className="w-4 h-4" />
-                답변 중단하기
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Stop Response Dialog */}
@@ -267,6 +253,23 @@ export function ProgressiveLoadingBubble({ relatedLaws, onStop, onAnswerPreparat
           onNavigateToMain={onNavigateToMain}
         />
       </div>
+
+      {/* 답변 중단하기 - Fixed Floating Pill */}
+      {onStop && (
+        <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
+          <button
+            onClick={() => setShowStopDialog(true)}
+            className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold shadow-xl transition-all hover:opacity-80 active:scale-95"
+            style={{
+              background: '#1C1C1E',
+              color: '#FFFFFF',
+            }}
+          >
+            <span className="w-2 h-2 rounded-sm bg-white inline-block" />
+            답변 중단하기
+          </button>
+        </div>
+      )}
     </div>
   );
 }

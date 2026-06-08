@@ -1373,21 +1373,6 @@ ${integratedData.aiOpinionSummary}
       <div className="flex-1 relative z-10 px-6 overflow-hidden">
         {/* 고정 흰색 배경 컨테이너 - 상단/하단과 이어짐 */}
         <div className="max-w-3xl mx-auto bg-white dark:bg-gray-950 shadow-lg h-full flex flex-col">
-          {/* 모드 배지 */}
-          <div className="flex items-center gap-2.5 px-6 py-2.5 border-b border-border/40 bg-muted/20 flex-shrink-0">
-            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${
-              chatMode === "search"
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                : "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"
-            }`}>
-              {chatMode === "search" ? "⚡ 빠른 답변 모드" : "📄 의견서 작성 모드"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {chatMode === "search"
-                ? "대화형 답변 · 세션 누적 의견서 · 파일 첨부 가능"
-                : "구조화 답변 · 답변별 의견서 · 최초 질문 시만 파일 첨부 가능"}
-            </span>
-          </div>
           {/* 내부에서만 스크롤 가능 */}
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {messages.length === 0 && (
