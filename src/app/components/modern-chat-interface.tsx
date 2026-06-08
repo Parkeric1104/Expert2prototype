@@ -151,6 +151,7 @@ export function ModernChatInterface({
   const [pendingDebateMessageId, setPendingDebateMessageId] = useState("");
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [pendingLeaveAction, setPendingLeaveAction] = useState<(() => void) | null>(null);
+  const [pendingDocDraftAfterSidebar, setPendingDocDraftAfterSidebar] = useState(false);
   
   // 세션 제한 관련 상태
   const [showSessionLimitModal, setShowSessionLimitModal] = useState(false);
@@ -776,15 +777,22 @@ ${integratedData.aiOpinionSummary}
     setMessages((prev) => [...prev, loadingMsg]);
 
     if (chatMode === "search") {
-      // 검색 모드: 대화형 텍스트 응답, 짧은 딜레이
+      // 검색 모드: 가드레일 적용 + 대화형 텍스트 응답 (휴먼피드백 UI는 미사용)
+      const searchValidation = validateQuestion(savedInput);
+      const isBlocked =
+        searchValidation.reason === "inappropriate" ||
+        searchValidation.reason === "unethical";
+
       setTimeout(() => {
         const aiMsg: Message = {
           id: (Date.now() + 2).toString(),
-          text: generateSearchResponse(savedInput),
+          text: isBlocked
+            ? "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다."
+            : generateSearchResponse(savedInput),
           isUser: false,
         };
         setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-      }, 2500);
+      }, isBlocked ? 800 : 2500);
     } else {
       // 의견서 작성 모드: 구조화된 응답 + 가드레일 적용
       const validation = validateQuestion(savedInput);
@@ -1045,11 +1053,11 @@ ${integratedData.aiOpinionSummary}
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 의견서 작성 모드일 때 2턴 이후 파일 첨부 불가
+    // 의견서 작성 모드일 때 최초 질문 이후 파일 첨부 불가
     if (chatMode === "opinion") {
       const userMessageCount = messages.filter(m => m.isUser).length;
-      if (userMessageCount >= 2) {
-        toast.error('의견서 작성 모드에서는 2턴 이후 파일 첨부가 불가능합니다.');
+      if (userMessageCount >= 1) {
+        toast.error('의견서 작성 모드에서는 최초 질문 이후 파일 첨부가 불가능합니다.');
         // Reset input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
@@ -1238,8 +1246,8 @@ ${integratedData.aiOpinionSummary}
   // 입력 비활성화 조건: 토론 진행 중 OR 답변 생성 중
   const isInputDisabled = isDebateInProgress || isAnswerLoading;
 
-  // 파일 첨부 비활성화 조건: 의견서 작성 모드 & 2턴 이후
-  const isFileUploadDisabled = chatMode === "opinion" && messages.filter(m => m.isUser).length >= 2;
+  // 파일 첨부 비활성화 조건: 의견서 작성 모드 & 최초 질문 이후
+  const isFileUploadDisabled = chatMode === "opinion" && messages.filter(m => m.isUser).length >= 1;
 
   // 비활성화 사유에 따른 placeholder 텍스트
   const getPlaceholder = (): string => {
@@ -1304,12 +1312,12 @@ ${integratedData.aiOpinionSummary}
                 ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
                 : "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"
             }`}>
-              {chatMode === "search" ? "🔍 검색 모드" : "📝 의견서 작성 모드"}
+              {chatMode === "search" ? "⚡ 빠른 답변 모드" : "📄 의견서 작성 모드"}
             </span>
             <span className="text-xs text-muted-foreground">
               {chatMode === "search"
                 ? "대화형 답변 · 세션 누적 의견서 · 파일 첨부 가능"
-                : "구조화 답변 · 답변별 의견서 · 2턴 이후 파일 첨부 불가"}
+                : "구조화 답변 · 답변별 의견서 · 최초 질문 시만 파일 첨부 가능"}
             </span>
           </div>
           {/* 내부에서만 스크롤 가능 */}
@@ -1431,8 +1439,8 @@ ${integratedData.aiOpinionSummary}
         </div>
       </div>
 
-      {/* Session Actions (검색 모드 전용) - Toss Style Floating Action Bar */}
-      {chatMode === "search" && messages.some(m => m.isEnhancedResponse) && (
+      {/* Session Actions (빠른 답변 모드 전용) - Toss Style Floating Action Bar */}
+      {chatMode === "search" && messages.some(m => !m.isUser && !m.isLoading && (m.isEnhancedResponse || (!!m.text && !m.needsFeedback))) && (
         <div className="relative z-20">
           <div
             className="max-w-3xl mx-auto px-6 py-3"
@@ -1452,30 +1460,38 @@ ${integratedData.aiOpinionSummary}
               {/* AI 상세의견 버튼 - Secondary Style */}
               <button
                 onClick={() => {
-                  const lastEnhancedMessage = [...messages].reverse().find(m => m.isEnhancedResponse);
-                  if (lastEnhancedMessage?.enhancedData) {
-                    setPreparingAnswerData(lastEnhancedMessage.enhancedData);
-                    setShowDetailSidebar(true);
-                    setIsInitialAnswerView(false);
-                  }
+                  const lastEnhanced = [...messages].reverse().find(m => m.isEnhancedResponse);
+                  const allUserMsgs = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
+                  const combinedQ = allUserMsgs.map(m => m.text).join("\n\n");
+                  setPreparingAnswerData(
+                    lastEnhanced?.enhancedData ?? generateIntegratedResponse(combinedQ)
+                  );
+                  setShowDetailSidebar(true);
+                  setIsInitialAnswerView(false);
+                  setPendingDocDraftAfterSidebar(false); // 상세의견만 보기
                 }}
                 className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-                style={{
-                  background: '#F2F4F6',
-                  color: '#4E5968',
-                }}
+                style={{ background: '#F2F4F6', color: '#4E5968' }}
               >
                 AI 상세의견
               </button>
 
-              {/* 의견서 작성 버튼 - Primary Style */}
+              {/* 종합 의견서 작성 버튼 - Primary Style (상세의견 → 의견서 순서) */}
               <button
-                onClick={() => handleDraftDocument()}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                style={{
-                  background: '#3182F6',
-                  color: '#FFFFFF',
+                onClick={() => {
+                  // 스펙: 상세 의견 작성 후 의견서 작성
+                  const lastEnhanced = [...messages].reverse().find(m => m.isEnhancedResponse);
+                  const allUserMsgs = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
+                  const combinedQ = allUserMsgs.map(m => m.text).join("\n\n");
+                  setPreparingAnswerData(
+                    lastEnhanced?.enhancedData ?? generateIntegratedResponse(combinedQ)
+                  );
+                  setShowDetailSidebar(true);
+                  setIsInitialAnswerView(false);
+                  setPendingDocDraftAfterSidebar(true); // 사이드바 닫힌 후 의견서 자동 시작
                 }}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
+                style={{ background: '#3182F6', color: '#FFFFFF' }}
               >
                 <span className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
@@ -1493,7 +1509,7 @@ ${integratedData.aiOpinionSummary}
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 rounded-lg">
             <Info className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
             <p className="text-xs text-amber-700 dark:text-amber-400">
-              의견서 작성 모드에서는 2턴 이후 파일 첨부가 비활성화됩니다.
+              의견서 작성 모드에서는 최초 질문 이후 파일 첨부가 비활성화됩니다.
             </p>
           </div>
         </div>
@@ -1671,7 +1687,12 @@ ${integratedData.aiOpinionSummary}
           onClose={() => {
             console.log('[Chat] 사이드바 닫기 - autoCloseSidebar 플래그 초기화');
             setShowDetailSidebar(false);
-            setAutoCloseSidebar(false); // 플래그 초기화
+            setAutoCloseSidebar(false);
+            // 검색 모드: 상세의견 확인 후 의견서 작성 자동 시작
+            if (pendingDocDraftAfterSidebar) {
+              setPendingDocDraftAfterSidebar(false);
+              setTimeout(() => handleDraftDocument(), 200);
+            }
           }}
           conclusion={preparingAnswerData.conclusion}
           factAnalysis={preparingAnswerData.factAnalysis}
