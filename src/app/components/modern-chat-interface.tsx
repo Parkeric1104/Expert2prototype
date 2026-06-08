@@ -77,6 +77,7 @@ interface Message {
   };
   suggestedQuestions?: string[]; // 추천 질문 추가
   isEnhancedResponse?: boolean;
+  isSimpleResponse?: boolean; // 빠른 답변 모드
   enhancedData?: EnhancedResponseData;
   lawCategory?: string;
   isDebate?: boolean;
@@ -725,15 +726,16 @@ ${integratedData.aiOpinionSummary}
         id: (Date.now() + 2).toString(),
         text: "",
         isUser: false,
-        isEnhancedResponse: true,
+        isEnhancedResponse: chatMode === "opinion",
+        isSimpleResponse: chatMode === "search",
         enhancedData: enhancedData,
       };
       setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-      
+
       // Step 2: 법령 분석 완료 -> Step 3: 결과 확인
       onStepChange?.(3);
       setCurrentStep(3);
-    }, 16000); // 16초로 변경
+    }, chatMode === "search" ? 2500 : 16000); // 검색 모드는 빠르게
   };
 
   // 최종 답변 준비 시작 시 호출되는 핸들러
@@ -822,21 +824,31 @@ ${integratedData.aiOpinionSummary}
     setMessages((prev) => [...prev, loadingMsg]);
 
     if (chatMode === "search") {
-      // 검색 모드: 가드레일 적용 + 대화형 텍스트 응답 (휴먼피드백 UI는 미사용)
+      // 검색 모드: 가드레일 적용 + 빠른 답변 카드 (SimpleResponseCard)
       const searchValidation = validateQuestion(savedInput);
       const isBlocked =
         searchValidation.reason === "inappropriate" ||
         searchValidation.reason === "unethical";
 
       setTimeout(() => {
-        const aiMsg: Message = {
-          id: (Date.now() + 2).toString(),
-          text: isBlocked
-            ? "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다."
-            : generateSearchResponse(savedInput),
-          isUser: false,
-        };
-        setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+        if (isBlocked) {
+          const aiMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다.",
+            isUser: false,
+          };
+          setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+        } else {
+          const enhancedData = generateIntegratedResponse(savedInput);
+          const aiMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: "",
+            isUser: false,
+            isSimpleResponse: true,
+            enhancedData: enhancedData,
+          };
+          setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+        }
       }, isBlocked ? 800 : 2500);
     } else {
       // 의견서 작성 모드: 구조화된 응답 + 가드레일 적용
@@ -1411,40 +1423,26 @@ ${integratedData.aiOpinionSummary}
                   />
                 )}
                 {/* 검색 모드 대화형 텍스트 응답 */}
-                {!message.isUser && !message.isLoading && !message.needsFeedback && !message.isEnhancedResponse && !message.isDebate && !message.isInvalidQuestion && !message.relatedLaws && message.text && (
+                {!message.isUser && !message.isLoading && !message.needsFeedback && !message.isEnhancedResponse && !message.isSimpleResponse && !message.isDebate && !message.isInvalidQuestion && !message.relatedLaws && message.text && (
                   <ChatBubble message={message.text} isUser={false} />
                 )}
-                {!message.isUser && !message.isLoading && !message.needsFeedback && !message.isEnhancedResponse && !message.isDebate && !message.isInvalidQuestion && message.relatedLaws && (
+                {/* 빠른 답변 카드 */}
+                {message.isSimpleResponse && message.enhancedData && (
                   <SimpleResponseCard
                     question={messages.find(m => m.isUser)?.text || ""}
                     answer={{
                       items: [
                         {
-                          text: "법인세법은 대한민국의 법인에 대한 소득에 관하여 과세하는 것을 목적으로 하는 법입니다.",
-                          laws: ["법인세법 제1조"]
-                        },
-                        {
-                          text: "법인세법에서는 \"내국법인\", \"외국법인\", \"비영리법인\" 등 용어의 정의를 명확하게 하고 있습니다.",
-                          laws: ["법인세법 제2조"]
-                        },
-                        {
-                          text: "법인세를 납부할 의무자는 내국법인과 국내원천소득이 있는 외국법인입니다.",
-                          laws: ["법인세법 제3조"]
-                        },
-                        {
-                          text: "과세 대상 소득의 범위, 사업연도, 과세표준, 남부세액 등 세법적인 기준과 절차를 규정하고 있습니다.",
-                          laws: ["법인세법 제4조", "법인세법 제6조", "법인세법 제13조", "법인세법 제8조"]
-                        },
-                        {
-                          text: "또한, 법인세 부과와 관련된 질문 조사, 손금산입, 병 시 결손금 공제 제한 등 세부적인 절차를 세밀하게 규정하고 있습니다.",
-                          laws: ["법인세법 제122조", "법인세법 제25조", "법인세법 제45조"]
+                          text: message.enhancedData.conclusion,
+                          laws: []
                         }
                       ]
                     }}
-                    relatedLaws={message.relatedLaws.map((law, idx) => ({
-                      id: `제${idx + 1}조`,
-                      name: law
-                    }))} 
+                    relatedLaws={message.enhancedData.sources.map((source) => ({
+                      id: source.title,
+                      name: source.title,
+                      content: source.content
+                    }))}
                     onLawClick={handleLawClick}
                   />
                 )}
@@ -1496,7 +1494,7 @@ ${integratedData.aiOpinionSummary}
       </div>
 
       {/* Session Actions (빠른 답변 모드 전용) - Floating Pill */}
-      {chatMode === "search" && messages.some(m => !m.isUser && !m.isLoading && (m.isEnhancedResponse || (!!m.text && !m.needsFeedback))) && (
+      {chatMode === "search" && messages.some(m => !m.isUser && !m.isLoading && (m.isEnhancedResponse || m.isSimpleResponse || (!!m.text && !m.needsFeedback))) && (
         <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
           <div
             className="pointer-events-auto flex items-center gap-2 rounded-full px-2 py-2 shadow-xl"
@@ -1510,11 +1508,11 @@ ${integratedData.aiOpinionSummary}
             {/* AI 상세의견 버튼 */}
             <button
               onClick={() => {
-                const lastEnhanced = [...messages].reverse().find(m => m.isEnhancedResponse);
+                const lastResponse = [...messages].reverse().find(m => m.isEnhancedResponse || m.isSimpleResponse);
                 const allUserMsgs = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
                 const combinedQ = allUserMsgs.map(m => m.text).join("\n\n");
                 setPreparingAnswerData(
-                  lastEnhanced?.enhancedData ?? generateIntegratedResponse(combinedQ)
+                  lastResponse?.enhancedData ?? generateIntegratedResponse(combinedQ)
                 );
                 setShowDetailSidebar(true);
                 setIsInitialAnswerView(false);
@@ -1531,11 +1529,11 @@ ${integratedData.aiOpinionSummary}
             {/* 의견서 작성 버튼 */}
             <button
               onClick={() => {
-                const lastEnhanced = [...messages].reverse().find(m => m.isEnhancedResponse);
+                const lastResponse = [...messages].reverse().find(m => m.isEnhancedResponse || m.isSimpleResponse);
                 const allUserMsgs = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
                 const combinedQ = allUserMsgs.map(m => m.text).join("\n\n");
                 setPreparingAnswerData(
-                  lastEnhanced?.enhancedData ?? generateIntegratedResponse(combinedQ)
+                  lastResponse?.enhancedData ?? generateIntegratedResponse(combinedQ)
                 );
                 setShowDetailSidebar(true);
                 setIsInitialAnswerView(false);

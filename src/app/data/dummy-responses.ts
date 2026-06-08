@@ -387,6 +387,37 @@ export const getDummyResponse = (userMessage: string): EnhancedResponseData => {
     };
   }
 
+  // 케이스 5: 육아휴직 연차 차감 여부
+  if (lowerMessage.includes("육아휴직") && (lowerMessage.includes("연차") || lowerMessage.includes("출근"))) {
+    return {
+      factAnalysis: `근로자가 육아휴직을 사용한 경우, 해당 기간이 연차 산정 시 출근한 것으로 간주되는지에 대한 질의입니다.`,
+      queryRedefinition: `"근로기준법상 육아휴직 기간이 연차휴가 산정 시 출근으로 인정되는지, 연차 일수가 차감되지 않는지"에 대한 법적 검토가 필요합니다.`,
+      reviewContent: `근로기준법 제60조 제6항에 따르면, 육아휴직 기간은 출근한 것으로 간주됩니다.`,
+      conclusion: `근로기준법 제60조에 의거하여, 육아휴직 기간은 출근한 것으로 간주되므로 연차 일수가 차감되지 않습니다.`,
+      sources: [
+        {
+          type: "법령",
+          title: "근로기준법 제60조(연차 유급휴가) ⑥항",
+          url: "https://www.law.go.kr/법령/근로기준법",
+          content: `근로자가 다음 각 호의 어느 하나에 해당하는 기간으로 휴업한 경우에는 출근한 것으로 본다.
+
+3. 「남녀고용평등과 일·가정 양립 지원에 관한 법률」에 따른 육아휴직으로 휴업한 기간`,
+        },
+        {
+          type: "사규",
+          title: "더존비즈온 취업규칙 제42조(휴가 산정)",
+          url: "",
+          content: `육아휴직 기간은 근로기준법을 준용하여 전 기간 출근한 것으로 간주하여 연차를 부여한다.`,
+        },
+      ],
+      aiOpinionSummary: {
+        integratedConclusion: `육아휴직 기간은 법령에 따라 출근으로 간주되므로 연차 산정에 불이익이 없습니다.`,
+        proConclusion: `근로기준법이 명확히 규정하고 있어 연차 차감 없이 보호받을 수 있습니다.`,
+        conConclusion: `다만, 회사의 취업규칙이 법령을 준수하고 있는지 확인이 필요합니다.`,
+      },
+    };
+  }
+
   // 기본 케이스
   return {
     factAnalysis: `제공하신 정보를 바탕으로 사실관계를 분석하였습니다.`,
