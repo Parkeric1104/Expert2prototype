@@ -29,8 +29,8 @@ export function CreditStatus() {
       >
         <CreditCard className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
       </PopoverTrigger>
-      
-      <PopoverContent 
+
+      <PopoverContent
         className="w-72 p-0 ml-4 mb-2 border border-border shadow-xl rounded-xl overflow-hidden"
         side="top"
         align="start"
@@ -42,10 +42,10 @@ export function CreditStatus() {
             <h3 className="text-sm font-semibold text-foreground">{creditData.remaining.toLocaleString()} credits left</h3>
             <span className="text-xs text-muted-foreground">{creditData.total.toLocaleString()} credits/mo</span>
           </div>
-          
+
           {/* 프로그레스 바 */}
           <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
-            <div 
+            <div
               className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all duration-500"
               style={{ width: `${100 - usagePercentage}%` }}
             />

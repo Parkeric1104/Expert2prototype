@@ -1,4 +1,4 @@
-import { Scale, BookOpen, Check } from "lucide-react";
+import { Scale, BookOpen, FileText } from "lucide-react";
 
 interface SimpleResponseCardProps {
   question: string;
@@ -11,8 +11,9 @@ interface SimpleResponseCardProps {
   relatedLaws: Array<{
     id: string;
     name: string;
+    content?: string; // 법령 내용 추가
   }>;
-  onLawClick?: (lawName: string) => void; // 법령 클릭 핸들러 추가
+  onLawClick?: (lawName: string) => void;
 }
 
 export function SimpleResponseCard({ question, answer, relatedLaws, onLawClick }: SimpleResponseCardProps) {
@@ -24,78 +25,50 @@ export function SimpleResponseCard({ question, answer, relatedLaws, onLawClick }
 
   return (
     <div className="flex justify-start mb-6">
-      {/* 답변 컨테이너 */}
-      <div className="max-w-[650px] flex flex-col gap-2">
-        {/* 답변 버블 */}
-        <div className="rounded-2xl px-5 py-3.5 bg-muted/50 text-foreground">
-          {/* 분석 완료 메시지 */}
-          <div className="mb-3 pb-3 border-b border-border/50">
-            <div className="flex items-center gap-2 mb-1">
-              <Check className="w-4 h-4 text-green-500" />
-              <p className="text-xs text-muted-foreground font-medium">
-                질문 분석이 완료되었습니다
-              </p>
-            </div>
-          </div>
-
-          {/* 답변 */}
-          <div className="mb-3">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Scale className="w-4 h-4 text-indigo-500" />
-              <h3 className="text-sm font-bold text-foreground">답변</h3>
-            </div>
-            
-            {/* Answer Content */}
-            <div className="space-y-3 mt-2">
+      <div className="max-w-[720px] flex flex-col gap-3">
+        {/* 메인 답변 카드 */}
+        <div className="rounded-2xl px-6 py-5 bg-card border border-border shadow-sm">
+          {/* 메인 답변 */}
+          <div className="mb-4">
+            <p className="text-[15px] leading-relaxed text-foreground font-normal">
               {answer.items.map((item, index) => (
-                <div key={index} className="space-y-1.5">
-                  <div className="flex items-start gap-2">
-                    <span className="text-muted-foreground mt-0.5 text-sm">•</span>
-                    <p className="flex-1 text-sm leading-relaxed text-foreground">
-                      {item.text}
-                    </p>
-                  </div>
-                  
-                  {item.laws.length > 0 && (
-                    <div className="ml-4 flex flex-wrap gap-1.5">
-                      {item.laws.map((law, lawIndex) => (
-                        <button
-                          key={lawIndex}
-                          onClick={() => handleLawClick(law)}
-                          className="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
-                        >
-                          <span>↳ {law}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <span key={index}>
+                  {item.text}
+                  {index < answer.items.length - 1 && " "}
+                </span>
               ))}
-            </div>
+            </p>
           </div>
 
-          {/* Related Laws Section */}
+          {/* 근거 법령 및 사규 */}
           {relatedLaws.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-border/50">
-              <div className="flex items-center gap-2 mb-2.5">
-                <BookOpen className="w-4 h-4 text-indigo-500" />
-                <h4 className="text-sm font-bold text-foreground">근거 법령</h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 pt-3 border-t border-border">
+                <span className="w-1 h-1 rounded-full bg-primary" />
+                <h4 className="text-[13px] font-bold text-foreground">근거 법령 및 사규</h4>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {relatedLaws.map((law, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleLawClick(law.name)}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-lg hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all text-left"
-                  >
-                    <div className="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-0.5">
-                      {law.id}
-                    </div>
-                    <div className="text-sm text-foreground">
-                      {law.name}
-                    </div>
-                  </button>
+                  <div key={index} className="space-y-2">
+                    {/* 법령명 */}
+                    <button
+                      onClick={() => handleLawClick(law.name)}
+                      className="group inline-flex items-baseline gap-1.5 text-[14px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <span>{law.id}</span>
+                      <span className="group-hover:underline">&gt;</span>
+                    </button>
+
+                    {/* 법령 내용 인용 박스 */}
+                    {law.content && (
+                      <div className="pl-4 border-l-2 border-primary/30 bg-muted/30 py-2.5 px-4 rounded-r-lg">
+                        <p className="text-[13px] leading-relaxed text-foreground/90 whitespace-pre-line">
+                          {law.content}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
