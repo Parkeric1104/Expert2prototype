@@ -98,10 +98,12 @@ interface ModernChatInterfaceProps {
   onOpenLawSelector: () => void;
   onStepChange?: (step: number) => void;
   onCompleteDocument?: () => void;
-  onMessagesChange?: (hasMessages: boolean) => void; // 메시지 상태 변경 콜백 추가
-  relatedLaws?: string[]; // 추천 질문의 관련 법령 추가
-  questionType?: string; // 질문 유형 추가
-  chatMode?: "search" | "opinion"; // 검색 모드 vs 의견서 작성 모드
+  onMessagesChange?: (hasMessages: boolean) => void;
+  relatedLaws?: string[];
+  questionType?: string;
+  chatMode?: "search" | "opinion";
+  requestDraftDocument?: boolean; // 외부에서 의견서 작성 트리거
+  onDraftDocumentHandled?: () => void; // 트리거 처리 완료 콜백
 }
 
 // 배경 아이콘 데이터 - 메인 화면과 동일
@@ -129,10 +131,12 @@ export function ModernChatInterface({
   onOpenLawSelector,
   onStepChange,
   onCompleteDocument,
-  onMessagesChange, // 추가
-  relatedLaws, // 추가
-  questionType, // 추가
-  chatMode = "search", // 기본값은 검색 모드
+  onMessagesChange,
+  relatedLaws,
+  questionType,
+  chatMode = "search",
+  requestDraftDocument,
+  onDraftDocumentHandled,
 }: ModernChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -1231,6 +1235,14 @@ ${integratedData.aiOpinionSummary}
       onMessagesChange(messages.length > 0);
     }
   }, [messages, onMessagesChange]);
+
+  // 외부에서 의견서 작성 트리거 처리
+  useEffect(() => {
+    if (requestDraftDocument) {
+      handleDraftDocument();
+      onDraftDocumentHandled?.();
+    }
+  }, [requestDraftDocument]);
 
   // 세션 제한 확인
   useEffect(() => {

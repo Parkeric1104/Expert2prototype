@@ -7,17 +7,8 @@ import { EmbeddingCorrectionView, EmbeddingCorrectionPolicy } from "@/app/compon
 import { LawSelectionModal } from "@/app/components/law-selection-modal";
 import { EnhancedChatHistoryModal } from "@/app/components/enhanced-chat-history-modal";
 import { HistorySidebarPanel } from "@/app/components/history-sidebar-panel";
+import { ChatLeaveConfirmModal } from "@/app/components/chat-leave-confirm-modal";
 import { Toaster } from "@/app/components/ui/sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/app/components/ui/alert-dialog";
 
 export default function App() {
   const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding">("home");
@@ -36,7 +27,8 @@ export default function App() {
   const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<EmbeddingCorrectionPolicy | null>(null);
   const [pendingPoliciesCount, setPendingPoliciesCount] = useState<number>(0);
-  const [chatMode, setChatMode] = useState<"search" | "opinion">("search"); // 검색 모드 vs 의견서 작성 모드
+  const [chatMode, setChatMode] = useState<"search" | "opinion">("search");
+  const [requestDraftDocument, setRequestDraftDocument] = useState(false);
 
   // pending 정책 개수 확인 (테스트용: 3개)
   useEffect(() => {
@@ -228,6 +220,8 @@ export default function App() {
           relatedLaws={relatedLaws}
           questionType={questionType}
           chatMode={chatMode}
+          requestDraftDocument={requestDraftDocument}
+          onDraftDocumentHandled={() => setRequestDraftDocument(false)}
         />
       )}
 
@@ -263,21 +257,16 @@ export default function App() {
       {/* Toast Notifications */}
       <Toaster />
 
-      {/* Leave Confirm Modal */}
-      <AlertDialog open={showLeaveConfirmModal} onOpenChange={setShowLeaveConfirmModal}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>대화를 나가시겠습니까?</AlertDialogTitle>
-            <AlertDialogDescription>
-              현재 대화를 나가면 작성 중인 내용이 저장되지 않습니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLeaveConfirm}>나가기</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Leave Confirm Modal - 모드별 버튼 구성 상이 */}
+      <ChatLeaveConfirmModal
+        isOpen={showLeaveConfirmModal}
+        onClose={() => setShowLeaveConfirmModal(false)}
+        onConfirm={handleLeaveConfirm}
+        onDraftDocument={chatMode === "opinion" && hasChatMessages ? () => {
+          setShowLeaveConfirmModal(false);
+          setRequestDraftDocument(true);
+        } : undefined}
+      />
     </div>
   );
 }

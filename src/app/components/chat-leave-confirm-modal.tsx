@@ -44,10 +44,12 @@ export function ChatLeaveConfirmModal({
             {description}
           </AlertDialogTitle>
           
-          {/* 설명 */}
-          <AlertDialogDescription className="text-sm text-muted-foreground text-center pt-2">
-            **대화 내용은 '의견서 작성'을 통해 문서로 저장할 수 있습니다.
-          </AlertDialogDescription>
+          {/* 설명 - 의견서 작성 버튼이 있을 때만 표시 */}
+          {onDraftDocument && (
+            <AlertDialogDescription className="text-sm text-muted-foreground text-center pt-2">
+              *대화 내용은 '의견서 작성'을 통해 문서로 저장할 수 있습니다.
+            </AlertDialogDescription>
+          )}
         </AlertDialogHeader>
         
         <AlertDialogFooter className="flex-row gap-2 sm:justify-center">
