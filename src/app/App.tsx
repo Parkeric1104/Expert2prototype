@@ -169,6 +169,8 @@ export default function App() {
       {/* Top Header – embedding 상세 화면에서는 미노출 */}
       {currentView !== "embedding" && (
         <TopHeader
+          variant={currentView === "chat" ? "chat" : currentView === "policy" ? "policy" : "home"}
+          onNavigateToMain={() => handleNavigation(handleNewChat)}
           onNewChat={() => handleNavigation(handleNewChat)}
           onOpenHistory={handleOpenHistory}
           onOpenPolicyUpload={() => {
