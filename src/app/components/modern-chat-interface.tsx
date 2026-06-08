@@ -231,10 +231,10 @@ export function ModernChatInterface({
     return "노동법 일반";
   };
 
-  // 검색 모드 대화형 응답 생성
+  // 검색 모드 대화형 응답 생성 — 결론 텍스트 반환
   const generateSearchResponse = (question: string): string => {
-    const q = question.slice(0, 30);
-    return `"${q}..." 에 대해 답변드리겠습니다.\n\n해당 사항은 근로기준법 및 관련 법령에 따라 처리됩니다. 구체적인 상황에 따라 적용 기준이 다를 수 있으므로, 아래 내용을 참고하시되 실제 적용 시에는 전문가 상담을 권장드립니다.\n\n현행 법령상 원칙적으로 정해진 절차에 따라 처리되어야 하며, 관련 판례와 고용노동부 행정해석도 이를 지지하고 있습니다. 추가로 궁금한 점이 있으시면 편하게 질문해 주세요.`;
+    const data = getDummyResponse(question);
+    return data.conclusion;
   };
 
   // 의견서 검토유형 자동 분류 (PRD: 단순문의 / 리스크검토 / 법률검토 / 기타)
@@ -358,21 +358,32 @@ export function ModernChatInterface({
     onStepChange?.(2);
     setCurrentStep(2);
 
-    setTimeout(() => {
-      const enhancedData = generateIntegratedResponse(question);
-      const aiMsg: Message = {
-        id: (Date.now() + 2).toString(),
-        text: "",
-        isUser: false,
-        isEnhancedResponse: true,
-        enhancedData: enhancedData,
-      };
-      setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-      
-      // Step 2: 법령 분석 완료 -> Step 3: 결과 확인
-      onStepChange?.(3);
-      setCurrentStep(3);
-    }, 16000); // 16초로 변경
+    if (chatMode === "search") {
+      setTimeout(() => {
+        const aiMsg: Message = {
+          id: (Date.now() + 2).toString(),
+          text: generateSearchResponse(question),
+          isUser: false,
+        };
+        setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+        onStepChange?.(3);
+        setCurrentStep(3);
+      }, 2500);
+    } else {
+      setTimeout(() => {
+        const enhancedData = generateIntegratedResponse(question);
+        const aiMsg: Message = {
+          id: (Date.now() + 2).toString(),
+          text: "",
+          isUser: false,
+          isEnhancedResponse: true,
+          enhancedData: enhancedData,
+        };
+        setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+        onStepChange?.(3);
+        setCurrentStep(3);
+      }, 16000);
+    }
   };
 
   // Watch for selectedLaws changes (refined search)
@@ -411,18 +422,28 @@ export function ModernChatInterface({
       };
       setMessages((prev) => [...prev, loadingMsg]);
 
-      // Generate response with refined laws (동일한 원래 질문 사용)
-      setTimeout(() => {
-        const enhancedData = generateIntegratedResponse(originalQuestion);
-        const aiMsg: Message = {
-          id: (Date.now() + 2).toString(),
-          text: "",
-          isUser: false,
-          isEnhancedResponse: true,
-          enhancedData: enhancedData,
-        };
-        setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-      }, 16000); // 법령 재선택도 16초 분석 시간 적용
+      if (chatMode === "search") {
+        setTimeout(() => {
+          const aiMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: generateSearchResponse(originalQuestion),
+            isUser: false,
+          };
+          setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+        }, 2500);
+      } else {
+        setTimeout(() => {
+          const enhancedData = generateIntegratedResponse(originalQuestion);
+          const aiMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: "",
+            isUser: false,
+            isEnhancedResponse: true,
+            enhancedData: enhancedData,
+          };
+          setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+        }, 16000);
+      }
     }
   }, [selectedLaws]);
 
@@ -528,7 +549,6 @@ ${integratedData.aiOpinionSummary}
             setCurrentStep(3);
           }, 2000);
         } else if (questionType === "normal") {
-          // 정상 질문 - 일반 AI 답변 생성
           onStepChange?.(2);
           setCurrentStep(2);
 
@@ -541,20 +561,34 @@ ${integratedData.aiOpinionSummary}
           };
           setMessages((prev) => [...prev, loadingMsg]);
 
-          setTimeout(() => {
-            const enhancedData = generateIntegratedResponse(initialMessage);
-            const aiMsg: Message = {
-              id: (Date.now() + 2).toString(),
-              text: "",
-              isUser: false,
-              isEnhancedResponse: true,
-              enhancedData: enhancedData,
-            };
-            setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-            setIsTyping(false);
-            onStepChange?.(3);
-            setCurrentStep(3);
-          }, 16000); // 16초로 변경
+          if (chatMode === "search") {
+            setTimeout(() => {
+              const aiMsg: Message = {
+                id: (Date.now() + 2).toString(),
+                text: generateSearchResponse(initialMessage),
+                isUser: false,
+              };
+              setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+              setIsTyping(false);
+              onStepChange?.(3);
+              setCurrentStep(3);
+            }, 2500);
+          } else {
+            setTimeout(() => {
+              const enhancedData = generateIntegratedResponse(initialMessage);
+              const aiMsg: Message = {
+                id: (Date.now() + 2).toString(),
+                text: "",
+                isUser: false,
+                isEnhancedResponse: true,
+                enhancedData: enhancedData,
+              };
+              setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+              setIsTyping(false);
+              onStepChange?.(3);
+              setCurrentStep(3);
+            }, 16000);
+          }
         } else if (questionType === "insufficient" || questionType === "meaningless" || questionType === "out-of-scope" || questionType === "inappropriate") {
           // 검색 모드: 휴먼피드백 미적용 → 대화형 응답
           if (chatMode === "search") {
@@ -629,23 +663,34 @@ ${integratedData.aiOpinionSummary}
       };
       setMessages((prev) => [...prev, loadingMsg]);
 
-      // After 16 seconds, replace with integrated response
-      setTimeout(() => {
-        const enhancedData = generateIntegratedResponse(initialMessage);
-        const aiMsg: Message = {
-          id: (Date.now() + 2).toString(),
-          text: "",
-          isUser: false,
-          isEnhancedResponse: true,
-          enhancedData: enhancedData,
-        };
-        setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-        setIsTyping(false);
-        
-        // Step 2: 법령 분석 완료 -> Step 3: 결과 확인
-        onStepChange?.(3);
-        setCurrentStep(3);
-      }, 16000); // 16초로 변경
+      if (chatMode === "search") {
+        setTimeout(() => {
+          const aiMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: generateSearchResponse(initialMessage),
+            isUser: false,
+          };
+          setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+          setIsTyping(false);
+          onStepChange?.(3);
+          setCurrentStep(3);
+        }, 2500);
+      } else {
+        setTimeout(() => {
+          const enhancedData = generateIntegratedResponse(initialMessage);
+          const aiMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: "",
+            isUser: false,
+            isEnhancedResponse: true,
+            enhancedData: enhancedData,
+          };
+          setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+          setIsTyping(false);
+          onStepChange?.(3);
+          setCurrentStep(3);
+        }, 16000);
+      }
     }
   }, [initialMessage, questionType]);
 
@@ -1208,17 +1253,28 @@ ${integratedData.aiOpinionSummary}
       };
       setMessages((prev) => [...prev, loadingMsg]);
 
-      setTimeout(() => {
-        const enhancedData = generateIntegratedResponse(pendingQuestion);
-        const aiMsg: Message = {
-          id: (Date.now() + 2).toString(),
-          text: "",
-          isUser: false,
-          isEnhancedResponse: true,
-          enhancedData: enhancedData,
-        };
-        setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
-      }, 16000); // 세션 제한 모달 질문도 16초 분석 시간 적용
+      if (chatMode === "search") {
+        setTimeout(() => {
+          const aiMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: generateSearchResponse(pendingQuestion),
+            isUser: false,
+          };
+          setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+        }, 2500);
+      } else {
+        setTimeout(() => {
+          const enhancedData = generateIntegratedResponse(pendingQuestion);
+          const aiMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: "",
+            isUser: false,
+            isEnhancedResponse: true,
+            enhancedData: enhancedData,
+          };
+          setMessages((prev) => prev.filter(m => !m.isLoading).concat(aiMsg));
+        }, 16000);
+      }
     }
     setShowSessionLimitModal(false);
   };
@@ -1344,7 +1400,7 @@ ${integratedData.aiOpinionSummary}
                       maxQuestions={MAX_QUESTIONS}
                     />
                   )}
-                  {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} onAnswerPreparationStart={handleAnswerPreparationStart} onNavigateToMain={handleNavigateToMain} />}
+                  {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} onAnswerPreparationStart={chatMode === "opinion" ? handleAnswerPreparationStart : undefined} onNavigateToMain={handleNavigateToMain} />}
                 {message.needsFeedback && message.feedbackReason && (
                   <HumanFeedbackRequest
                     reason={message.feedbackReason}
@@ -1439,66 +1495,58 @@ ${integratedData.aiOpinionSummary}
         </div>
       </div>
 
-      {/* Session Actions (빠른 답변 모드 전용) - Toss Style Floating Action Bar */}
+      {/* Session Actions (빠른 답변 모드 전용) - Floating Pill */}
       {chatMode === "search" && messages.some(m => !m.isUser && !m.isLoading && (m.isEnhancedResponse || (!!m.text && !m.needsFeedback))) && (
-        <div className="relative z-20">
+        <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
           <div
-            className="max-w-3xl mx-auto px-6 py-3"
+            className="pointer-events-auto flex items-center gap-2 rounded-full px-2 py-2 shadow-xl"
             style={{
-              background: 'rgba(255, 255, 255, 0.8)',
+              background: 'rgba(255, 255, 255, 0.92)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              borderTop: '1px solid #F2F4F6',
+              border: '1px solid rgba(0,0,0,0.08)',
             }}
           >
-            <div
-              className="bg-white/90 rounded-2xl px-5 py-3 shadow-sm flex items-center justify-end gap-3"
-              style={{
-                border: '1px solid #F2F4F6',
+            {/* AI 상세의견 버튼 */}
+            <button
+              onClick={() => {
+                const lastEnhanced = [...messages].reverse().find(m => m.isEnhancedResponse);
+                const allUserMsgs = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
+                const combinedQ = allUserMsgs.map(m => m.text).join("\n\n");
+                setPreparingAnswerData(
+                  lastEnhanced?.enhancedData ?? generateIntegratedResponse(combinedQ)
+                );
+                setShowDetailSidebar(true);
+                setIsInitialAnswerView(false);
+                setPendingDocDraftAfterSidebar(false);
               }}
+              className="px-4 py-2 rounded-full text-sm font-semibold transition-all hover:bg-gray-100 active:scale-95"
+              style={{ color: '#4E5968' }}
             >
-              {/* AI 상세의견 버튼 - Secondary Style */}
-              <button
-                onClick={() => {
-                  const lastEnhanced = [...messages].reverse().find(m => m.isEnhancedResponse);
-                  const allUserMsgs = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
-                  const combinedQ = allUserMsgs.map(m => m.text).join("\n\n");
-                  setPreparingAnswerData(
-                    lastEnhanced?.enhancedData ?? generateIntegratedResponse(combinedQ)
-                  );
-                  setShowDetailSidebar(true);
-                  setIsInitialAnswerView(false);
-                  setPendingDocDraftAfterSidebar(false); // 상세의견만 보기
-                }}
-                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-                style={{ background: '#F2F4F6', color: '#4E5968' }}
-              >
-                AI 상세의견
-              </button>
+              AI 상세의견
+            </button>
 
-              {/* 종합 의견서 작성 버튼 - Primary Style (상세의견 → 의견서 순서) */}
-              <button
-                onClick={() => {
-                  // 스펙: 상세 의견 작성 후 의견서 작성
-                  const lastEnhanced = [...messages].reverse().find(m => m.isEnhancedResponse);
-                  const allUserMsgs = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
-                  const combinedQ = allUserMsgs.map(m => m.text).join("\n\n");
-                  setPreparingAnswerData(
-                    lastEnhanced?.enhancedData ?? generateIntegratedResponse(combinedQ)
-                  );
-                  setShowDetailSidebar(true);
-                  setIsInitialAnswerView(false);
-                  setPendingDocDraftAfterSidebar(true); // 사이드바 닫힌 후 의견서 자동 시작
-                }}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:opacity-90"
-                style={{ background: '#3182F6', color: '#FFFFFF' }}
-              >
-                <span className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  종합 의견서 작성
-                </span>
-              </button>
-            </div>
+            <div className="w-px h-5 bg-gray-200" />
+
+            {/* 의견서 작성 버튼 */}
+            <button
+              onClick={() => {
+                const lastEnhanced = [...messages].reverse().find(m => m.isEnhancedResponse);
+                const allUserMsgs = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
+                const combinedQ = allUserMsgs.map(m => m.text).join("\n\n");
+                setPreparingAnswerData(
+                  lastEnhanced?.enhancedData ?? generateIntegratedResponse(combinedQ)
+                );
+                setShowDetailSidebar(true);
+                setIsInitialAnswerView(false);
+                setPendingDocDraftAfterSidebar(true);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+              style={{ background: '#3182F6', color: '#FFFFFF' }}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              의견서 작성
+            </button>
           </div>
         </div>
       )}
