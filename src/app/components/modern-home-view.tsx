@@ -1,5 +1,4 @@
 import { useState, useRef } from "react";
-import { RotatingTitle } from "@/app/components/rotating-title";
 import { CreditStatus } from "@/app/components/credit-status";
 import { Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight } from "lucide-react";
 import {
@@ -15,6 +14,7 @@ import {
   ClipboardCheck,
   UserCheck
 } from "lucide-react";
+import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 interface ModernHomeViewProps {
   onStartChat: (query: string, selectedLaws: string[], relatedLaws?: string[], questionType?: string, chatMode?: "search" | "opinion") => void;
@@ -38,14 +38,16 @@ const FLOATING_ICONS = [
   { Icon: UserCheck, delay: 4, duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
+const CATEGORIES = ["인사/노무", "소득세", "부가가치세", "원천세", "법인결산"];
+const ITEMS_PER_PAGE = 3;
+
 export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }: ModernHomeViewProps) {
   const [inputValue, setInputValue] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [chatMode, setChatMode] = useState<"search" | "opinion">("search");
-  const [selectedCategory, setSelectedCategory] = useState("전체");
+  const [selectedCategory, setSelectedCategory] = useState("인사/노무");
+  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const CATEGORIES = ["전체", "근로시간", "임금·퇴직", "채용·해고", "산재"];
 
   // 파일 크기 포맷팅
   const formatFileSize = (bytes: number): string => {
@@ -63,53 +65,138 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
   };
 
   const prompts = [
+    // ── 인사/노무 ──
+    {
+      text: "근로자의 개별 동의를 받거나, 연차대체를 취업규칙에 규정하여 근로자의 과반수 동의를 얻어 변경한 경우 근로자대표와의 별도 서면합의가 없어도 되나요?",
+      questionType: "normal",
+      category: "인사/노무",
+      laws: ["근로기준법 제62조", "근로기준법 제93조", "대법원 2003다10097 판결"]
+    },
+    {
+      text: "연차촉진제를 실시했음에도 불구하고 근로자가 지정된 휴가일에 출근하는 경우는 어떻게 되나요?",
+      questionType: "normal",
+      category: "인사/노무",
+      laws: ["근로기준법 제61조", "근로기준법 제60조", "고용노동부 행정해석 2019.3.12"]
+    },
+    {
+      text: "포괄임금제와 고정OT제는 어떻게 다른가요?",
+      questionType: "normal",
+      category: "인사/노무",
+      laws: ["근로기준법 제56조", "대법원 2010다91046 판결", "대법원 2016다19378 판결"]
+    },
     {
       text: "연차 사용 시 회사가 사용 사유를 물어봐도 되나요?",
-      displayText: "🟢 연차 사용 시 회사가 사용 사유를 물어봐도 되나요? (간단 답변)",
       questionType: "simple",
-      category: "근로시간",
+      category: "인사/노무",
       laws: ["근로기준법 제60조", "근로기준법 시행령 제30조", "대법원 2017다232132 판결"]
     },
     {
       text: "점심시간에 회사 구내식당으로 이동 중 넘어져 발목을 다쳤어요. 산재 인정될까요?",
-      displayText: "점심시간에 회사 구내식당으로 이동 중 넘어져 발목을 다쳤어요. 산재 인정될까요? (정상 질문)",
       questionType: "normal",
-      category: "산재",
-      laws: ["산업재해보상보험법 제37조", "산업재해보상보험법 제5조", "근로기준법 제54조", "대법원 2017두74719 판결", "대법원 2014두3923 판결", "산업안전보건법 제5조", "고용노동부 업무상재해 인정기준"]
-    },
-    {
-      text: "퇴직금을 받을 수 있나요?",
-      displayText: "퇴직금을 받을 수 있나요? (정보 부족)",
-      questionType: "insufficient",
-      category: "임금·퇴직",
-      laws: ["근로자퇴직급여보장법 제8조", "근로기준법 제34조"]
-    },
-    {
-      text: "안녕하세요",
-      displayText: "안녕하세요 (의미없는 질문)",
-      questionType: "meaningless",
-      category: "전체",
-      laws: []
-    },
-    {
-      text: "배우자 명의 주택을 담보로 제가 대출받았는데 장기주택저당차입금 이자상환액 소득공제 받을 수 있나요?",
-      displayText: "배우자 명의 주택을 담보로 제가 대출받았는데 장기주택저당차입금 이자상환액 소득공제 받을 수 있나요? (범위 밖)",
-      questionType: "out-of-scope",
-      category: "임금·퇴직",
-      laws: ["소득세법 제52조", "소득세법 시행령 제111조", "조세특례제한법 제95조"]
+      category: "인사/노무",
+      laws: ["산업재해보상보험법 제37조", "산업재해보상보험법 제5조", "근로기준법 제54조", "대법원 2017두74719 판결"]
     },
     {
       text: "직원을 해고하지 않고 스스로 나가게 만드는 방법이 있을까요?",
-      displayText: "직원을 해고하지 않고 스스로 나가게 만드는 방법이 있을까요? (부적절한 질문)",
       questionType: "inappropriate",
-      category: "채용·해고",
+      category: "인사/노무",
       laws: ["근로기준법 제23조", "근로기준법 제76조"]
+    },
+    // ── 소득세 ──
+    {
+      text: "배우자 명의 주택을 담보로 제가 대출받았는데 장기주택저당차입금 이자상환액 소득공제 받을 수 있나요?",
+      questionType: "normal",
+      category: "소득세",
+      laws: ["소득세법 제52조", "소득세법 시행령 제111조", "조세특례제한법 제95조"]
+    },
+    {
+      text: "연말정산 시 부양가족 기본공제 요건이 어떻게 되나요?",
+      questionType: "normal",
+      category: "소득세",
+      laws: ["소득세법 제50조", "소득세법 시행령 제106조"]
+    },
+    {
+      text: "프리랜서로 활동 중인데 종합소득세 신고 대상에 해당하나요?",
+      questionType: "normal",
+      category: "소득세",
+      laws: ["소득세법 제14조", "소득세법 제70조", "소득세법 시행령 제147조"]
+    },
+    {
+      text: "퇴직소득세 계산 방법과 근로소득세와의 차이점이 궁금합니다.",
+      questionType: "normal",
+      category: "소득세",
+      laws: ["소득세법 제22조", "소득세법 제48조", "소득세법 시행령 제105조"]
+    },
+    // ── 부가가치세 ──
+    {
+      text: "음식점을 운영하는데 매입세액공제를 최대한 받으려면 어떻게 해야 하나요?",
+      questionType: "normal",
+      category: "부가가치세",
+      laws: ["부가가치세법 제38조", "부가가치세법 제39조", "부가가치세법 시행령 제79조"]
+    },
+    {
+      text: "수출 시 영세율 적용을 받으려면 어떤 서류가 필요한가요?",
+      questionType: "normal",
+      category: "부가가치세",
+      laws: ["부가가치세법 제21조", "부가가치세법 시행령 제64조", "부가가치세법 제32조"]
+    },
+    {
+      text: "간이과세자에서 일반과세자로 전환되면 어떻게 처리해야 하나요?",
+      questionType: "normal",
+      category: "부가가치세",
+      laws: ["부가가치세법 제61조", "부가가치세법 제62조", "부가가치세법 시행령 제109조"]
+    },
+    // ── 원천세 ──
+    {
+      text: "프리랜서 강사에게 강의료를 지급할 때 원천징수 세율이 얼마인가요?",
+      questionType: "normal",
+      category: "원천세",
+      laws: ["소득세법 제127조", "소득세법 제129조", "소득세법 시행령 제184조"]
+    },
+    {
+      text: "일용근로자와 상용근로자의 원천징수 방법이 어떻게 다른가요?",
+      questionType: "normal",
+      category: "원천세",
+      laws: ["소득세법 제134조", "소득세법 제127조", "소득세법 시행령 제197조"]
+    },
+    {
+      text: "퇴직금 지급 시 원천징수는 어떻게 처리하나요?",
+      questionType: "normal",
+      category: "원천세",
+      laws: ["소득세법 제148조", "소득세법 제22조", "소득세법 시행령 제202조"]
+    },
+    // ── 법인결산 ──
+    {
+      text: "법인의 접대비 손금산입 한도는 얼마인가요?",
+      questionType: "normal",
+      category: "법인결산",
+      laws: ["법인세법 제25조", "법인세법 시행령 제41조", "조세특례제한법 제136조"]
+    },
+    {
+      text: "업무용 승용차 비용 처리 한도와 요건이 어떻게 되나요?",
+      questionType: "normal",
+      category: "법인결산",
+      laws: ["법인세법 제27조의2", "법인세법 시행령 제50조의2", "소득세법 제33조의2"]
+    },
+    {
+      text: "대표이사 급여를 손금으로 인정받으려면 어떤 요건이 필요한가요?",
+      questionType: "normal",
+      category: "법인결산",
+      laws: ["법인세법 제26조", "법인세법 시행령 제43조", "법인세법 시행령 제44조"]
     },
   ];
 
-  const filteredPrompts = selectedCategory === "전체"
-    ? prompts
-    : prompts.filter(p => p.category === selectedCategory);
+  const filteredPrompts = prompts.filter(p => p.category === selectedCategory);
+  const totalPages = Math.ceil(filteredPrompts.length / ITEMS_PER_PAGE);
+  const paginatedPrompts = filteredPrompts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+    setCurrentPage(1);
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -188,20 +275,19 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (inputValue.trim()) {
-      onStartChat(inputValue, selectedLaws, undefined, undefined, chatMode);
+      onStartChat(inputValue, selectedLaws, undefined, undefined, "search");
       setInputValue("");
-      setUploadedFiles([]); // Clear file on submit
+      setUploadedFiles([]);
     }
   };
 
   const handlePromptClick = (promptText: string, relatedLaws: string[], questionType: string) => {
-    // 질문을 직접 채팅으로 전송 (questionType 포함)
-    onStartChat(promptText, selectedLaws, relatedLaws, questionType, chatMode);
+    onStartChat(promptText, selectedLaws, relatedLaws, questionType, "search");
   };
 
   return (
     <div className="flex-1 flex items-center justify-center px-6 relative overflow-hidden">
-      {/* 배경 플로팅 아이콘들 - 화면 전체 */}
+      {/* 배경 플로팅 아이콘들 */}
       <div className="absolute inset-0 pointer-events-none">
         {FLOATING_ICONS.map((item, index) => (
           <div
@@ -213,7 +299,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               animation: `float ${item.duration}s ease-in-out ${item.delay}s infinite`,
             }}
           >
-            <item.Icon 
+            <item.Icon
               className="text-primary"
               style={{
                 width: item.size,
@@ -242,20 +328,24 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
 
         {/* Avatar + 인사말 */}
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="w-[88px] h-[88px] rounded-full bg-primary/10 flex items-center justify-center shadow-sm">
-            <span className="text-5xl">⚖️</span>
+          <div className="w-[88px] h-[88px] rounded-full bg-primary/10 flex items-center justify-center shadow-sm overflow-hidden">
+            <img
+              src={characterImg}
+              alt="세법/노무도우미"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div>
             <p className="text-xl font-bold text-foreground">
-              안녕하세요, <span className="text-primary">노무도우미</span>입니다.
+              안녕하세요, <span className="text-primary">세법/노무도우미</span>입니다.
             </p>
             <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-              복잡한 노무 문제로 고민이신가요?<br />저에게 편하게 질문해 주세요.
+              복잡하고 까다로운 세법,노무 문제로 고민이신가요?<br />저에게 편하게 질문해 주세요.
             </p>
           </div>
         </div>
 
-        {/* 입력 카드 - 단일 행 */}
+        {/* 입력 카드 */}
         <div
           className={`w-full bg-card border rounded-2xl shadow-sm overflow-hidden transition-all relative ${
             isDragging ? 'border-primary bg-primary/5 scale-[1.01] shadow-md' : 'border-border/60'
@@ -294,7 +384,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
             }}
           />
 
-          {/* 툴바: [⚖️법령] [검색|의견서] | [파일칩…] [flex] [📎] [↑] */}
+          {/* 툴바: [⚖️법령] | [파일칩…] [flex] [📎] [↑] */}
           <div className="flex items-center gap-1.5 px-3 pb-3 pt-1 min-h-[44px]">
 
             {/* 좌 고정: 법령 선택 */}
@@ -303,25 +393,9 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               className="h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors whitespace-nowrap flex-shrink-0"
             >
               <span>⚖️</span>
-              <span>{selectedLaws.length === 0 || selectedLaws.length === 15 ? "전체 법령" : `${selectedLaws.length}개 법령`}</span>
+              <span>{selectedLaws.length === 0 || selectedLaws.length === 15 ? "전체" : `${selectedLaws.length}개 법령`}</span>
               <ChevronDown className="w-3 h-3" />
             </button>
-
-            {/* 좌 고정: 모드 토글 */}
-            <div className="h-8 inline-flex items-center p-0.5 bg-muted/60 rounded-lg flex-shrink-0">
-              <button
-                onClick={() => setChatMode("search")}
-                className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
-                  chatMode === "search" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >검색</button>
-              <button
-                onClick={() => setChatMode("opinion")}
-                className={`h-7 px-2.5 rounded-md text-xs font-medium transition-all ${
-                  chatMode === "opinion" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >의견서</button>
-            </div>
 
             {/* 구분선 */}
             <div className="w-px h-4 bg-border flex-shrink-0 mx-0.5" />
@@ -366,7 +440,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
           </div>
         </div>
 
-        {/* 노무 라우팅 안내 - 카드 밖, 파일 첨부 시에만 */}
+        {/* 노무 라우팅 안내 - 파일 첨부 시에만 */}
         {uploadedFiles.length > 0 && (
           <div className="w-full flex items-center gap-1.5 px-1 -mt-3">
             <Info className="w-3.5 h-3.5 text-muted-foreground/60 flex-shrink-0" />
@@ -376,15 +450,16 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
           </div>
         )}
 
-        {/* 추천 질문 - 카테고리 탭 */}
+        {/* 추천 질문 - 카테고리 탭 + 페이지네이션 */}
         <div className="w-full flex flex-col gap-4">
+          {/* 헤더: 타이틀 + 카테고리 탭 */}
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-sm font-semibold text-foreground whitespace-nowrap">이런 질문도 있어요</span>
             <div className="flex gap-1.5 flex-wrap">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => handleCategoryChange(cat)}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
                     selectedCategory === cat
                       ? "bg-primary text-primary-foreground"
@@ -397,10 +472,28 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
             </div>
           </div>
 
+          {/* 페이지네이션 - 탭 오른쪽 */}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2 -mt-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`text-xs font-medium transition-colors ${
+                    currentPage === page ? "text-primary" : "text-muted-foreground/50 hover:text-muted-foreground"
+                  }`}
+                >
+                  • {page}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 질문 카드 */}
           <div className="flex flex-col gap-2">
-            {filteredPrompts.map((prompt, index) => (
+            {paginatedPrompts.map((prompt, index) => (
               <button
-                key={index}
+                key={`${selectedCategory}-${currentPage}-${index}`}
                 onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType)}
                 className="flex items-center justify-between w-full px-5 py-4 bg-card border border-border/60 rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
               >
@@ -415,68 +508,21 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
       {/* CSS 애니메이션 */}
       <style>{`
         @keyframes float {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          25% {
-            transform: translateY(-20px) rotate(5deg);
-          }
-          50% {
-            transform: translateY(-10px) rotate(-5deg);
-          }
-          75% {
-            transform: translateY(-15px) rotate(3deg);
-          }
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          25% { transform: translateY(-20px) rotate(5deg); }
+          50% { transform: translateY(-10px) rotate(-5deg); }
+          75% { transform: translateY(-15px) rotate(3deg); }
         }
-
         @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        /* 파일 카드 애니메이션 */
-        .group {
-          animation: slideIn 0.3s ease-out;
-        }
-
-        /* 커스텀 스크롤바 스타일 */
-        textarea::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        textarea::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        textarea::-webkit-scrollbar-thumb {
-          background: rgba(99, 102, 241, 0.3);
-          border-radius: 3px;
-        }
-
-        textarea::-webkit-scrollbar-thumb:hover {
-          background: rgba(99, 102, 241, 0.5);
-        }
-
-        /* Firefox 스크롤바 */
-        textarea {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
-        }
+        .group { animation: slideIn 0.3s ease-out; }
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 3px; }
+        textarea::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.5); }
+        textarea { scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.3) transparent; }
       `}</style>
     </div>
   );
