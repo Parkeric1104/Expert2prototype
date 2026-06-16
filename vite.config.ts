@@ -30,4 +30,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    // 다른 인스턴스(5173)와 포트 충돌 방지
+    port: 5273,
+    strictPort: true,
+  },
 })

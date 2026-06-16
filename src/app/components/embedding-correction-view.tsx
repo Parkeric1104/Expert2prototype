@@ -512,7 +512,7 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
 
   // ── 렌더 ──────────────────────────────────────────────
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
+    <div className="flex-1 flex flex-col overflow-hidden">
 
       {/* ── 상단 헤더 ── */}
       <div className="border-b border-border bg-white px-6 py-3 flex-shrink-0">

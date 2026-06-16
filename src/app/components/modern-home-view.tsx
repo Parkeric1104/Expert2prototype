@@ -144,12 +144,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     onStartChat(text, selectedLaws, laws, questionType);
 
   return (
-    <div
-      className="flex-1 flex items-start justify-center px-6 relative overflow-y-auto"
-      style={{
-        background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #E9EAFB 75%, #C9CCF4 100%)",
-      }}
-    >
+    <div className="flex-1 flex items-start justify-center px-6 relative overflow-y-auto">
 
       <div className="absolute bottom-6 left-6 z-20"><CreditStatus /></div>
       <div className="absolute bottom-4 right-0 left-0 z-20">

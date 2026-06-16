@@ -23,6 +23,8 @@ export default function App() {
   const [isRefiningSearch, setIsRefiningSearch] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isAdmin] = useState<boolean>(true);
+  // 체험판 여부 (체험판에서는 답변 평가 미제공) — 실제로는 사용자 플랜 정보에서 주입
+  const [isTrial] = useState<boolean>(false);
   const [hasChatMessages, setHasChatMessages] = useState(false);
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [showServiceFeedback, setShowServiceFeedback] = useState(false);
@@ -144,14 +146,42 @@ export default function App() {
     }
   };
 
+  // CHA-012: 답변 완료 상태에서 세션 종료 시 평가 노출 여부 판단
+  // - 체험판 미제공 / 1일 최대 1회 / 대화 세션 3회당 1회
+  const shouldShowFeedbackOnLeave = (): boolean => {
+    if (isTrial) return false;            // 체험판 미제공
+    if (!hasChatMessages) return false;   // 답변 완료 상태에서만
+
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+
+      // 종료된 대화 세션 수 누적
+      const sessionCount = Number(localStorage.getItem("feedbackSessionCount") || "0") + 1;
+      localStorage.setItem("feedbackSessionCount", String(sessionCount));
+
+      // 대화 세션 3회당 1회
+      if (sessionCount % 3 !== 0) return false;
+
+      // 1일 최대 1회
+      if (localStorage.getItem("feedbackLastShownDate") === today) return false;
+
+      localStorage.setItem("feedbackLastShownDate", today);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleLeaveConfirm = () => {
     if (pendingNavigationAction) {
       pendingNavigationAction();
       setPendingNavigationAction(null);
     }
     setShowLeaveConfirmModal(false);
-    // 채팅 세션 종료 시 서비스 평가 요청
-    setShowServiceFeedback(true);
+    // 답변 완료 + 세션 종료 → 노출 빈도 조건 충족 시에만 평가 요청
+    if (shouldShowFeedbackOnLeave()) {
+      setShowServiceFeedback(true);
+    }
   };
 
   const handleLeaveCancel = () => {
@@ -159,7 +189,12 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div
+      className="flex flex-col h-screen overflow-hidden"
+      style={{
+        background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #E9EAFB 75%, #C9CCF4 100%)",
+      }}
+    >
       {/* Top Header – embedding 상세 화면에서는 미노출 */}
       {currentView !== "embedding" && (
         <TopHeader

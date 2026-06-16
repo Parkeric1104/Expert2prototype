@@ -123,8 +123,8 @@ const FLOATING_ICONS = [
   { Icon: UserCheck, delay: 4, duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
-// 멀티턴 제한 상수 (최대 6회)
-const MAX_QUESTIONS = 6;
+// 멀티턴 제한 상수 (최대 5회)
+const MAX_QUESTIONS = 5;
 
 export function ModernChatInterface({
   initialMessage,
@@ -237,17 +237,11 @@ export function ModernChatInterface({
       return { msg: { ...base, isSimpleResponse: true }, delay: DELAY_SIMPLE };
     }
 
-    // 후속(멀티턴) — 간단 트랙에서 상세 답변으로 강제/승급되는 두 조건
+    // 후속(멀티턴) — 간단 트랙에서 n-2번째 턴 도달 후의 턴은 무조건 상세 답변으로 강제 전환
+    // (예: MAX 5회 → 추가질문 3 = 4번째 턴부터 상세 답변)
     if (answerTrack === "simple") {
-      // 지금 생성하는 답변의 턴 번호 (이미 나온 AI 답변 수 + 1)
-      const turnBeingAnswered = getAIResponseCount() + 1;
-      // (1) n-2번째 턴에 도달한 이후의 턴은 무조건 상세 답변으로 강제 전환
-      const forcedByTurnLimit = turnBeingAnswered >= MAX_QUESTIONS - 1;
-      // (2) 누적 질문 복잡도가 상승하면 상세 답변으로 승급
-      const upgradedByComplexity =
-        classifyComplexity(getAccumulatedQuestions(question)) === "detailed";
-
-      if (forcedByTurnLimit || upgradedByComplexity) {
+      const turnBeingAnswered = getAIResponseCount() + 1; // 지금 생성하는 답변의 턴 번호
+      if (turnBeingAnswered >= MAX_QUESTIONS - 1) {
         setAnswerTrack("detailed");
         return { msg: { ...base, isEnhancedResponse: true }, delay: DELAY_DETAILED };
       }
@@ -1063,13 +1057,8 @@ ${integratedData.aiOpinionSummary}
     }
   }, [requestDraftDocument]);
 
-  // 세션 제한 확인
-  useEffect(() => {
-    const aiResponseCount = getAIResponseCount();
-    if (aiResponseCount >= MAX_QUESTIONS) {
-      setShowSessionLimitModal(true);
-    }
-  }, [messages]);
+  // 세션 제한 모달은 n+1번째 질문을 "제출"할 때만 노출 (submitQuestion 내부에서 처리).
+  // 답변 완료 직후 자동 노출하지 않도록 messages 감시 트리거는 제거.
 
   // 세션 제한 모달에서 질문 재시도
   const handleRetryQuestion = () => {
@@ -1140,52 +1129,9 @@ ${integratedData.aiOpinionSummary}
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
-      {/* 배경 아이콘 레이어 - 메인 화면과 동일 */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        {FLOATING_ICONS.map((item, index) => (
-          <div
-            key={index}
-            className="absolute"
-            style={{
-              left: item.x,
-              top: item.y,
-              animation: `float ${item.duration}s ease-in-out ${item.delay}s infinite`,
-            }}
-          >
-            <item.Icon 
-              className="text-primary"
-              style={{
-                width: item.size,
-                height: item.size,
-                opacity: item.opacity,
-              }}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* CSS 애니메이션 */}
-      <style>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          25% {
-            transform: translateY(-20px) rotate(5deg);
-          }
-          50% {
-            transform: translateY(-10px) rotate(-5deg);
-          }
-          75% {
-            transform: translateY(-15px) rotate(3deg);
-          }
-        }
-      `}</style>
-
-      {/* Chat Messages Area */}
+      {/* Chat Messages Area — 배경은 App 루트 그라데이션을 그대로 노출 (메인 화면과 동일) */}
       <div className="flex-1 relative z-10 px-6 overflow-hidden">
-        {/* 고정 흰색 배경 컨테이너 - 상단/하단과 이어짐 */}
-        <div className="max-w-3xl mx-auto bg-white dark:bg-gray-950 shadow-lg h-full flex flex-col">
+        <div className="max-w-3xl mx-auto h-full flex flex-col">
           {/* 내부에서만 스크롤 가능 */}
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {messages.length === 0 && (
