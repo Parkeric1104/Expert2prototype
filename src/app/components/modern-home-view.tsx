@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { CreditStatus } from "@/app/components/credit-status";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
-  Plus, Check, Zap, FileEdit
+  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2
 } from "lucide-react";
 import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
@@ -11,7 +11,7 @@ import {
 import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 interface ModernHomeViewProps {
-  onStartChat: (query: string, selectedLaws: string[], relatedLaws?: string[], questionType?: string, chatMode?: "search" | "opinion") => void;
+  onStartChat: (query: string, selectedLaws: string[], relatedLaws?: string[], questionType?: string) => void;
   onOpenLawSelector: () => void;
   selectedLaws: string[];
 }
@@ -34,44 +34,14 @@ const FLOATING_ICONS = [
 const CATEGORIES = ["인사/노무", "소득세", "부가가치세", "원천세", "법인결산"];
 const ITEMS_PER_PAGE = 3;
 
-const MODES: { id: "search" | "opinion"; icon: React.ReactNode; label: string; desc: string }[] = [
-  {
-    id: "search",
-    icon: <Zap className="w-4 h-4 text-blue-500" />,
-    label: "빠른 답변",
-    desc: "핵심 내용을 간결하게 전달",
-  },
-  {
-    id: "opinion",
-    icon: <FileEdit className="w-4 h-4 text-violet-500" />,
-    label: "의견서 작성",
-    desc: "법적 근거와 함께 상세 검토",
-  },
-];
-
 export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
-  const [chatMode, setChatMode]         = useState<"search" | "opinion">("search");
-  const [showModePopup, setShowModePopup] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("인사/노무");
   const [currentPage, setCurrentPage]   = useState(1);
 
   const fileInputRef    = useRef<HTMLInputElement>(null);
-  const modeButtonRef   = useRef<HTMLDivElement>(null);
-
-  // 모드 팝업 외부 클릭 시 닫기
-  useEffect(() => {
-    if (!showModePopup) return;
-    const handler = (e: MouseEvent) => {
-      if (modeButtonRef.current && !modeButtonRef.current.contains(e.target as Node)) {
-        setShowModePopup(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showModePopup]);
 
   const getFileIcon = (fileName: string) => {
     if (fileName.endsWith(".pdf"))  return "📄";
@@ -84,7 +54,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     // ── 인사/노무 ──
     { text: "근로자의 개별 동의를 받거나, 연차대체를 취업규칙에 규정하여 근로자의 과반수 동의를 얻어 변경한 경우 근로자대표와의 별도 서면합의가 없어도 되나요?", questionType: "normal",       category: "인사/노무",   laws: ["근로기준법 제62조", "근로기준법 제93조"] },
     { text: "연차촉진제를 실시했음에도 불구하고 근로자가 지정된 휴가일에 출근하는 경우는 어떻게 되나요?",                                                               questionType: "normal",       category: "인사/노무",   laws: ["근로기준법 제61조", "근로기준법 제60조"] },
-    { text: "포괄임금제와 고정OT제는 어떻게 다른가요?",                                                                                                              questionType: "normal",       category: "인사/노무",   laws: ["근로기준법 제56조", "대법원 2010다91046 판결"] },
+    { text: "포괄임금제와 고정OT제는 어떻게 다른가요?",                                                                                                              questionType: "simple",       category: "인사/노무",   laws: ["근로기준법 제17조", "근로기준법 제56조"] },
     { text: "연차 사용 시 회사가 사용 사유를 물어봐도 되나요?",                                                                                                       questionType: "simple",       category: "인사/노무",   laws: ["근로기준법 제60조", "근로기준법 시행령 제30조"] },
     { text: "점심시간에 회사 구내식당으로 이동 중 넘어져 발목을 다쳤어요. 산재 인정될까요?",                                                                              questionType: "normal",       category: "인사/노무",   laws: ["산업재해보상보험법 제37조", "대법원 2017두74719 판결"] },
     { text: "직원을 해고하지 않고 스스로 나가게 만드는 방법이 있을까요?",                                                                                               questionType: "inappropriate", category: "인사/노무",   laws: ["근로기준법 제23조", "근로기준법 제76조"] },
@@ -165,27 +135,21 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputValue.trim()) return;
-    onStartChat(inputValue, selectedLaws, undefined, undefined, chatMode);
+    onStartChat(inputValue, selectedLaws, undefined, undefined);
     setInputValue("");
     setUploadedFiles([]);
   };
 
   const handlePromptClick = (text: string, laws: string[], questionType: string) =>
-    onStartChat(text, selectedLaws, laws, questionType, chatMode);
-
-  const currentMode = MODES.find(m => m.id === chatMode)!;
+    onStartChat(text, selectedLaws, laws, questionType);
 
   return (
-    <div className="flex-1 flex items-center justify-center px-6 relative overflow-hidden">
-
-      {/* 배경 플로팅 아이콘 */}
-      <div className="absolute inset-0 pointer-events-none">
-        {FLOATING_ICONS.map((item, i) => (
-          <div key={i} className="absolute" style={{ left: item.x, top: item.y, animation: `float ${item.duration}s ease-in-out ${item.delay}s infinite` }}>
-            <item.Icon className="text-primary" style={{ width: item.size, height: item.size, opacity: item.opacity }} />
-          </div>
-        ))}
-      </div>
+    <div
+      className="flex-1 flex items-start justify-center px-6 relative overflow-y-auto"
+      style={{
+        background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #E9EAFB 75%, #C9CCF4 100%)",
+      }}
+    >
 
       <div className="absolute bottom-6 left-6 z-20"><CreditStatus /></div>
       <div className="absolute bottom-4 right-0 left-0 z-20">
@@ -195,19 +159,19 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="w-full max-w-[680px] flex flex-col items-center gap-7 relative z-10 py-8">
+      <div className="w-full max-w-[760px] flex flex-col items-center gap-7 relative z-10 pt-12 pb-16">
 
         {/* 아바타 + 인삿말 */}
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="w-[88px] h-[88px] rounded-full bg-primary/10 flex items-center justify-center shadow-sm overflow-hidden">
+        <div className="flex flex-col items-center gap-5 text-center">
+          <div className="w-[96px] h-[96px] rounded-full bg-primary/10 flex items-center justify-center shadow-sm overflow-hidden">
             <img src={characterImg} alt="세법/노무도우미" className="w-full h-full object-cover" />
           </div>
-          <div>
-            <p className="text-xl font-bold text-foreground">
-              안녕하세요, <span className="text-primary">세법/노무도우미</span>입니다.
+          <div className="space-y-1.5">
+            <p className="text-[22px] leading-snug text-foreground">
+              안녕하세요, <span className="font-bold">세법/노무도우미</span> 입니다.
             </p>
-            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-              복잡하고 까다로운 세법,노무 문제로 고민이신가요?<br />저에게 편하게 질문해 주세요.
+            <p className="text-[22px] leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
+              복잡하고 까다로운 세법,노무 문제로 고민이신가요? 저에게 편하게 질문해 주세요.
             </p>
           </div>
         </div>
@@ -252,17 +216,13 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
             {/* 좌: 법령 선택 */}
             <button
               onClick={onOpenLawSelector}
-              className="h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors whitespace-nowrap flex-shrink-0"
+              className="h-8 flex items-center gap-1.5 px-3 rounded-full text-sm text-foreground/80 hover:text-foreground hover:bg-muted/70 transition-colors whitespace-nowrap flex-shrink-0"
             >
-              <span>⚖️</span>
+              <Settings2 className="w-4 h-4" />
               <span>{selectedLaws.length === 0 || selectedLaws.length === 15 ? "전체" : `${selectedLaws.length}개 법령`}</span>
-              <ChevronDown className="w-3 h-3" />
             </button>
 
-            {/* 구분선 */}
-            <div className="w-px h-4 bg-border flex-shrink-0 mx-0.5" />
-
-            {/* 중앙: 파일 첨부 영역 */}
+            {/* 파일 칩 (첨부 시) */}
             <input
               type="file"
               ref={fileInputRef}
@@ -271,19 +231,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               className="hidden"
               multiple
             />
-
-            {uploadedFiles.length === 0 ? (
-              /* 파일 없을 때: 파일 첨부 버튼 */
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="h-7 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors flex-shrink-0"
-              >
-                <Paperclip className="w-3.5 h-3.5" />
-                <span>파일 첨부</span>
-              </button>
-            ) : (
-              /* 파일 있을 때: 칩 + 추가하기 버튼 */
+            {uploadedFiles.length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap">
                 {uploadedFiles.map((file, idx) => (
                   <div
@@ -301,77 +249,27 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
                     </button>
                   </div>
                 ))}
-                {uploadedFiles.length < 5 && (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="h-7 flex items-center gap-1 px-2 rounded-lg text-xs font-medium text-primary hover:bg-primary/10 transition-colors flex-shrink-0"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>추가하기</span>
-                  </button>
-                )}
               </div>
             )}
 
             <div className="flex-1" />
 
-            {/* 우: 모드 선택 */}
-            <div className="relative flex-shrink-0" ref={modeButtonRef}>
-              <button
-                type="button"
-                onClick={() => setShowModePopup(v => !v)}
-                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-lg text-xs font-medium transition-colors ${
-                  showModePopup
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                }`}
-              >
-                {currentMode.icon}
-                <span>{currentMode.label}</span>
-                <ChevronDown className={`w-3 h-3 transition-transform ${showModePopup ? "rotate-180" : ""}`} />
-              </button>
-
-              {/* 모드 팝업 */}
-              {showModePopup && (
-                <div className="absolute bottom-full right-0 mb-2 w-60 bg-popover border border-border/60 rounded-2xl shadow-xl overflow-hidden z-50">
-                  {/* 헤더 */}
-                  <div className="px-4 pt-3 pb-2 border-b border-border/40">
-                    <p className="text-xs font-semibold text-foreground">답변 방식</p>
-                  </div>
-                  {/* 모드 항목 */}
-                  <div className="p-1.5 flex flex-col gap-0.5">
-                    {MODES.map(mode => (
-                      <button
-                        key={mode.id}
-                        type="button"
-                        onClick={() => { setChatMode(mode.id); setShowModePopup(false); }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
-                          chatMode === mode.id
-                            ? "bg-primary/8 text-foreground"
-                            : "hover:bg-muted/60 text-foreground"
-                        }`}
-                      >
-                        <span className="flex-shrink-0">{mode.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium leading-none">{mode.label}</p>
-                          <p className="text-xs text-muted-foreground mt-1 leading-snug">{mode.desc}</p>
-                        </div>
-                        {chatMode === mode.id && (
-                          <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* 우: 파일 첨부 (아이콘) */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="파일 첨부"
+              className="h-9 w-9 rounded-full border border-border bg-card text-foreground/70 hover:text-foreground hover:bg-muted/60 transition-colors flex items-center justify-center flex-shrink-0"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
 
             {/* 우: 전송 */}
             <button
               onClick={handleSubmit}
               disabled={!inputValue.trim()}
-              className="h-8 w-8 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+              aria-label="질문 보내기"
+              className="h-9 w-9 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-all disabled:bg-muted disabled:text-muted-foreground/50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
             >
               <ArrowUp className="w-4 h-4" />
             </button>
@@ -391,16 +289,16 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
         {/* 추천 질문 */}
         <div className="w-full flex flex-col gap-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm font-semibold text-foreground whitespace-nowrap">이런 질문도 있어요</span>
+            <span className="text-sm font-bold text-foreground whitespace-nowrap">이런 질문도 있어요</span>
             <div className="flex gap-1.5 flex-wrap">
               {CATEGORIES.map(cat => (
                 <button
                   key={cat}
                   onClick={() => handleCategoryChange(cat)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
                     selectedCategory === cat
                       ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                      : "bg-card text-foreground border border-border/60 hover:border-primary/40"
                   }`}
                 >
                   {cat}
@@ -410,13 +308,16 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center gap-2 -mt-2">
+            <div className="w-full flex items-center gap-5 px-4 py-1.5 rounded-full bg-indigo-200/40 -mt-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
+                  aria-label={`${page}페이지`}
                   className={`text-xs font-medium transition-colors ${
-                    currentPage === page ? "text-primary" : "text-muted-foreground/40 hover:text-muted-foreground"
+                    currentPage === page
+                      ? "text-primary font-semibold"
+                      : "text-muted-foreground/60 hover:text-muted-foreground"
                   }`}
                 >
                   • {page}

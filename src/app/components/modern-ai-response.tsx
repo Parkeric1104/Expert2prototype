@@ -122,53 +122,10 @@ export function ModernAIResponse({
                 </div>
               </div>
             )}
+
           </div>
         </div>
       </div>
-
-      {/* Action Buttons - 한 줄 pill 배치 (의견서 작성 모드에서만 표시) */}
-      {showActionButtons && (
-        <div className="mb-6">
-          <div className="h-px" style={{ background: '#F2F4F6' }} />
-          <div className="pt-3 flex items-center gap-2">
-            {/* 법령 재선택 */}
-            {onRefineSearch && !hasAIOpinion && (
-              <button
-                onClick={onRefineSearch}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all hover:opacity-80 active:scale-95"
-                style={{ background: '#F2F4F6', color: '#4E5968', border: '1px solid #E5E8EB' }}
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                법령 재선택
-              </button>
-            )}
-
-            {/* 의견서 작성 */}
-            {onDraftDocument && (
-              <button
-                onClick={onDraftDocument}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all hover:opacity-80 active:scale-95"
-                style={{ background: '#E8F3FF', color: '#1B64DA', border: '1px solid #C2DCFF' }}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                의견서 작성
-              </button>
-            )}
-
-            {/* AI 심층분석 */}
-            {onRequestAIOpinion && !hasAIOpinion && (
-              <button
-                onClick={onRequestAIOpinion}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium transition-all hover:opacity-80 active:scale-95"
-                style={{ background: '#F3F0FF', color: '#6B47ED', border: '1px solid #DDD6FE' }}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                AI 심층분석
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Answer Detail Sidebar */}
       <AnswerDetailSidebar

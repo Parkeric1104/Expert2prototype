@@ -1,5 +1,4 @@
 import { Menu, BookOpen, ChevronLeft } from "lucide-react";
-import logoIcon from "@/imports/image-1.png";
 
 interface TopHeaderProps {
   variant?: "home" | "chat" | "policy";
@@ -65,35 +64,22 @@ export function TopHeader({
     );
   }
 
-  // [1-1] 메인/홈 화면 GNB: ☰ + 로고 (좌측), 사용자 매뉴얼 (우측)
+  // [1-1] 메인/홈 화면 GNB: ☰ (좌측), 사용자 매뉴얼 (우측) — 배경과 이어지도록 보더 없음
   return (
-    <header className="bg-card border-b border-border">
+    <header className="bg-white">
       <div className="h-14 flex items-center justify-between px-5">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onToggleSidebar}
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label="메뉴 열기"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <button
-            onClick={onLogoClick}
-            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity cursor-pointer"
-          >
-            <img
-              src={logoIcon}
-              alt="노무도우미 로고"
-              className="w-8 h-8 object-contain"
-            />
-            <span className="text-base font-bold text-primary">노무도우미</span>
-          </button>
-        </div>
+        <button
+          onClick={onToggleSidebar}
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
+          aria-label="메뉴 열기"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
 
         <nav className="flex items-center gap-5">
           <button
             onClick={() => console.log("사용자 매뉴얼 열기")}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
           >
             <BookOpen className="w-4 h-4" />
             사용자 매뉴얼

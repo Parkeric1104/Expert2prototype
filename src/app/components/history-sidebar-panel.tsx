@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Calendar,
@@ -9,10 +9,22 @@ import {
   MessageSquarePlus,
   BookOpen,
   FileStack,
-  Eye
+  Eye,
+  Trash2
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 
 interface ChatHistoryItem {
   id: string;
@@ -49,9 +61,10 @@ export function HistorySidebarPanel({
   pendingPoliciesCount = 0
 }: HistorySidebarPanelProps) {
   const [expandedChat, setExpandedChat] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   // Mock chat history data (간략화된 버전)
-  const chatHistory: ChatHistoryItem[] = [
+  const initialChatHistory: ChatHistoryItem[] = [
     {
       id: "1",
       title: "구내식당 이동 중 사고 업무상 재해 검토",
@@ -109,6 +122,18 @@ export function HistorySidebarPanel({
     },
   ];
 
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>(initialChatHistory);
+
+  // ESC 키로 패널 닫기 (REQ-06)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   const toggleExpand = (chatId: string) => {
     setExpandedChat(expandedChat === chatId ? null : chatId);
   };
@@ -118,6 +143,17 @@ export function HistorySidebarPanel({
       onViewChatHistory(chatId);
     }
   };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetId) return;
+    const target = chatHistory.find((c) => c.id === deleteTargetId);
+    setChatHistory((prev) => prev.filter((c) => c.id !== deleteTargetId));
+    if (expandedChat === deleteTargetId) setExpandedChat(null);
+    setDeleteTargetId(null);
+    toast.success(`"${target?.title ?? "대화"}" 히스토리가 삭제되었습니다.`);
+  };
+
+  const deleteTarget = chatHistory.find((c) => c.id === deleteTargetId);
 
   if (!isOpen) return null;
 
@@ -200,7 +236,7 @@ export function HistorySidebarPanel({
                   {/* Accordion Header */}
                   <div className="p-3">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 space-y-1.5">
+                      <div className="flex-1 space-y-1.5 min-w-0">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Calendar className="w-3 h-3" />
                           <span>{chat.date}</span>
@@ -214,6 +250,7 @@ export function HistorySidebarPanel({
                         variant="ghost"
                         onClick={() => toggleExpand(chat.id)}
                         className="h-7 w-7 p-0 flex-shrink-0"
+                        aria-label={expandedChat === chat.id ? "접기" : "펼치기"}
                       >
                         {expandedChat === chat.id ? (
                           <ChevronUp className="w-4 h-4" />
@@ -243,16 +280,28 @@ export function HistorySidebarPanel({
                         </p>
                       </div>
 
-                      {/* 채팅 이력보기 버튼 */}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewHistory(chat.id)}
-                        className="w-full gap-2 text-xs h-8"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        채팅 이력보기
-                      </Button>
+                      {/* 채팅 이력보기 / 삭제 버튼 */}
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewHistory(chat.id)}
+                          className="flex-1 gap-2 text-xs h-8"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          채팅 이력보기
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDeleteTargetId(chat.id)}
+                          className="gap-2 text-xs h-8 text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                          aria-label="대화 삭제"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          삭제
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -268,6 +317,28 @@ export function HistorySidebarPanel({
           </ScrollArea>
         </div>
       </div>
+
+      {/* 삭제 확인 다이얼로그 */}
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>대화를 삭제할까요?</AlertDialogTitle>
+            <AlertDialogDescription style={{ wordBreak: "keep-all" }}>
+              {deleteTarget ? `"${deleteTarget.title}"` : "선택한 대화"} 히스토리가 삭제됩니다.
+              삭제된 대화는 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -8,6 +8,7 @@ import { LawSelectionModal } from "@/app/components/law-selection-modal";
 import { EnhancedChatHistoryModal } from "@/app/components/enhanced-chat-history-modal";
 import { HistorySidebarPanel } from "@/app/components/history-sidebar-panel";
 import { ChatLeaveConfirmModal } from "@/app/components/chat-leave-confirm-modal";
+import { ServiceFeedbackModal } from "@/app/components/service-feedback-modal";
 import { Toaster } from "@/app/components/ui/sonner";
 
 export default function App() {
@@ -24,10 +25,10 @@ export default function App() {
   const [isAdmin] = useState<boolean>(true);
   const [hasChatMessages, setHasChatMessages] = useState(false);
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
+  const [showServiceFeedback, setShowServiceFeedback] = useState(false);
   const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<EmbeddingCorrectionPolicy | null>(null);
   const [pendingPoliciesCount, setPendingPoliciesCount] = useState<number>(0);
-  const [chatMode, setChatMode] = useState<"search" | "opinion">("search");
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
 
   // pending 정책 개수 확인 (테스트용: 3개)
@@ -42,12 +43,11 @@ export default function App() {
     }
   }, [isAdmin]);
 
-  const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string, mode?: "search" | "opinion") => {
+  const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string) => {
     setChatQuery(query);
     setSelectedLaws(laws);
     setRelatedLaws(promptRelatedLaws || []); // 추천 질문의 관련 법령 저장
     setQuestionType(promptQuestionType); // 질문 유형 저장
-    setChatMode(mode || "search"); // 모드 설정 (기본값: 검색 모드)
     setCurrentView("chat");
     setCurrentStep(1); // 질문 입력 단계
   };
@@ -150,6 +150,8 @@ export default function App() {
       setPendingNavigationAction(null);
     }
     setShowLeaveConfirmModal(false);
+    // 채팅 세션 종료 시 서비스 평가 요청
+    setShowServiceFeedback(true);
   };
 
   const handleLeaveCancel = () => {
@@ -219,7 +221,6 @@ export default function App() {
           onMessagesChange={setHasChatMessages}
           relatedLaws={relatedLaws}
           questionType={questionType}
-          chatMode={chatMode}
           requestDraftDocument={requestDraftDocument}
           onDraftDocumentHandled={() => setRequestDraftDocument(false)}
         />
@@ -254,6 +255,12 @@ export default function App() {
         onSelectChat={handleSelectChat}
       />
 
+      {/* 서비스 평가 모달 (채팅 세션 종료 시) */}
+      <ServiceFeedbackModal
+        isOpen={showServiceFeedback}
+        onClose={() => setShowServiceFeedback(false)}
+      />
+
       {/* Toast Notifications */}
       <Toaster />
 
@@ -262,7 +269,7 @@ export default function App() {
         isOpen={showLeaveConfirmModal}
         onClose={() => setShowLeaveConfirmModal(false)}
         onConfirm={handleLeaveConfirm}
-        onDraftDocument={chatMode === "opinion" && hasChatMessages ? () => {
+        onDraftDocument={hasChatMessages ? () => {
           setShowLeaveConfirmModal(false);
           setRequestDraftDocument(true);
         } : undefined}

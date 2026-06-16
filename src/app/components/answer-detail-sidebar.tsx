@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { X, FileText, BookOpen, Scale, Gavel, Sparkles, ChevronRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import { SourcesContent } from "@/app/components/sources-and-history-panel";
+import type { PanelSource } from "@/app/components/sources-and-history-panel";
 
 interface Source {
   type: "법령" | "해석례" | "판례";
@@ -41,8 +43,9 @@ export function AnswerDetailSidebar({
   questionSummary,
   isInitialAnswer = false,
 }: AnswerDetailSidebarProps) {
-  const [viewMode, setViewMode] = useState<"answer" | "law">("answer");
+  const [viewMode, setViewMode] = useState<"answer" | "law" | "sources">("answer");
   const [selectedLaw, setSelectedLaw] = useState<Source | null>(null);
+  const [selectedSourceTitle, setSelectedSourceTitle] = useState<string>("");
   
   // 타이핑 효과를 위한 상태
   const [typingStage, setTypingStage] = useState(0); // 0: 준비, 1: 사실관계, 2: 질의내용, 3: 검토내용, 4: 근거법령, 5: 결론
@@ -59,18 +62,21 @@ export function AnswerDetailSidebar({
 
   // Handler functions - defined before useEffect hooks to avoid hoisting issues
   const handleLawClick = (source: Source) => {
-    setSelectedLaw(source);
-    setViewMode("law");
+    // 출처 클릭 → 같은 패널 안에서 "sources" 뷰로 슬라이드 전환
+    setSelectedSourceTitle(source.title);
+    setViewMode("sources");
   };
 
   const handleBackToAnswer = () => {
     setViewMode("answer");
     setSelectedLaw(null);
+    setSelectedSourceTitle("");
   };
 
   const handleClose = () => {
     setViewMode("answer");
     setSelectedLaw(null);
+    setSelectedSourceTitle("");
     onClose();
   };
 
@@ -253,12 +259,12 @@ export function AnswerDetailSidebar({
 
       {/* Sidebar */}
       <div className="fixed top-0 right-0 h-full w-full max-w-3xl bg-background border-l border-border shadow-2xl z-50 flex flex-col overflow-hidden">
-        {/* 두 개의 뷰를 겹쳐서 배치 */}
+        {/* 세 개의 뷰를 겹쳐서 배치 */}
         <div className="relative flex-1">
           {/* Answer View */}
           <div
             className={`absolute inset-0 flex flex-col transition-transform duration-300 ${
-              viewMode === "law" ? "-translate-x-full" : "translate-x-0"
+              viewMode !== "answer" ? "-translate-x-full" : "translate-x-0"
             }`}
           >
             {/* Header */}
@@ -480,7 +486,7 @@ export function AnswerDetailSidebar({
                         <Sparkles className="w-3.5 h-3.5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-sm font-bold text-foreground">AI 심층분석 결과</h4>
+                        <h4 className="text-sm font-bold text-foreground">AI 상세의견 결과</h4>
                       </div>
                     </div>
 
@@ -553,6 +559,37 @@ export function AnswerDetailSidebar({
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Sources & History View */}
+          <div
+            className={`absolute inset-0 flex flex-col bg-background transition-transform duration-300 ${
+              viewMode === "sources" ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 h-16 border-b border-border flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToAnswer}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="font-medium">상세 답변</span>
+              </Button>
+              <h3 className="text-sm font-bold text-foreground absolute left-1/2 -translate-x-1/2">
+                출처 및 탐색기록
+              </h3>
+              <Button variant="ghost" size="icon" onClick={handleClose}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            {/* SourcesContent 인라인 렌더 */}
+            <SourcesContent
+              sources={sources as PanelSource[]}
+              initialSelectedTitle={selectedSourceTitle}
+            />
           </div>
 
           {/* Law Detail View */}

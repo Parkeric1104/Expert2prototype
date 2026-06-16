@@ -20,7 +20,7 @@ interface ChatHistoryItem {
   category: string;
   hasDocument: boolean;
   documentName?: string;
-  // AI 심층분석 데이터
+  // AI 상세의견 데이터
   hasDebate?: boolean;
   debates?: Array<{
     round: number;
