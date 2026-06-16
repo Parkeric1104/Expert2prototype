@@ -590,6 +590,32 @@ export const getDummyResponse = (userMessage: string): EnhancedResponseData => {
   };
 };
 
+// 멀티턴(대화형) 답변 본문 — 결론 + 검토내용을 자연스러운 줄글로 합쳐 길게 구성
+export const buildMultiTurnBody = (data: EnhancedResponseData): string => {
+  const paras: string[] = [];
+
+  // 1) 결론을 대화체 도입으로
+  if (data.conclusion) paras.push(data.conclusion);
+
+  // 2) 검토 내용을 풀어서 부연 설명 (서식/번호 표기는 줄글로 완화)
+  if (data.reviewContent) {
+    const explained = data.reviewContent
+      .replace(/^\s*\d+\.\s*/gm, "")      // "1. " 번호 제거
+      .replace(/^[✓•]\s*/gm, "")          // 체크/불릿 기호 제거
+      .replace(/\n{2,}/g, "\n")           // 빈 줄 정리
+      .trim();
+    if (explained) paras.push(`좀 더 자세히 말씀드리면, ${explained}`);
+  }
+
+  // 3) 질의 재정의가 있으면 마무리 보강
+  if (data.queryRedefinition) {
+    paras.push(data.queryRedefinition);
+  }
+
+  // 내용이 부족하면 결론만이라도 반환
+  return paras.join("\n\n") || data.conclusion;
+};
+
 // 답변 하단 후속 추천 질문 (REQ-03) — 맥락 기반, 세무↔노무 교차 추천 포함
 export const getFollowUpQuestions = (userMessage: string): string[] => {
   const m = userMessage.toLowerCase();

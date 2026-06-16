@@ -35,7 +35,7 @@ import {
   Info
 } from "lucide-react";
 import { toast } from "sonner";
-import { getDummyResponse } from "@/app/data/dummy-responses";
+import { getDummyResponse, buildMultiTurnBody } from "@/app/data/dummy-responses";
 import { validateQuestion, ValidationReason } from "@/app/utils/validate-question";
 import {
   AlertDialog,
@@ -1186,7 +1186,7 @@ ${integratedData.aiOpinionSummary}
                 {/* 멀티턴(대화형) 답변 */}
                 {message.isMultiTurnResponse && message.enhancedData && (
                   <MultiTurnResponse
-                    body={message.enhancedData.conclusion}
+                    body={buildMultiTurnBody(message.enhancedData)}
                     sources={message.enhancedData.sources}
                     onLawClick={handleLawClick}
                     onStreamingChange={setIsStreaming}

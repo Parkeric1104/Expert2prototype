@@ -52,8 +52,10 @@ export function MultiTurnResponse({
     setStreaming(true);
     setDisplayed("");
     let i = 0;
+    // 본문 길이에 비례해 한 틱당 표시량 조정 (긴 답변도 ~30틱 내 완료)
+    const step = Math.max(3, Math.ceil(body.length / 30));
     intervalRef.current = window.setInterval(() => {
-      i = Math.min(body.length, i + 2);
+      i = Math.min(body.length, i + step);
       setDisplayed(body.slice(0, i));
       if (i >= body.length) {
         if (intervalRef.current) clearInterval(intervalRef.current);
