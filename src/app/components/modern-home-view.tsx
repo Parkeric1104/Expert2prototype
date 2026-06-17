@@ -31,7 +31,7 @@ const FLOATING_ICONS = [
   { Icon: UserCheck,    delay: 4,   duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
-const CATEGORIES = ["근로계약", "취업규칙", "근로관계", "모성보호", "임금", "휴일·휴가", "근로시간"];
+const CATEGORIES = ["근로계약", "취업규칙", "인사관리", "모성보호", "임금", "휴일·휴가", "근로시간"];
 const ITEMS_PER_PAGE = 3;
 
 export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }: ModernHomeViewProps) {
@@ -59,10 +59,10 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     { text: "취업규칙과 근로계약의 내용이 다르면 어느 것이 우선하나요?",                 questionType: "normal", category: "취업규칙", laws: ["근로기준법 제97조"] },
     { text: "3년 전에 발생한 일을 이제 와서 징계할 수 있나요?",                         questionType: "normal", category: "취업규칙", laws: ["근로기준법 제23조"] },
     { text: "동일한 사유를 당연퇴직·징계로 중복 규정한 경우 어느 것을 적용하나요?",       questionType: "normal", category: "취업규칙", laws: ["근로기준법 제93조"] },
-    // ── 근로관계 ──
-    { text: "수습 3개월 만에 해고 통보를 받았어요. 정당한가요?",                        questionType: "normal", category: "근로관계", laws: ["근로기준법 제23조", "근로기준법 제35조"] },
-    { text: "저성과자라는 이유로 해고할 수 있나요?",                                  questionType: "normal", category: "근로관계", laws: ["근로기준법 제23조"] },
-    { text: "해고예고수당은 얼마나 받을 수 있나요?",                                   questionType: "normal", category: "근로관계", laws: ["근로기준법 제26조"] },
+    // ── 인사관리 ──
+    { text: "수습 3개월 만에 해고 통보를 받았어요. 정당한가요?",                        questionType: "normal", category: "인사관리", laws: ["근로기준법 제23조", "근로기준법 제35조"] },
+    { text: "저성과자라는 이유로 해고할 수 있나요?",                                  questionType: "normal", category: "인사관리", laws: ["근로기준법 제23조"] },
+    { text: "해고예고수당은 얼마나 받을 수 있나요?",                                   questionType: "normal", category: "인사관리", laws: ["근로기준법 제26조"] },
     // ── 모성보호 ──
     { text: "육아휴직 복직 후 다른 부서로 발령내도 되나요?",                            questionType: "normal", category: "모성보호", laws: ["남녀고용평등법 제19조"] },
     { text: "육아휴직을 신청했다는 이유로 근로자를 해고할 수 있나요?",                    questionType: "normal", category: "모성보호", laws: ["남녀고용평등법 제19조"] },
