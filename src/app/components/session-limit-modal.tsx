@@ -7,7 +7,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
-import { MessageCircle, FileText, LogOut } from "lucide-react";
+import { MessageCircle, FileText, LogOut, X } from "lucide-react";
 
 interface SessionLimitModalProps {
   isOpen: boolean;
@@ -31,8 +31,16 @@ export function SessionLimitModal({
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="max-w-md">
+        {/* 우측 상단 닫기 */}
+        <button
+          onClick={onClose}
+          aria-label="닫기"
+          className="absolute right-4 top-4 w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+          <AlertDialogTitle className="text-xl font-bold text-foreground flex items-center gap-2 pr-8">
             <MessageCircle className="w-5 h-5 text-indigo-600" />
             입력하신 질문으로 새 채팅을 시작합니다.
           </AlertDialogTitle>

@@ -31,14 +31,14 @@ const FLOATING_ICONS = [
   { Icon: UserCheck,    delay: 4,   duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
-const CATEGORIES = ["인사/노무", "소득세", "부가가치세", "원천세", "법인결산"];
+const CATEGORIES = ["근로계약", "취업규칙", "근로관계", "모성보호", "임금", "휴일·휴가", "기타", "근로시간"];
 const ITEMS_PER_PAGE = 3;
 
 export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("인사/노무");
+  const [selectedCategory, setSelectedCategory] = useState("근로계약");
   const [currentPage, setCurrentPage]   = useState(1);
 
   const fileInputRef    = useRef<HTMLInputElement>(null);
@@ -51,30 +51,38 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
   };
 
   const prompts = [
-    // ── 인사/노무 ──
-    { text: "근로자의 개별 동의를 받거나, 연차대체를 취업규칙에 규정하여 근로자의 과반수 동의를 얻어 변경한 경우 근로자대표와의 별도 서면합의가 없어도 되나요?", questionType: "normal",       category: "인사/노무",   laws: ["근로기준법 제62조", "근로기준법 제93조"] },
-    { text: "연차촉진제를 실시했음에도 불구하고 근로자가 지정된 휴가일에 출근하는 경우는 어떻게 되나요?",                                                               questionType: "normal",       category: "인사/노무",   laws: ["근로기준법 제61조", "근로기준법 제60조"] },
-    { text: "포괄임금제와 고정OT제는 어떻게 다른가요?",                                                                                                              questionType: "simple",       category: "인사/노무",   laws: ["근로기준법 제17조", "근로기준법 제56조"] },
-    { text: "연차 사용 시 회사가 사용 사유를 물어봐도 되나요?",                                                                                                       questionType: "simple",       category: "인사/노무",   laws: ["근로기준법 제60조", "근로기준법 시행령 제30조"] },
-    { text: "점심시간에 회사 구내식당으로 이동 중 넘어져 발목을 다쳤어요. 산재 인정될까요?",                                                                              questionType: "normal",       category: "인사/노무",   laws: ["산업재해보상보험법 제37조", "대법원 2017두74719 판결"] },
-    { text: "직원을 해고하지 않고 스스로 나가게 만드는 방법이 있을까요?",                                                                                               questionType: "inappropriate", category: "인사/노무",   laws: ["근로기준법 제23조", "근로기준법 제76조"] },
-    // ── 소득세 ──
-    { text: "배우자 명의 주택을 담보로 제가 대출받았는데 장기주택저당차입금 이자상환액 소득공제 받을 수 있나요?", questionType: "normal", category: "소득세",    laws: ["소득세법 제52조", "소득세법 시행령 제111조"] },
-    { text: "연말정산 시 부양가족 기본공제 요건이 어떻게 되나요?",                                           questionType: "normal", category: "소득세",    laws: ["소득세법 제50조", "소득세법 시행령 제106조"] },
-    { text: "프리랜서로 활동 중인데 종합소득세 신고 대상에 해당하나요?",                                       questionType: "normal", category: "소득세",    laws: ["소득세법 제14조", "소득세법 제70조"] },
-    { text: "퇴직소득세 계산 방법과 근로소득세와의 차이점이 궁금합니다.",                                       questionType: "normal", category: "소득세",    laws: ["소득세법 제22조", "소득세법 제48조"] },
-    // ── 부가가치세 ──
-    { text: "음식점을 운영하는데 매입세액공제를 최대한 받으려면 어떻게 해야 하나요?",     questionType: "normal", category: "부가가치세", laws: ["부가가치세법 제38조", "부가가치세법 제39조"] },
-    { text: "수출 시 영세율 적용을 받으려면 어떤 서류가 필요한가요?",                   questionType: "normal", category: "부가가치세", laws: ["부가가치세법 제21조", "부가가치세법 시행령 제64조"] },
-    { text: "간이과세자에서 일반과세자로 전환되면 어떻게 처리해야 하나요?",               questionType: "normal", category: "부가가치세", laws: ["부가가치세법 제61조", "부가가치세법 제62조"] },
-    // ── 원천세 ──
-    { text: "프리랜서 강사에게 강의료를 지급할 때 원천징수 세율이 얼마인가요?",          questionType: "normal", category: "원천세",    laws: ["소득세법 제127조", "소득세법 제129조"] },
-    { text: "일용근로자와 상용근로자의 원천징수 방법이 어떻게 다른가요?",                questionType: "normal", category: "원천세",    laws: ["소득세법 제134조", "소득세법 제127조"] },
-    { text: "퇴직금 지급 시 원천징수는 어떻게 처리하나요?",                            questionType: "normal", category: "원천세",    laws: ["소득세법 제148조", "소득세법 제22조"] },
-    // ── 법인결산 ──
-    { text: "법인의 접대비 손금산입 한도는 얼마인가요?",                               questionType: "normal", category: "법인결산",  laws: ["법인세법 제25조", "법인세법 시행령 제41조"] },
-    { text: "업무용 승용차 비용 처리 한도와 요건이 어떻게 되나요?",                     questionType: "normal", category: "법인결산",  laws: ["법인세법 제27조의2", "법인세법 시행령 제50조의2"] },
-    { text: "대표이사 급여를 손금으로 인정받으려면 어떤 요건이 필요한가요?",              questionType: "normal", category: "법인결산",  laws: ["법인세법 제26조", "법인세법 시행령 제43조"] },
+    // ── 근로계약 ──
+    { text: "위탁계약·프리랜서계약도 노동법의 보호를 받나요?",                         questionType: "normal", category: "근로계약", laws: ["근로기준법 제2조", "대법원 2004다29736 판결"] },
+    { text: "근로계약서를 작성할 때 꼭 챙겨야 할 내용은 무엇인가요?",                   questionType: "normal", category: "근로계약", laws: ["근로기준법 제17조"] },
+    { text: "퇴직 후 동종업체 취업을 금지하는 전직금지약정도 효력이 있나요?",            questionType: "normal", category: "근로계약", laws: ["근로기준법 제15조"] },
+    // ── 취업규칙 ──
+    { text: "취업규칙과 근로계약의 내용이 다르면 어느 것이 우선하나요?",                 questionType: "normal", category: "취업규칙", laws: ["근로기준법 제97조"] },
+    { text: "3년 전에 발생한 일을 이제 와서 징계할 수 있나요?",                         questionType: "normal", category: "취업규칙", laws: ["근로기준법 제23조"] },
+    { text: "동일한 사유를 당연퇴직·징계로 중복 규정한 경우 어느 것을 적용하나요?",       questionType: "normal", category: "취업규칙", laws: ["근로기준법 제93조"] },
+    // ── 근로관계 ──
+    { text: "수습 3개월 만에 해고 통보를 받았어요. 정당한가요?",                        questionType: "normal", category: "근로관계", laws: ["근로기준법 제23조", "근로기준법 제35조"] },
+    { text: "저성과자라는 이유로 해고할 수 있나요?",                                  questionType: "normal", category: "근로관계", laws: ["근로기준법 제23조"] },
+    { text: "해고예고수당은 얼마나 받을 수 있나요?",                                   questionType: "normal", category: "근로관계", laws: ["근로기준법 제26조"] },
+    // ── 모성보호 ──
+    { text: "육아휴직 복직 후 다른 부서로 발령내도 되나요?",                            questionType: "normal", category: "모성보호", laws: ["남녀고용평등법 제19조"] },
+    { text: "육아휴직을 신청했다는 이유로 근로자를 해고할 수 있나요?",                    questionType: "normal", category: "모성보호", laws: ["남녀고용평등법 제19조"] },
+    { text: "회사 사정으로 그만뒀는데 실업급여를 받을 수 있나요?",                       questionType: "normal", category: "모성보호", laws: ["고용보험법 제40조"] },
+    // ── 임금 ──
+    { text: "임금을 받지 못했어요. 임금체불로 신고하면 어떻게 처리되나요?",               questionType: "normal", category: "임금", laws: ["근로기준법 제36조", "근로기준법 제43조"] },
+    { text: "연장·휴일·야간근로수당은 어떻게 계산하나요?",                              questionType: "normal", category: "임금", laws: ["근로기준법 제56조"] },
+    { text: "회사가 폐업했는데 밀린 임금·퇴직금은 어떻게 받을 수 있나요?",                questionType: "normal", category: "임금", laws: ["임금채권보장법 제7조"] },
+    // ── 휴일·휴가 ──
+    { text: "1년 근무 후 퇴직하면 연차 미사용수당은 며칠분을 받나요?",                   questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제60조"] },
+    { text: "지각·조퇴를 3회 이상 하면 주휴수당을 받을 수 없나요?",                      questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제55조"] },
+    { text: "휴일에 근무하고 다른 날 쉬면 휴일근로수당을 받을 수 있나요?",                questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제55조", "근로기준법 제56조"] },
+    // ── 기타 ──
+    { text: "일 좀 잘하라고 독려했는데 직장 내 괴롭힘이라고 합니다. 괴롭힘인가요?",        questionType: "normal", category: "기타", laws: ["근로기준법 제76조의2"] },
+    { text: "부당해고 구제신청 대상인 상시근로자 5명 이상 여부는 어떻게 판단하나요?",      questionType: "normal", category: "기타", laws: ["근로기준법 제11조"] },
+    { text: "파견근로자가 2년을 초과해 근무하면 회사가 직접 고용해야 하나요?",            questionType: "normal", category: "기타", laws: ["파견근로자 보호법 제6조의2"] },
+    // ── 근로시간 ──
+    { text: "포괄임금제라 야근해도 별도의 추가수당이 없나요?",                          questionType: "normal", category: "근로시간", laws: ["근로기준법 제56조"] },
+    { text: "연장근로는 1주 12시간을 초과할 수 없다는데 어떻게 판단하나요?",              questionType: "normal", category: "근로시간", laws: ["근로기준법 제53조"] },
+    { text: "단시간근로자가 약정시간을 초과해 근무하면 가산수당을 받나요?",               questionType: "normal", category: "근로시간", laws: ["기간제 및 단시간근로자 보호법 제6조", "근로기준법 제56조"] },
   ];
 
   const filteredPrompts  = prompts.filter(p => p.category === selectedCategory);

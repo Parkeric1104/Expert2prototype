@@ -141,6 +141,8 @@ export function ModernChatInterface({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  // 가드레일 차단 시 채팅 종료 (재시도 불가)
+  const [chatEnded, setChatEnded] = useState(false);
   const [showDocPreview, setShowDocPreview] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [documentContent, setDocumentContent] = useState("");
@@ -561,30 +563,32 @@ ${integratedData.aiOpinionSummary}
         validation.reason === "inappropriate" ||
         validation.reason === "unethical";
 
-      onStepChange?.(2);
-      setCurrentStep(2);
-
-      const loadingMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "",
-        isUser: false,
-        isLoading: true,
-        relatedLaws: relatedLaws,
-      };
-      setMessages((prev) => [...prev, loadingMsg]);
-
+      // 차단 질문(가드레일) → 에러 메시지 후 채팅 종료(재시도 불가)
       if (blocked) {
+        onStepChange?.(2);
+        setCurrentStep(2);
+        setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
         setTimeout(() => {
           setMessages((prev) => prev.filter(m => !m.isLoading).concat({
             id: (Date.now() + 2).toString(),
             text: "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다.",
             isUser: false,
           }));
+          setChatEnded(true);
         }, 800);
         return;
       }
 
-      // 최초 답변: 질문 복잡도에 따라 간단/상세 답변
+      // 최초 질문이 '상세 답변'(복잡도 중간~높음)이면 휴먼피드백 먼저 노출 (간단 답변은 미적용)
+      if (classifyComplexity(initialMessage, questionType) === "detailed") {
+        setMessages((prev) => [...prev, makeFeedbackMessage()]);
+        return;
+      }
+
+      // 간단 답변: 로딩 → 답변
+      onStepChange?.(2);
+      setCurrentStep(2);
+      setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
       const { msg, delay } = buildAnswerMessage(initialMessage, { isFirst: true, presetType: questionType });
       setTimeout(() => {
         setMessages((prev) => prev.filter(m => !m.isLoading).concat(msg));
@@ -595,9 +599,39 @@ ${integratedData.aiOpinionSummary}
     }
   }, [initialMessage, questionType]);
 
-  // 추천 질문 등으로 들어온 질문을 동일 흐름으로 처리
+  // 휴먼피드백(사실관계 확인) 메시지 생성 — 최초 질문이 상세 답변일 때만 사용
+  const makeFeedbackMessage = (): Message => ({
+    id: (Date.now() + 1).toString(),
+    text: "",
+    isUser: false,
+    needsFeedback: true,
+    feedbackReason: "insufficient",
+    suggestedQuestions: getSuggestedQuestions("insufficient"),
+  });
+
+  // 휴먼피드백 "계속 진행하기" → 피드백 제거 후 상세 답변 생성 (사용자 메시지 재추가 없음)
+  const proceedWithAnswer = (question: string) => {
+    onStepChange?.(2);
+    setCurrentStep(2);
+    const loadingMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      text: "",
+      isUser: false,
+      isLoading: true,
+      relatedLaws: relatedLaws,
+    };
+    setMessages((prev) => prev.filter((m) => !m.needsFeedback).concat(loadingMsg));
+    const { msg, delay } = buildAnswerMessage(question, { isFirst: true });
+    setTimeout(() => {
+      setMessages((prev) => prev.filter((m) => !m.isLoading).concat(msg));
+      onStepChange?.(3);
+      setCurrentStep(3);
+    }, delay);
+  };
+
+  // 휴먼피드백 "계속 진행하기" 핸들러
   const handleRevisedQuestion = (revisedQuestion: string) => {
-    submitQuestion(revisedQuestion);
+    proceedWithAnswer(revisedQuestion);
   };
 
   // 최종 답변 준비 시작 시 호출되는 핸들러
@@ -677,35 +711,36 @@ ${integratedData.aiOpinionSummary}
     const savedInput = text;
     setMessages((prev) => [...prev, userMsg]);
 
-    // Show loading
-    const loadingMsg: Message = {
-      id: (Date.now() + 1).toString(),
-      text: "",
-      isUser: false,
-      isLoading: true,
-      relatedLaws: relatedLaws, // 추천 질문의 관련 법령 전달
-    };
-    setMessages((prev) => [...prev, loadingMsg]);
-
     // 가드레일: 부적절/위법 질문 차단 (휴먼피드백 미적용)
     const validation = validateQuestion(savedInput);
     const isBlocked =
       validation.reason === "inappropriate" || validation.reason === "unethical";
+
+    const hasPriorAnswer = messages.some(
+      m => !m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
+    );
+
     if (isBlocked) {
+      setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
       setTimeout(() => {
         setMessages((prev) => prev.filter(m => !m.isLoading).concat({
           id: (Date.now() + 2).toString(),
           text: "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다.",
           isUser: false,
         }));
+        setChatEnded(true);
       }, 800);
       return;
     }
 
-    // 최초 답변(복잡도 기반) vs 후속 멀티턴(간단→상세 승급 가능)
-    const hasPriorAnswer = messages.some(
-      m => !m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
-    );
+    // 최초 질문이 '상세 답변'이면 휴먼피드백 먼저 노출 (간단 답변/후속 질문은 미적용)
+    if (!hasPriorAnswer && classifyComplexity(savedInput) === "detailed") {
+      setMessages((prev) => prev.filter(m => !m.needsFeedback).concat(makeFeedbackMessage()));
+      return;
+    }
+
+    // 로딩 → 답변 (최초 간단답변 또는 후속 멀티턴)
+    setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
     const { msg, delay } = buildAnswerMessage(savedInput, { isFirst: !hasPriorAnswer });
     setTimeout(() => {
       setMessages((prev) => prev.filter(m => !m.isLoading).concat(msg));
@@ -1060,37 +1095,66 @@ ${integratedData.aiOpinionSummary}
   // 세션 제한 모달은 n+1번째 질문을 "제출"할 때만 노출 (submitQuestion 내부에서 처리).
   // 답변 완료 직후 자동 노출하지 않도록 messages 감시 트리거는 제거.
 
-  // 세션 제한 모달에서 질문 재시도
-  const handleRetryQuestion = () => {
-    if (pendingQuestion) {
-      const userMsg: Message = {
-        id: Date.now().toString(),
-        text: pendingQuestion,
-        isUser: true,
-        attachedFiles: pendingAttachedFiles,
-      };
-      setMessages((prev) => [...prev, userMsg]);
-      setInputValue("");
-      
-      // 메시지 발송 후 첨부파일 삭제
-      setUploadedFiles([]);
+  // 첫 질문 흐름 (가드레일 → 복잡도 분류 → 휴먼피드백/간단답변). 사용자 메시지는 호출 측에서 이미 추가됨
+  const runFirstQuestionFlow = (question: string) => {
+    const validation = validateQuestion(question);
+    const blocked = validation.reason === "inappropriate" || validation.reason === "unethical";
 
-      // Show loading
-      const loadingMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "",
-        isUser: false,
-        isLoading: true,
-        relatedLaws: relatedLaws, // 추천 질문의 관련 법령 전달
-      };
-      setMessages((prev) => [...prev, loadingMsg]);
-
-      const { msg, delay } = buildAnswerMessage(pendingQuestion, { isFirst: false });
+    if (blocked) {
+      onStepChange?.(2);
+      setCurrentStep(2);
+      setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
       setTimeout(() => {
-        setMessages((prev) => prev.filter(m => !m.isLoading).concat(msg));
-      }, delay);
+        setMessages((prev) => prev.filter(m => !m.isLoading).concat({
+          id: (Date.now() + 2).toString(),
+          text: "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다.",
+          isUser: false,
+        }));
+        setChatEnded(true);
+      }, 800);
+      return;
     }
+
+    // 상세 답변이면 휴먼피드백 먼저
+    if (classifyComplexity(question) === "detailed") {
+      setMessages((prev) => [...prev, makeFeedbackMessage()]);
+      return;
+    }
+
+    // 간단 답변: 로딩 → 답변
+    onStepChange?.(2);
+    setCurrentStep(2);
+    setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
+    const { msg, delay } = buildAnswerMessage(question, { isFirst: true });
+    setTimeout(() => {
+      setMessages((prev) => prev.filter(m => !m.isLoading).concat(msg));
+      onStepChange?.(3);
+      setCurrentStep(3);
+    }, delay);
+  };
+
+  // 세션 제한 모달 "이어서 질문하기" → 새 채팅 세션으로 리셋 후 입력 질문을 첫 질문으로 처리
+  const handleRetryQuestion = () => {
     setShowSessionLimitModal(false);
+    if (!pendingQuestion) return;
+
+    // 새 세션: 기존 대화 초기화 (선택 법령은 상위에서 유지)
+    setAnswerTrack(null);
+    setChatEnded(false);
+    setInputValue("");
+    setUploadedFiles([]);
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      text: pendingQuestion,
+      isUser: true,
+      attachedFiles: pendingAttachedFiles.length > 0 ? pendingAttachedFiles : undefined,
+    };
+    setMessages([userMsg]);
+
+    const q = pendingQuestion;
+    setPendingQuestion("");
+    setPendingAttachedFiles([]);
+    runFirstQuestionFlow(q);
   };
 
   // If showing document preview, render DocumentView instead
@@ -1112,14 +1176,15 @@ ${integratedData.aiOpinionSummary}
   // 답변 생성 중인지 확인
   const isAnswerLoading = messages.some(m => m.isLoading);
 
-  // 입력 비활성화 조건: 토론 진행 중 OR 답변 생성 중 OR 스트리밍 출력 중
-  const isInputDisabled = isDebateInProgress || isAnswerLoading || isStreaming;
+  // 입력 비활성화 조건: 채팅 종료(가드레일) OR 토론 진행 중 OR 답변 생성 중 OR 스트리밍 출력 중
+  const isInputDisabled = chatEnded || isDebateInProgress || isAnswerLoading || isStreaming;
 
   // 파일 첨부 비활성화: 최초 질문 이후 (첨부는 최초 1회만)
-  const isFileUploadDisabled = messages.filter(m => m.isUser).length >= 1;
+  const isFileUploadDisabled = chatEnded || messages.filter(m => m.isUser).length >= 1;
 
   // 비활성화 사유에 따른 placeholder 텍스트
   const getPlaceholder = (): string => {
+    if (chatEnded) return "답변이 제한되어 상담이 종료되었습니다.";
     if (isDebateInProgress) return "AI 상세의견 진행 중...";
     if (isStreaming) return "답변 출력 중...";
     if (isAnswerLoading) return "답변 생성 중...";
@@ -1157,8 +1222,18 @@ ${integratedData.aiOpinionSummary}
                     />
                   )}
                   {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} onNavigateToMain={handleNavigateToMain} />}
+                {/* 휴먼피드백 (최초 질문이 상세 답변일 때만) */}
+                {message.needsFeedback && message.feedbackReason && (
+                  <HumanFeedbackRequest
+                    reason={message.feedbackReason}
+                    originalQuestion={messages.find(m => m.isUser)?.text || ""}
+                    onSubmitRevision={handleRevisedQuestion}
+                    suggestedQuestions={message.suggestedQuestions}
+                    onQuestionSelect={(question) => setInputValue(question)}
+                  />
+                )}
                 {/* 가드레일 차단 등 일반 텍스트 응답 */}
-                {!message.isUser && !message.isLoading && !message.isEnhancedResponse && !message.isSimpleResponse && !message.isMultiTurnResponse && !message.isDebate && !message.isInvalidQuestion && !message.relatedLaws && message.text && (
+                {!message.isUser && !message.isLoading && !message.needsFeedback && !message.isEnhancedResponse && !message.isSimpleResponse && !message.isMultiTurnResponse && !message.isDebate && !message.isInvalidQuestion && !message.relatedLaws && message.text && (
                   <ChatBubble message={message.text} isUser={false} />
                 )}
                 {/* 빠른 답변 카드 */}

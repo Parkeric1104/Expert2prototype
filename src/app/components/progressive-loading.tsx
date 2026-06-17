@@ -1,258 +1,149 @@
 import { useEffect, useState, useRef } from "react";
-import { Loader2, Check, Bot, StopCircle, Search, Scale } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
-import { Badge } from "@/app/components/ui/badge";
+import { Check } from "lucide-react";
 import { StopResponseDialog } from "@/app/components/stop-response-dialog";
-
-interface LoadingStage {
-  id: number;
-  text: string;
-  completed: boolean;
-}
+import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 interface ProgressiveLoadingBubbleProps {
   relatedLaws?: string[];
   onStop?: () => void;
-  onAnswerPreparationStart?: () => void; // 최종 답변 준비 시작 콜백 추가
-  onNavigateToMain?: () => void; // 메인화면 이동 핸들러 추가
+  onAnswerPreparationStart?: () => void;
+  onNavigateToMain?: () => void;
 }
 
-export function ProgressiveLoadingBubble({ relatedLaws, onStop, onAnswerPreparationStart, onNavigateToMain }: ProgressiveLoadingBubbleProps = {}) {
-  const [currentStage, setCurrentStage] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [showLawBox, setShowLawBox] = useState(false);
-  const [foundLaws, setFoundLaws] = useState<string[]>([]);
+// 관련 자료를 법령/해석례로 분류해 건수 산출
+function splitCounts(items: string[]): { law: number; interp: number } {
+  if (!items || items.length === 0) return { law: 4, interp: 2 };
+  let law = 0;
+  let interp = 0;
+  for (const it of items) {
+    if (/판결|판례|해석|노동부|#|결정|회시/.test(it)) interp += 1;
+    else law += 1;
+  }
+  return { law: law || 1, interp };
+}
+
+export function ProgressiveLoadingBubble({
+  relatedLaws,
+  onStop,
+  onAnswerPreparationStart,
+  onNavigateToMain,
+}: ProgressiveLoadingBubbleProps = {}) {
+  // step: 0 분석 / 1 탐색 / 2 최종정리(활성) / 3 내용정리(대기)
+  const [step, setStep] = useState(0);
   const [showStopDialog, setShowStopDialog] = useState(false);
-  const [isStopped, setIsStopped] = useState(false);
-  const [isPaused, setIsPaused] = useState(false); // 일시 중지 상태
-  
-  // useRef로 타이머 ID 관리
-  const timersRef = useRef<NodeJS.Timeout[]>([]);
-  const pausedStateRef = useRef<any>(null);
-  const hasCalledPreparationRef = useRef(false); // ref로 변경
+  const [isPaused, setIsPaused] = useState(false);
+  const timersRef = useRef<number[]>([]);
+  const preparedRef = useRef(false);
 
-  console.log('[Progressive Loading] 컴포넌트 렌더링됨', { onAnswerPreparationStart: !!onAnswerPreparationStart });
+  const { law, interp } = splitCounts(relatedLaws ?? []);
 
-  const stages: LoadingStage[] = [
-    { id: 0, text: "질문의 핵심 쟁점 추출 중...", completed: false },
-    { id: 1, text: "관련 법령 및 조항 스캔 중...", completed: false },
-    { id: 2, text: "판례 데이터베이스 검색 중...", completed: false },
-    { id: 3, text: "법률 검토 의견 작성 중...", completed: false },
+  const STEPS = [
+    "질문 분석 완료",
+    `법령 ${law}건, 해석례 ${interp}건 데이터 탐색 완료`,
+    "최종 답변을 정리하고 있어요.",
+    "내용 정리",
   ];
+  // 활성 단계(현재 진행 중): step이 2에 도달하면 '최종 답변 정리'가 활성
+  const activeIndex = Math.min(step, 2);
 
-  // 추천 질문에서 전달된 법령이 있으면 사용, 없으면 기본값 사용
-  const lawExamples = relatedLaws && relatedLaws.length > 0 ? relatedLaws : [
-    "산업재해보상보험법 제37조",
-    "근로기준법 제54조",
-    "대법원 2017두74719 판결",
-  ];
+  // 팝업 열릴 때 일시 중지
+  useEffect(() => {
+    setIsPaused(showStopDialog);
+  }, [showStopDialog]);
 
-  // Helper to get law names from IDs
-  const getLawNames = (lawIds: string[]): string[] => {
-    const lawMap: Record<string, string> = {
-      "labor-standards": "근로기준법",
-      "equal-employment": "남녀고용평등법",
-      "industrial-safety": "산업안전보건법",
-      "serious-accident": "중대재해처벌법",
-      "labor-union": "노동조합법",
-      "minimum-wage": "최저임금법",
-      "dispatched-workers": "파견근로자 보호법",
-      "fixed-term": "기간제 및 단시간근로자 보호법",
-      "employment-insurance": "고용보험법",
-      "industrial-accident-insurance": "산업재해보상보험법",
-      "elderly-employment": "고령자고용촉진법",
-      "disabled-employment": "장애인고용촉진법",
-      "foreign-workers": "외국인근로자 고용법",
-      "vocational-training": "근로자직업능력개발법",
-      "labor-welfare": "근로복지기본법",
+  useEffect(() => {
+    if (isPaused) return;
+    // 답변 지연(약 2.5~3.5초) 안에 '최종 답변 정리' 활성 상태까지 진행
+    const t1 = window.setTimeout(() => setStep(1), 700);
+    const t2 = window.setTimeout(() => setStep(2), 1800);
+    const t3 = window.setTimeout(() => {
+      if (!preparedRef.current && onAnswerPreparationStart) {
+        onAnswerPreparationStart();
+        preparedRef.current = true;
+      }
+    }, 2200);
+    timersRef.current = [t1, t2, t3];
+    return () => {
+      timersRef.current.forEach((t) => clearTimeout(t));
+      timersRef.current = [];
     };
-    return lawIds.map(id => lawMap[id] || id);
-  };
-  
-  // 중단 핸들러
+  }, [isPaused]);
+
   const handleStopConfirm = () => {
-    setIsStopped(true);
-    // 모든 타이머 클리어
-    timersRef.current.forEach(timer => clearTimeout(timer));
+    timersRef.current.forEach((t) => clearTimeout(t));
     timersRef.current = [];
     onStop?.();
   };
 
-  // 팝업 열릴 때 일시 중지
-  useEffect(() => {
-    if (showStopDialog && !isPaused) {
-      setIsPaused(true);
-      // 현재 상태 저장
-      pausedStateRef.current = {
-        currentStage,
-        progress,
-        foundLaws: [...foundLaws],
-        pausedAt: Date.now()
-      };
-      // 모든 타이머 클리어
-      timersRef.current.forEach(timer => clearTimeout(timer));
-      timersRef.current = [];
-    } else if (!showStopDialog && isPaused) {
-      setIsPaused(false);
-      pausedStateRef.current = null;
-    }
-  }, [showStopDialog]);
-
-  useEffect(() => {
-    // 이미 중단되었으면 타이머 시작 안 함
-    if (isStopped) return;
-
-    // 15초 동안 단계별 진 (프로토타입 시연용)
-    const timer1 = setTimeout(() => {
-      setCurrentStage(1);
-      setProgress(1);
-    }, 2000); // 2초 - Step 1 완료 (질문 분석)
-
-    const timer2 = setTimeout(() => {
-      setProgress(2);
-      setFoundLaws([lawExamples[0]]);
-    }, 4000); // 4초 - 첫 번째 법령
-
-    const timer3 = setTimeout(() => {
-      setProgress(3);
-      setFoundLaws([lawExamples[0], lawExamples[1]]);
-    }, 6000); // 6초 - 두 번째 법령
-
-    const timer4 = setTimeout(() => {
-      setProgress(4);
-      setFoundLaws([lawExamples[0], lawExamples[1], lawExamples[2]]);
-    }, 8000); // 8초 - 세 번째 법령
-
-    const timer5 = setTimeout(() => {
-      setProgress(5);
-      setFoundLaws(lawExamples.slice(0, 4));
-    }, 10000); // 10초 - 네 번째 법령
-
-    const timer6 = setTimeout(() => {
-      setProgress(6);
-      setFoundLaws(lawExamples.slice(0, 5));
-    }, 11000); // 11초 - 다섯 번째 법령
-
-    const timer7 = setTimeout(() => {
-      setCurrentStage(2);
-      setProgress(7);
-      setFoundLaws(lawExamples); // 모든 법령 표시
-    }, 12000); // 12초 - Step 2 완료
-
-    const timer8 = setTimeout(() => {
-      setProgress(8);
-      setCurrentStage(3);
-      // 최종 답변 정리 단계 시작 시 사이드바 열기
-      console.log('[Progressive Loading] Step 3 시작 - 사이드바 열기', { hasCalledPreparationRef: hasCalledPreparationRef.current, onAnswerPreparationStart: !!onAnswerPreparationStart });
-      if (!hasCalledPreparationRef.current && onAnswerPreparationStart) {
-        console.log('[Progressive Loading] 사이드바 콜백 호출');
-        onAnswerPreparationStart();
-        hasCalledPreparationRef.current = true;
-      }
-    }, 13500); // 13.5초 - Step 3 시작
-
-    const timer9 = setTimeout(() => {
-      setProgress(9);
-      if (!hasCalledPreparationRef.current) {
-        onAnswerPreparationStart?.(); // 최종 답변 준비 시작 콜백 호출
-        hasCalledPreparationRef.current = true;
-      }
-    }, 15000); // 15초 - 완료
-
-    // 타이머 ID 저장
-    timersRef.current = [timer1, timer2, timer3, timer4, timer5, timer6, timer7, timer8, timer9];
-
-    return () => {
-      // cleanup: 모든 타이머 클리어
-      timersRef.current.forEach(timer => clearTimeout(timer));
-      timersRef.current = [];
-    };
-  }, []); // 빈 배열: 마운트 시 한 번만 실행
-
-  const totalStages = 7;
-  const progressPercent = (progress / totalStages) * 100;
-
   return (
-    <div className="flex justify-start mb-6">
-      {/* 답변 컨테이너 */}
-      <div className="max-w-[650px] flex flex-col gap-2">
-        {/* Loading Card - 단계별 프로세스 */}
-        <div className="bg-card rounded-2xl shadow-lg border border-border p-5">
-          {/* 단계별 진행 상황 */}
-          <div className="space-y-3">
-            {/* Step 1: 문 분석 완료 */}
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary flex items-center justify-center mt-0.5">
-                <Check className="w-3 h-3 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">질문 분석 완료</p>
-              </div>
-            </div>
-
-            {/* Step 2: 법령 데이터 탐색 중 / 완료 */}
-            <div className="flex items-start gap-3">
-              {foundLaws.length === 0 ? (
-                // 탐색 중일 때
-                <>
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center mt-0.5">
-                    <Loader2 className={`w-3 h-3 text-primary ${isPaused ? '' : 'animate-spin'}`} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                      {isPaused ? '법령 데이터 탐색 일시 중지됨' : '법령 데이터 탐색 중...'}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                // 1건 이상 찾았을 때
-                <>
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-primary flex items-center justify-center mt-0.5">
-                    <Check className="w-3 h-3 text-white" />
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <p className="text-sm font-medium text-foreground">
-                      법령 {foundLaws.length}건 데이터 탐색 완료
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {foundLaws.map((law, index) => (
-                        <Badge 
-                          key={index}
-                          variant="secondary"
-                          className="text-xs bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20"
-                        >
-                          {law}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Step 3: 최종 답변 정리 중 (현재 진행) */}
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center mt-0.5">
-                <Loader2 className={`w-3 h-3 text-primary ${isPaused ? '' : 'animate-spin'}`} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">
-                  {isPaused ? '답변 생성 일시 중지됨' : '최종 답변을 정리하고 있어요.'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Stop Response Dialog */}
-        <StopResponseDialog
-          isOpen={showStopDialog}
-          onClose={() => setShowStopDialog(false)}
-          onConfirm={handleStopConfirm}
-          onNavigateToMain={onNavigateToMain}
-        />
+    <div className="flex flex-col items-start mb-6">
+      {/* 마스코트 */}
+      <div className="w-14 h-14 rounded-full overflow-hidden mb-4 ml-1">
+        <img src={characterImg} alt="도우미" className="w-full h-full object-cover" />
       </div>
+
+      {/* 단계별 타임라인 */}
+      <div className="flex flex-col gap-0">
+        {STEPS.map((label, idx) => {
+          const isDone = idx < activeIndex;
+          const isActive = idx === activeIndex;
+          const isLast = idx === STEPS.length - 1;
+          const completedOrActive = isDone || isActive;
+          // 텍스트(법령/해석례 건수)는 탐색 단계(1)가 완료(또는 그 이후)일 때만 표시
+          const labelToShow =
+            idx === 1 && step < 1
+              ? "법령 데이터 탐색 중..."
+              : isPaused && isActive
+              ? "답변 생성 일시 중지됨"
+              : label;
+
+          return (
+            <div key={idx} className="flex items-start gap-3">
+              {/* 도트 + 연결선 */}
+              <div className="flex flex-col items-center self-stretch">
+                <div
+                  className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                    completedOrActive ? "bg-primary" : "bg-muted-foreground/30"
+                  }`}
+                >
+                  {completedOrActive && <Check className="w-3 h-3 text-white" />}
+                </div>
+                {!isLast && (
+                  <div
+                    className="flex-1 my-1"
+                    style={{
+                      minHeight: 18,
+                      borderLeft: "2px dotted",
+                      borderColor: isDone ? "rgba(99,102,241,0.45)" : "rgba(120,120,140,0.3)",
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* 라벨 */}
+              <p
+                className={`text-[15px] leading-5 pb-5 ${
+                  isActive
+                    ? "font-semibold text-primary"
+                    : isDone
+                    ? "font-medium text-foreground"
+                    : "text-muted-foreground/60"
+                }`}
+              >
+                {labelToShow}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Stop Response Dialog */}
+      <StopResponseDialog
+        isOpen={showStopDialog}
+        onClose={() => setShowStopDialog(false)}
+        onConfirm={handleStopConfirm}
+        onNavigateToMain={onNavigateToMain}
+      />
 
       {/* 답변 중단하기 - Fixed Floating Pill */}
       {onStop && (
@@ -260,10 +151,7 @@ export function ProgressiveLoadingBubble({ relatedLaws, onStop, onAnswerPreparat
           <button
             onClick={() => setShowStopDialog(true)}
             className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold shadow-xl transition-all hover:opacity-80 active:scale-95"
-            style={{
-              background: '#1C1C1E',
-              color: '#FFFFFF',
-            }}
+            style={{ background: "#1C1C1E", color: "#FFFFFF" }}
           >
             <span className="w-2 h-2 rounded-sm bg-white inline-block" />
             답변 중단하기
