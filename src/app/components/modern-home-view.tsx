@@ -31,7 +31,7 @@ const FLOATING_ICONS = [
   { Icon: UserCheck,    delay: 4,   duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
-const CATEGORIES = ["근로계약", "취업규칙", "근로관계", "모성보호", "임금", "휴일·휴가", "기타", "근로시간"];
+const CATEGORIES = ["근로계약", "취업규칙", "근로관계", "모성보호", "임금", "휴일·휴가", "근로시간"];
 const ITEMS_PER_PAGE = 3;
 
 export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }: ModernHomeViewProps) {
@@ -75,10 +75,6 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     { text: "1년 근무 후 퇴직하면 연차 미사용수당은 며칠분을 받나요?",                   questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제60조"] },
     { text: "지각·조퇴를 3회 이상 하면 주휴수당을 받을 수 없나요?",                      questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제55조"] },
     { text: "휴일에 근무하고 다른 날 쉬면 휴일근로수당을 받을 수 있나요?",                questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제55조", "근로기준법 제56조"] },
-    // ── 기타 ──
-    { text: "일 좀 잘하라고 독려했는데 직장 내 괴롭힘이라고 합니다. 괴롭힘인가요?",        questionType: "normal", category: "기타", laws: ["근로기준법 제76조의2"] },
-    { text: "부당해고 구제신청 대상인 상시근로자 5명 이상 여부는 어떻게 판단하나요?",      questionType: "normal", category: "기타", laws: ["근로기준법 제11조"] },
-    { text: "파견근로자가 2년을 초과해 근무하면 회사가 직접 고용해야 하나요?",            questionType: "normal", category: "기타", laws: ["파견근로자 보호법 제6조의2"] },
     // ── 근로시간 ──
     { text: "포괄임금제라 야근해도 별도의 추가수당이 없나요?",                          questionType: "normal", category: "근로시간", laws: ["근로기준법 제56조"] },
     { text: "연장근로는 1주 12시간을 초과할 수 없다는데 어떻게 판단하나요?",              questionType: "normal", category: "근로시간", laws: ["근로기준법 제53조"] },
