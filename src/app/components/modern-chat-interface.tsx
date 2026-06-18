@@ -32,7 +32,8 @@ import {
   DollarSign,
   ClipboardCheck,
   UserCheck,
-  Info
+  Info,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { getDummyResponse, buildMultiTurnBody } from "@/app/data/dummy-responses";
@@ -170,6 +171,7 @@ export function ModernChatInterface({
   const [preparingAnswerData, setPreparingAnswerData] = useState<EnhancedResponseData | null>(null);
   const [isInitialAnswerView, setIsInitialAnswerView] = useState(false); // 최초 답변 생성 시 사이드바인지 여부
   const [autoCloseSidebar, setAutoCloseSidebar] = useState(false); // 사이드바 자동 닫기 플래그
+  const [detailInitialView, setDetailInitialView] = useState<"answer" | "debate">("answer"); // 사이드바 최초 진입 뷰
   
   // 출처 및 탐색기록 패널 상태
   const [showSourcesPanel, setShowSourcesPanel] = useState(false);
@@ -1326,6 +1328,7 @@ ${integratedData.aiOpinionSummary}
                     questionSummary={generateQuestionSummary(messages.find(m => m.isUser)?.text || "")}
                     onOpenDetailView={() => {
                       setPreparingAnswerData(message.enhancedData || null);
+                      setDetailInitialView("answer");
                       setShowDetailSidebar(true);
                       setIsInitialAnswerView(false); // 상세 답변 보기는 최초 답변이 아님
                     }}
@@ -1367,6 +1370,21 @@ ${integratedData.aiOpinionSummary}
               className="pointer-events-auto flex items-center gap-1 rounded-full px-1.5 py-1.5 shadow-xl"
               style={{ background: '#1C1C1E' }}
             >
+              {/* AI 상세의견 → 상세 답변 사이드패널의 토론 뷰로 진입 */}
+              <button
+                onClick={() => {
+                  setPreparingAnswerData(lastDetailed.enhancedData || null);
+                  setIsInitialAnswerView(false);
+                  setDetailInitialView("debate");
+                  setShowDetailSidebar(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all hover:bg-white/10 active:scale-95"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                AI 상세의견
+              </button>
+              <div className="w-px h-5 bg-white/20" />
+
               {/* 의견서 작성 */}
               <button
                 onClick={() => handleDraftDocument(lastDetailed.id)}
@@ -1508,6 +1526,7 @@ ${integratedData.aiOpinionSummary}
           aiOpinion={preparingAnswerData.aiOpinionSummary}
           questionSummary={messages.find(m => m.isUser)?.text || initialMessage}
           isInitialAnswer={isInitialAnswerView}
+          initialView={detailInitialView}
         />
       )}
 

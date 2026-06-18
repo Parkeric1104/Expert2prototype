@@ -31,6 +31,7 @@ interface AnswerDetailSidebarProps {
   aiOpinion?: AIOpinionSummary | string; // 기존 string 타입도 지원
   questionSummary?: string; // 질문 요약 추가
   isInitialAnswer?: boolean; // 최초 답변 생성 여부 (타이핑 효과 + 자동 닫기 적용)
+  initialView?: "answer" | "debate"; // 열릴 때 진입 뷰 (AI 상세의견 버튼 → "debate")
 }
 
 // 법령 제목에서 조항 배지/법령명 분리 (예: "근로기준법 제17조 (근로조건의 명시)" → 제17조 / 근로기준법)
@@ -70,6 +71,7 @@ export function AnswerDetailSidebar({
   aiOpinion,
   questionSummary,
   isInitialAnswer = false,
+  initialView = "answer",
 }: AnswerDetailSidebarProps) {
   const [viewMode, setViewMode] = useState<"answer" | "law" | "sources" | "debate">("answer");
   const [selectedLaw, setSelectedLaw] = useState<Source | null>(null);
@@ -140,8 +142,8 @@ export function AnswerDetailSidebar({
       timersRef.current.forEach(timer => clearTimeout(timer));
       timersRef.current = [];
 
-      // 열릴 때마다 토론 뷰/반영 상태 초기화
-      setViewMode("answer");
+      // 열릴 때마다 진입 뷰/반영 상태 초기화 (AI 상세의견 버튼 → "debate" 직행)
+      setViewMode(initialView);
       setAiOpinionReflected(false);
 
       if (isInitialAnswer) {
@@ -212,7 +214,7 @@ export function AnswerDetailSidebar({
         timersRef.current = [];
       };
     }
-  }, [isOpen, factAnalysis, queryContent, reviewContent, conclusion, isInitialAnswer]);
+  }, [isOpen, factAnalysis, queryContent, reviewContent, conclusion, isInitialAnswer, initialView]);
 
   // 자동 닫기 카운트다운 로직
   useEffect(() => {
