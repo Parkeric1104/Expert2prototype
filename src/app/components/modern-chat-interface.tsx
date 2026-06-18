@@ -191,6 +191,8 @@ export function ModernChatInterface({
 
   // 질문 복잡도 분류 (낮음 → 간단 답변, 중간~높음 → 상세 답변)
   const classifyComplexity = (text: string, presetType?: string): "simple" | "detailed" => {
+    // 개발/검증용 마커: 질문에 '(상세답변)'이 포함되면 항상 상세 (질문 수정 후에도 유지)
+    if ((text || "").includes("(상세답변)")) return "detailed";
     if (presetType === "simple") return "simple";
     if (presetType && presetType !== "normal") return "detailed";
     const t = (text || "").trim();
