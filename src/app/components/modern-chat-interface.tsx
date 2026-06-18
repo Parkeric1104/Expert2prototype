@@ -246,15 +246,22 @@ export function ModernChatInterface({
       return { msg: { ...base, isSimpleResponse: true }, delay: DELAY_SIMPLE };
     }
 
-    // 후속(멀티턴) — 간단 트랙에서 n-2번째 턴 도달 후의 턴은 무조건 상세 답변으로 강제 전환
-    // (예: MAX 5회 → 추가질문 3 = 4번째 턴부터 상세 답변)
-    if (answerTrack === "simple") {
-      const turnBeingAnswered = getAIResponseCount() + 1; // 지금 생성하는 답변의 턴 번호
-      if (turnBeingAnswered >= MAX_QUESTIONS - 1) {
-        setAnswerTrack("detailed");
-        return { msg: { ...base, isEnhancedResponse: true }, delay: DELAY_DETAILED };
-      }
+    // 후속(멀티턴)
+    const turnBeingAnswered = getAIResponseCount() + 1; // 지금 생성하는 답변의 턴 번호
+
+    // 멀티턴 마지막 답변(MAX_QUESTIONS번째)은 트랙과 무관하게 항상 상세 답변
+    if (turnBeingAnswered >= MAX_QUESTIONS) {
+      setAnswerTrack("detailed");
+      return { msg: { ...base, isEnhancedResponse: true }, delay: DELAY_DETAILED };
     }
+
+    // 간단 트랙에서 n-2번째 턴 도달 후의 턴은 무조건 상세 답변으로 강제 전환
+    // (예: MAX 5회 → 추가질문 3 = 4번째 턴부터 상세 답변)
+    if (answerTrack === "simple" && turnBeingAnswered >= MAX_QUESTIONS - 1) {
+      setAnswerTrack("detailed");
+      return { msg: { ...base, isEnhancedResponse: true }, delay: DELAY_DETAILED };
+    }
+
     return { msg: { ...base, isMultiTurnResponse: true }, delay: DELAY_SIMPLE };
   };
 
