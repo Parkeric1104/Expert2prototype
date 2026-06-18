@@ -313,9 +313,7 @@ export function AnswerDetailSidebar({
                       <Scale className="w-3.5 h-3.5 text-primary" />
                       조사 완료
                     </span>
-                    <span className="text-xs text-muted-foreground">출처 {sources.length}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">AI 노무사의 법률 검토 의견서</p>
                 </div>
                 <button
                   onClick={() => {
