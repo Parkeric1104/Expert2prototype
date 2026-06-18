@@ -332,7 +332,14 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
                 onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType)}
                 className="flex items-center justify-between w-full px-5 py-4 bg-card border border-border/60 rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
               >
-                <span className="text-sm text-foreground leading-snug">{prompt.text}</span>
+                <span className="flex items-center gap-2 min-w-0">
+                  {prompt.questionType === "detailed" && (
+                    <span className="flex-shrink-0 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[11px] font-semibold">
+                      상세답변
+                    </span>
+                  )}
+                  <span className="text-sm text-foreground leading-snug">{prompt.text}</span>
+                </span>
                 <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0 ml-4 transition-colors" />
               </button>
             ))}
