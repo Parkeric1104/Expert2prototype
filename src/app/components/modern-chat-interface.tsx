@@ -178,6 +178,8 @@ export function ModernChatInterface({
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // 상세 답변 자동 스트리밍 사이드패널을 이미 띄운 메시지 id 집합 (중복 방지)
+  const autoStreamedRef = useRef<Set<string>>(new Set());
 
   // 답변 형태 정책 상태
   // answerTrack: 이 스레드의 최초 답변이 간단/상세 중 무엇으로 시작했는지 (간단→상세 승급 추적)
@@ -672,6 +674,18 @@ ${integratedData.aiOpinionSummary}
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
+
+  // 상세 답변이 새로 생성되면, 결론을 바로 보여주지 않고 상세 답변 사이드패널을 열어
+  // 스트리밍(타이핑) 후 자동으로 닫는다. (메시지당 1회)
+  useEffect(() => {
+    const latestDetailed = [...messages].reverse().find(m => m.isEnhancedResponse && m.enhancedData);
+    if (latestDetailed && !autoStreamedRef.current.has(latestDetailed.id)) {
+      autoStreamedRef.current.add(latestDetailed.id);
+      setPreparingAnswerData({ ...latestDetailed.enhancedData!, aiOpinionSummary: undefined });
+      setIsInitialAnswerView(true); // 타이핑 스트리밍 + 완료 후 자동 닫기
+      setShowDetailSidebar(true);
+    }
+  }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
