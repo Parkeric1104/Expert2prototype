@@ -105,6 +105,7 @@ interface ModernChatInterfaceProps {
   questionType?: string;
   requestDraftDocument?: boolean; // 외부에서 의견서 작성 트리거
   onDraftDocumentHandled?: () => void; // 트리거 처리 완료 콜백
+  onCanDraftDocumentChange?: (canDraft: boolean) => void; // GNB 의견서 작성 버튼 노출 여부
 }
 
 // 배경 아이콘 데이터 - 메인 화면과 동일
@@ -137,6 +138,7 @@ export function ModernChatInterface({
   questionType,
   requestDraftDocument,
   onDraftDocumentHandled,
+  onCanDraftDocumentChange,
 }: ModernChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -1127,6 +1129,14 @@ ${integratedData.aiOpinionSummary}
     }
   }, [messages, onMessagesChange]);
 
+  // GNB 의견서 작성 버튼 노출 여부 (상세답변 존재 & 생성/스트리밍/토론 중 아님)
+  useEffect(() => {
+    if (!onCanDraftDocumentChange) return;
+    const hasDetailed = messages.some(m => m.isEnhancedResponse && m.enhancedData);
+    const busy = messages.some(m => m.isLoading) || isStreaming || messages.some(m => m.isDebate && !m.debateHistory);
+    onCanDraftDocumentChange(hasDetailed && !busy);
+  }, [messages, isStreaming, onCanDraftDocumentChange]);
+
   // 외부에서 의견서 작성 트리거 처리
   useEffect(() => {
     if (requestDraftDocument) {
@@ -1357,31 +1367,6 @@ ${integratedData.aiOpinionSummary}
           </div>
         </div>
       </div>
-
-      {/* 상세 답변 액션 - Floating Pill (답변 중단 버튼과 동일한 노출 방식) */}
-      {(() => {
-        const lastDetailed = [...messages].reverse().find(m => m.isEnhancedResponse && m.enhancedData);
-        const showFloating = !!lastDetailed && !isAnswerLoading && !isStreaming && !isDebateInProgress;
-        if (!showFloating) return null;
-        return (
-          <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
-            <div
-              className="pointer-events-auto flex items-center gap-1 rounded-full px-1.5 py-1.5 shadow-xl"
-              style={{ background: '#1C1C1E' }}
-            >
-              {/* 의견서 작성 */}
-              <button
-                onClick={() => handleDraftDocument(lastDetailed.id)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-                style={{ background: '#3182F6', color: '#FFFFFF' }}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                의견서 작성
-              </button>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Input Area - Sticky Bottom (대화 상세에서는 파일 첨부 불가) */}
       <div className="border-t border-border bg-card/80 backdrop-blur-sm">
