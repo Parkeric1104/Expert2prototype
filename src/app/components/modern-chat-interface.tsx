@@ -8,6 +8,7 @@ import { ModernAIResponse } from "@/app/components/modern-ai-response";
 import { SimpleResponseCard } from "@/app/components/simple-response-card";
 import { MultiTurnResponse } from "@/app/components/multi-turn-response";
 import { DualPersonaDebate } from "@/app/components/dual-persona-debate";
+import { AIOpinionDebatePanel } from "@/app/components/ai-opinion-debate-panel";
 import { HumanFeedbackRequest } from "@/app/components/human-feedback-request";
 import { InvalidQuestionCard } from "@/app/components/invalid-question-card";
 import { DocumentView } from "@/app/components/document-view";
@@ -143,6 +144,9 @@ export function ModernChatInterface({
   const [isTyping, setIsTyping] = useState(false);
   // 가드레일 차단 시 채팅 종료 (재시도 불가)
   const [chatEnded, setChatEnded] = useState(false);
+  // AI 상세의견 토론 사이드패널
+  const [showAIDebate, setShowAIDebate] = useState(false);
+  const [aiDebateTargetId, setAiDebateTargetId] = useState<string>("");
   const [showDocPreview, setShowDocPreview] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [documentContent, setDocumentContent] = useState("");
@@ -872,7 +876,30 @@ ${integratedData.aiOpinionSummary}
     setCurrentStep(4);
   };
 
-  // Handle AI Opinion Request (Dual Persona Debate)
+  // AI 상세의견: 토론 사이드패널 열기
+  const openAIDebate = (messageId: string) => {
+    setAiDebateTargetId(messageId);
+    setShowAIDebate(true);
+  };
+
+  // AI 의견 반영 → 해당 상세답변에 hasAIOpinion 표시
+  const handleReflectAIOpinion = () => {
+    setMessages((prev) => prev.map((m) =>
+      m.id === aiDebateTargetId ? { ...m, hasAIOpinion: true } : m
+    ));
+    toast.success("AI 의견이 답변에 반영되었습니다.");
+  };
+
+  // AI 의견 반영 삭제
+  const handleDeleteAIOpinion = () => {
+    setMessages((prev) => prev.map((m) =>
+      m.id === aiDebateTargetId ? { ...m, hasAIOpinion: false } : m
+    ));
+    setShowAIDebate(false);
+    toast.success("AI 의견 반영이 삭제되었습니다.");
+  };
+
+  // Handle AI Opinion Request (Dual Persona Debate) - 레거시(인라인)
   const handleRequestAIOpinion = (messageId: string) => {
     // 1. Add user message "AI 의견"
     const userAIOpinionMsg: Message = {
@@ -1367,18 +1394,15 @@ ${integratedData.aiOpinionSummary}
               className="pointer-events-auto flex items-center gap-1 rounded-full px-1.5 py-1.5 shadow-xl"
               style={{ background: '#1C1C1E' }}
             >
-              {/* AI 상세의견 */}
-              {!lastDetailed.hasAIOpinion && (
-                <>
-                  <button
-                    onClick={() => handleRequestAIOpinion(lastDetailed.id)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all hover:bg-white/10 active:scale-95"
-                  >
-                    AI 상세의견
-                  </button>
-                  <div className="w-px h-5 bg-white/20" />
-                </>
-              )}
+              {/* AI 상세의견 → 토론 사이드패널 */}
+              <button
+                onClick={() => openAIDebate(lastDetailed.id)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all hover:bg-white/10 active:scale-95"
+              >
+                AI 상세의견
+              </button>
+              <div className="w-px h-5 bg-white/20" />
+
 
               {/* 의견서 작성 */}
               <button
@@ -1533,6 +1557,29 @@ ${integratedData.aiOpinionSummary}
           initialSelectedTitle={selectedSourceTitle}
         />
       )}
+
+      {/* AI 상세의견 토론 사이드패널 */}
+      {showAIDebate && (() => {
+        const target = messages.find(m => m.id === aiDebateTargetId);
+        const ai = target?.enhancedData?.aiOpinionSummary;
+        const isObj = ai && typeof ai === "object";
+        const proPoint = isObj ? (ai as any).proConclusion : "법리에 비추어 형식적 요건과 객관적 증빙이 충분해야 인정이 가능하며, 입증이 미흡하면 인정이 어렵습니다.";
+        const conPoint = isObj ? (ai as any).conConclusion : "실질적인 사실관계가 인정된다면 형식과 무관하게 인정 가능성이 높습니다. 현실 정황을 함께 살펴야 합니다.";
+        const summary = isObj ? (ai as any).integratedConclusion : (typeof ai === "string" ? ai : (target?.enhancedData?.conclusion || ""));
+        return (
+          <AIOpinionDebatePanel
+            isOpen={showAIDebate}
+            onClose={() => setShowAIDebate(false)}
+            question={messages.find(m => m.isUser)?.text || initialMessage || ""}
+            proPoint={proPoint}
+            conPoint={conPoint}
+            summary={summary}
+            reflected={!!target?.hasAIOpinion}
+            onReflect={handleReflectAIOpinion}
+            onDelete={handleDeleteAIOpinion}
+          />
+        );
+      })()}
     </div>
   );
 }
