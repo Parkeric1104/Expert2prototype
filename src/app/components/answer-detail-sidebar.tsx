@@ -503,7 +503,7 @@ export function AnswerDetailSidebar({
                         <div className="flex-1 min-w-0">
                           <h3 className="text-base font-bold text-foreground">AI 상세의견</h3>
                           <p className="text-sm text-muted-foreground mt-1 leading-relaxed" style={{ wordBreak: "keep-all" }}>
-                            AI 엄격한 법률학자와 AI 실무형 분석가가 토론하여 심층 의견을 제시합니다. 토론을 확인한 뒤 답변에 반영할 수 있어요.
+                            두 가지 유형의 AI가 핵심 쟁점을 다각도로 심층 토론하여 결과를 도출합니다. 토론 내용을 확인하고 최종 답변 및 의견서에 반영해 보세요.
                           </p>
                           <button
                             onClick={() => setViewMode("debate")}
