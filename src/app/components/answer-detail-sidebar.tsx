@@ -433,31 +433,6 @@ export function AnswerDetailSidebar({
                       </section>
                     )}
 
-                    {/* 판례 */}
-                    {caseSources.length > 0 && (
-                      <section>
-                        <div className="flex items-center gap-1.5 mb-3">
-                          <Gavel className="w-4 h-4 text-foreground" />
-                          <h3 className="text-base font-bold text-foreground">판례</h3>
-                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                        </div>
-                        <div className="space-y-2">
-                          {caseSources.map((s, idx) => (
-                            <button
-                              key={idx}
-                              onClick={() => handleLawClick(s)}
-                              className="block w-full text-left px-3.5 py-3 rounded-xl bg-card border border-border/60 hover:border-primary/40 transition-colors"
-                            >
-                              <p className="text-sm text-foreground" style={{ wordBreak: "keep-all" }}>
-                                <span className="font-bold text-primary mr-1.5">{caseDisplayTitle(s)}</span>
-                                <span className="text-muted-foreground">{sourceSubtitle(s)}</span>
-                              </p>
-                            </button>
-                          ))}
-                        </div>
-                      </section>
-                    )}
-
                     {/* 해석례 */}
                     {interpretationSources.length > 0 && (
                       <section>
@@ -483,67 +458,76 @@ export function AnswerDetailSidebar({
                         </div>
                       </section>
                     )}
+
+                    {/* 판례 */}
+                    {caseSources.length > 0 && (
+                      <section>
+                        <div className="flex items-center gap-1.5 mb-3">
+                          <Gavel className="w-4 h-4 text-foreground" />
+                          <h3 className="text-base font-bold text-foreground">판례</h3>
+                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                        </div>
+                        <div className="space-y-2">
+                          {caseSources.map((s, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleLawClick(s)}
+                              className="block w-full text-left px-3.5 py-3 rounded-xl bg-card border border-border/60 hover:border-primary/40 transition-colors"
+                            >
+                              <p className="text-sm text-foreground" style={{ wordBreak: "keep-all" }}>
+                                <span className="font-bold text-primary mr-1.5">{caseDisplayTitle(s)}</span>
+                                <span className="text-muted-foreground">{sourceSubtitle(s)}</span>
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      </section>
+                    )}
                   </div>
                 )}
 
-                {/* AI Opinion */}
-                {aiOpinion && (
-                  <div className="bg-white dark:bg-card border-2 border-purple-300 dark:border-purple-700 rounded-lg p-5">
-                    <div className="flex items-start gap-3 mb-4">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Sparkles className="w-3.5 h-3.5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-sm font-bold text-foreground">AI 상세의견 결과</h4>
-                      </div>
+                {/* AI 의견 요약 */}
+                {aiOpinion && showSources && (
+                  <section className="animate-in fade-in duration-300 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 p-5">
+                    <div className="flex items-center gap-1.5 mb-4">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <h3 className="text-base font-bold text-foreground">AI 의견 요약</h3>
                     </div>
 
                     {typeof aiOpinion === "string" ? (
-                      // String type - Legacy support
-                      <div className="text-sm leading-relaxed text-foreground whitespace-pre-line pl-9">
+                      <p className="text-sm leading-relaxed text-foreground bg-card rounded-xl p-4">
                         {aiOpinion}
-                      </div>
+                      </p>
                     ) : (
-                      // Object type - 두 AI 노무사의 의견 표시
-                      <div className="space-y-4 pl-9">
-                        {/* Pro & Con Conclusions */}
-                        <div className="grid grid-cols-1 gap-4">
-                          {/* Conservative AI */}
-                          <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border-l-4 border-blue-500 rounded-lg">
-                            <h5 className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-2">
-                              <span className="text-base">🛡️</span>
-                              보수적 AI 노무사
-                            </h5>
-                            <p className="text-sm leading-relaxed text-foreground">
-                              {aiOpinion.proConclusion}
-                            </p>
+                      <div className="space-y-3">
+                        {/* AI 엄격한 법률학자 (보수적) */}
+                        <div className="flex items-start gap-3 bg-card rounded-xl p-4">
+                          <div className="flex flex-col items-center gap-1 flex-shrink-0 w-14">
+                            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-blue-300 dark:ring-blue-700">
+                              <img src={characterImg} alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 text-center leading-tight">AI 엄격한 법률학자</span>
                           </div>
-
-                          {/* Progressive AI */}
-                          <div className="p-4 bg-purple-50 dark:bg-purple-950/20 border-l-4 border-purple-500 rounded-lg">
-                            <h5 className="text-sm font-bold text-purple-600 dark:text-purple-400 mb-2 flex items-center gap-2">
-                              <span className="text-base">✨</span>
-                              허용적 AI 노무사
-                            </h5>
-                            <p className="text-sm leading-relaxed text-foreground">
-                              {aiOpinion.conConclusion}
-                            </p>
-                          </div>
+                          <p className="text-sm leading-relaxed text-foreground flex-1 pt-1">
+                            {aiOpinion.proConclusion}
+                          </p>
                         </div>
 
-                        {/* Integrated Conclusion - 마지막에 표시 */}
-                        <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border-l-4 border-indigo-500 rounded-lg">
-                          <h5 className="text-sm font-bold text-indigo-600 dark:text-indigo-400 mb-2 flex items-center gap-2">
-                            <Sparkles className="w-4 h-4" />
-                            종합 의견
-                          </h5>
-                          <p className="text-sm leading-relaxed text-foreground">
-                            {aiOpinion.integratedConclusion}
+                        {/* AI 실무형 분석가 (허용적) */}
+                        <div className="flex items-start gap-3 bg-card rounded-xl p-4">
+                          <div className="flex flex-col items-center gap-1 flex-shrink-0 w-14">
+                            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-300 dark:ring-purple-700">
+                              <img src={characterImg} alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 text-center leading-tight">AI 실무형 분석가</span>
+                          </div>
+                          <p className="text-sm leading-relaxed text-foreground flex-1 pt-1">
+                            {aiOpinion.conConclusion}
                           </p>
                         </div>
                       </div>
                     )}
-                  </div>
+                  </section>
                 )}
               </div>
             </div>
