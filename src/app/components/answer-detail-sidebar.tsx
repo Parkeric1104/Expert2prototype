@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, FileText, BookOpen, Scale, Gavel, Sparkles, ChevronRight, ArrowLeft, Copy } from "lucide-react";
+import { X, FileText, BookOpen, Scale, Gavel, Sparkles, ChevronRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { SourcesContent } from "@/app/components/sources-and-history-panel";
 import type { PanelSource } from "@/app/components/sources-and-history-panel";
@@ -303,28 +303,16 @@ export function AnswerDetailSidebar({
           >
             {/* Header (이미지형: 마스코트 + 조사 완료 + 출처 N) */}
             <div className="px-6 pt-6 pb-4 border-b border-border">
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-indigo-100 dark:ring-indigo-900/40">
                   <img src={characterImg} alt="도우미" className="w-full h-full object-cover" />
                 </div>
-                <div className="flex-1 min-w-0 pt-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 text-sm font-bold text-foreground">
-                      <Scale className="w-3.5 h-3.5 text-primary" />
-                      조사 완료
-                    </span>
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <span className="inline-flex items-center gap-1 text-sm font-bold text-foreground">
+                    <Scale className="w-3.5 h-3.5 text-primary" />
+                    조사 완료
+                  </span>
                 </div>
-                <button
-                  onClick={() => {
-                    const text = [`1. 사실관계\n${factAnalysis}`, `2. 질의내용\n${queryContent}`, `3. 검토 내용\n${reviewContent}`, `4. 결론\n${conclusion}`].join("\n\n");
-                    navigator.clipboard?.writeText(text);
-                  }}
-                  aria-label="답변 복사"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
                 <Button
                   variant="ghost"
                   size="icon"
