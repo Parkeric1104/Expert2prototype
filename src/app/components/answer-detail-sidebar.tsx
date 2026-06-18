@@ -3,6 +3,7 @@ import { X, FileText, BookOpen, Scale, Gavel, Sparkles, ChevronRight, ArrowLeft,
 import { Button } from "@/app/components/ui/button";
 import { SourcesContent } from "@/app/components/sources-and-history-panel";
 import type { PanelSource } from "@/app/components/sources-and-history-panel";
+import { AIOpinionDebatePanel } from "@/app/components/ai-opinion-debate-panel";
 import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 interface Source {
@@ -70,9 +71,11 @@ export function AnswerDetailSidebar({
   questionSummary,
   isInitialAnswer = false,
 }: AnswerDetailSidebarProps) {
-  const [viewMode, setViewMode] = useState<"answer" | "law" | "sources">("answer");
+  const [viewMode, setViewMode] = useState<"answer" | "law" | "sources" | "debate">("answer");
   const [selectedLaw, setSelectedLaw] = useState<Source | null>(null);
   const [selectedSourceTitle, setSelectedSourceTitle] = useState<string>("");
+  // AI 상세의견(토론) 반영 여부 — 사이드패널 내부에서 동작
+  const [aiOpinionReflected, setAiOpinionReflected] = useState(false);
   
   // 타이핑 효과를 위한 상태
   const [typingStage, setTypingStage] = useState(0); // 0: 준비, 1: 사실관계, 2: 질의내용, 3: 검토내용, 4: 근거법령, 5: 결론
@@ -136,6 +139,10 @@ export function AnswerDetailSidebar({
       // 이전 타이머 클리어
       timersRef.current.forEach(timer => clearTimeout(timer));
       timersRef.current = [];
+
+      // 열릴 때마다 토론 뷰/반영 상태 초기화
+      setViewMode("answer");
+      setAiOpinionReflected(false);
 
       if (isInitialAnswer) {
         // 최초 답변 생성 시: 타이핑 효과 적용
@@ -483,12 +490,46 @@ export function AnswerDetailSidebar({
                   </div>
                 )}
 
-                {/* AI 의견 요약 */}
-                {aiOpinion && showSources && (
+                {/* AI 상세의견 진입 (반영 전) */}
+                {aiOpinion && showSources && !aiOpinionReflected && (
                   <section className="animate-in fade-in duration-300">
-                    <div className="flex items-center gap-1.5 mb-4">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      <h3 className="text-base font-bold text-foreground">AI 의견 요약</h3>
+                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Sparkles className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-bold text-foreground">AI 상세의견</h3>
+                          <p className="text-sm text-muted-foreground mt-1 leading-relaxed" style={{ wordBreak: "keep-all" }}>
+                            AI 엄격한 법률학자와 AI 실무형 분석가가 토론하여 심층 의견을 제시합니다. 토론을 확인한 뒤 답변에 반영할 수 있어요.
+                          </p>
+                          <button
+                            onClick={() => setViewMode("debate")}
+                            className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            AI 상세의견 보기
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* AI 의견 요약 (반영 후) */}
+                {aiOpinion && showSources && aiOpinionReflected && (
+                  <section className="animate-in fade-in duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <h3 className="text-base font-bold text-foreground">AI 의견 요약</h3>
+                      </div>
+                      <button
+                        onClick={() => setViewMode("debate")}
+                        className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        AI 상세의견 다시 보기
+                      </button>
                     </div>
 
                     {typeof aiOpinion === "string" ? (
@@ -633,6 +674,59 @@ export function AnswerDetailSidebar({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* AI 상세의견 토론 View */}
+          <div
+            className={`absolute inset-0 flex flex-col bg-background transition-transform duration-300 ${
+              viewMode === "debate" ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 h-16 border-b border-border flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToAnswer}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="font-medium">상세 답변</span>
+              </Button>
+              <h3 className="text-sm font-bold text-foreground absolute left-1/2 -translate-x-1/2">
+                AI 상세의견 · 토론
+              </h3>
+              <Button variant="ghost" size="icon" onClick={handleClose}>
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            {/* 토론 컨텐츠 (임베드) */}
+            {viewMode === "debate" && (() => {
+              const isObj = aiOpinion && typeof aiOpinion === "object";
+              const proPoint = isObj ? (aiOpinion as AIOpinionSummary).proConclusion : "법리에 비추어 형식적 요건과 객관적 증빙이 충분해야 인정이 가능하며, 입증이 미흡하면 인정이 어렵습니다.";
+              const conPoint = isObj ? (aiOpinion as AIOpinionSummary).conConclusion : "실질적인 사실관계가 인정된다면 형식과 무관하게 인정 가능성이 높습니다. 현실 정황을 함께 살펴야 합니다.";
+              const summary = isObj ? (aiOpinion as AIOpinionSummary).integratedConclusion : (typeof aiOpinion === "string" ? aiOpinion : conclusion);
+              return (
+                <AIOpinionDebatePanel
+                  embedded
+                  isOpen={true}
+                  onClose={handleBackToAnswer}
+                  question={questionSummary || ""}
+                  proPoint={proPoint}
+                  conPoint={conPoint}
+                  summary={summary}
+                  reflected={aiOpinionReflected}
+                  onReflect={() => {
+                    setAiOpinionReflected(true);
+                    setViewMode("answer");
+                  }}
+                  onDelete={() => {
+                    setAiOpinionReflected(false);
+                    setViewMode("answer");
+                  }}
+                />
+              );
+            })()}
           </div>
         </div>
       </div>

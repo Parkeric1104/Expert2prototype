@@ -19,6 +19,8 @@ interface AIOpinionDebatePanelProps {
   reflected: boolean; // 이미 반영됨
   onReflect: () => void; // AI 의견 반영
   onDelete: () => void; // AI 의견 반영 삭제
+  /** 상세 답변 사이드패널 안에 임베드되어 동작 (오버레이/헤더 없이 컨텐츠만) */
+  embedded?: boolean;
 }
 
 const PERSONAS = {
@@ -37,6 +39,7 @@ export function AIOpinionDebatePanel({
   reflected,
   onReflect,
   onDelete,
+  embedded = false,
 }: AIOpinionDebatePanelProps) {
   // 토론 스크립트: 사회자 → 법률학자(1) → 분석가(1) → 법률학자(2) → 분석가(2) → 사회자 마무리
   const script: ScriptLine[] = [
@@ -148,20 +151,9 @@ export function AIOpinionDebatePanel({
     );
   };
 
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
-      <div className="fixed top-0 right-0 h-full w-full max-w-3xl bg-background border-l border-border shadow-2xl z-50 flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 h-16 border-b border-border flex-shrink-0">
-          <h2 className="text-lg font-bold text-foreground">AI 상세의견 · 토론</h2>
-          <button onClick={onClose} aria-label="닫기" className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+  // ── 공통 컨텐츠 (페르소나 + 입장 안내 + 토론 메시지) ──
+  const content = (
+    <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           {/* 페르소나 소개 카드 */}
           <div className="grid grid-cols-3 gap-3">
             {(["host", "pro", "con"] as Speaker[]).map((p) => (
@@ -195,49 +187,78 @@ export function AIOpinionDebatePanel({
             {!done && shownCount < script.length && typingText && renderBubble(script[shownCount], shownCount, typingText + "▌")}
           </div>
         </div>
+  );
 
-        {/* 하단 액션 */}
-        <div className="border-t border-border px-6 py-4 flex-shrink-0">
-          {done && (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
-                  <img src={characterImg} alt="" className="w-full h-full object-cover" />
-                </div>
-                <p className="text-sm font-semibold text-primary" style={{ wordBreak: "keep-all" }}>
-                  {reflected ? "AI 의견이 이미 반영되었습니다." : "AI 의견을 반영하시겠습니까?"}
-                </p>
-              </div>
-              <div className="flex items-center flex-shrink-0">
-                {reflected ? (
-                  <button onClick={onDelete} className="px-5 py-2 rounded-full border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors">
-                    삭제하기
-                  </button>
-                ) : (
-                  <button onClick={handleReflect} className="px-5 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors">
-                    AI 의견 반영하기
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-          {!done && (
-            <p className="text-center text-sm text-muted-foreground">AI들이 토론을 진행하고 있어요…</p>
-          )}
-        </div>
-      </div>
-
-      {/* 반영 중 로딩 팝업 */}
-      {reflecting && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
-          <div className="bg-card rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-3">
-            <div className="w-14 h-14 rounded-full overflow-hidden">
+  // ── 하단 액션 바 ──
+  const actionBar = (
+    <div className="border-t border-border px-6 py-4 flex-shrink-0">
+      {done && (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
               <img src={characterImg} alt="" className="w-full h-full object-cover" />
             </div>
-            <p className="text-sm font-bold text-primary">AI 의견을 반영하고 있습니다.</p>
+            <p className="text-sm font-semibold text-primary" style={{ wordBreak: "keep-all" }}>
+              {reflected ? "AI 의견이 이미 반영되었습니다." : "AI 의견을 반영하시겠습니까?"}
+            </p>
+          </div>
+          <div className="flex items-center flex-shrink-0">
+            {reflected ? (
+              <button onClick={onDelete} className="px-5 py-2 rounded-full border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors">
+                삭제하기
+              </button>
+            ) : (
+              <button onClick={handleReflect} className="px-5 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors">
+                AI 의견 반영하기
+              </button>
+            )}
           </div>
         </div>
       )}
+      {!done && (
+        <p className="text-center text-sm text-muted-foreground">AI들이 토론을 진행하고 있어요…</p>
+      )}
+    </div>
+  );
+
+  // ── 반영 중 로딩 팝업 ──
+  const loadingPopup = reflecting && (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
+      <div className="bg-card rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-3">
+        <div className="w-14 h-14 rounded-full overflow-hidden">
+          <img src={characterImg} alt="" className="w-full h-full object-cover" />
+        </div>
+        <p className="text-sm font-bold text-primary">AI 의견을 반영하고 있습니다.</p>
+      </div>
+    </div>
+  );
+
+  // 임베드 모드: 상세 답변 사이드패널 내부에서 컨텐츠 + 액션바만 렌더 (헤더/백드롭은 사이드패널이 제공)
+  if (embedded) {
+    return (
+      <div className="flex flex-col h-full">
+        {content}
+        {actionBar}
+        {loadingPopup}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+      <div className="fixed top-0 right-0 h-full w-full max-w-3xl bg-background border-l border-border shadow-2xl z-50 flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 h-16 border-b border-border flex-shrink-0">
+          <h2 className="text-lg font-bold text-foreground">AI 상세의견 · 토론</h2>
+          <button onClick={onClose} aria-label="닫기" className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        {content}
+        {actionBar}
+      </div>
+      {loadingPopup}
     </>
   );
 }
