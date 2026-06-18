@@ -711,24 +711,33 @@ ${integratedData.aiOpinionSummary}
       return;
     }
 
+    const savedInput = text;
     const userMsg: Message = {
       id: Date.now().toString(),
       text,
       isUser: true,
       attachedFiles: filesInfo.length > 0 ? filesInfo : undefined,
     };
-    const savedInput = text;
-    setMessages((prev) => [...prev, userMsg]);
-
-    // 가드레일: 부적절/위법 질문 차단 (휴먼피드백 미적용)
-    const validation = validateQuestion(savedInput);
-    const isBlocked =
-      validation.reason === "inappropriate" || validation.reason === "unethical";
 
     const hasPriorAnswer = messages.some(
       m => !m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
     );
 
+    // ── 최초 답변 확정 전(휴먼피드백/질문수정 단계): 질문 교체로 처리 ──
+    // 이전 질문·피드백을 제거하고 새 질문으로 1턴 흐름을 재시작 (멀티턴 횟수 미차감)
+    if (!hasPriorAnswer) {
+      setMessages([userMsg]);
+      runFirstQuestionFlow(savedInput); // 가드레일 → 복잡도 분류 → 휴먼피드백/간단답변
+      return;
+    }
+
+    // ── 후속 질문(멀티턴) ──
+    setMessages((prev) => [...prev, userMsg]);
+
+    // 가드레일: 부적절/위법 질문 차단 → 채팅 종료
+    const validation = validateQuestion(savedInput);
+    const isBlocked =
+      validation.reason === "inappropriate" || validation.reason === "unethical";
     if (isBlocked) {
       setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
       setTimeout(() => {
@@ -742,15 +751,9 @@ ${integratedData.aiOpinionSummary}
       return;
     }
 
-    // 최초 질문이 '상세 답변'이면 휴먼피드백 먼저 노출 (간단 답변/후속 질문은 미적용)
-    if (!hasPriorAnswer && classifyComplexity(savedInput) === "detailed") {
-      setMessages((prev) => prev.filter(m => !m.needsFeedback).concat(makeFeedbackMessage()));
-      return;
-    }
-
-    // 로딩 → 답변 (최초 간단답변 또는 후속 멀티턴)
+    // 로딩 → 멀티턴 답변
     setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
-    const { msg, delay } = buildAnswerMessage(savedInput, { isFirst: !hasPriorAnswer });
+    const { msg, delay } = buildAnswerMessage(savedInput, { isFirst: false });
     setTimeout(() => {
       setMessages((prev) => prev.filter(m => !m.isLoading).concat(msg));
       onStepChange?.(3);
