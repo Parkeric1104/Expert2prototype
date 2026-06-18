@@ -1,4 +1,4 @@
-import { Scale, Copy, Share, CornerDownRight } from "lucide-react";
+import { Scale, Copy, CornerDownRight } from "lucide-react";
 import { toast } from "sonner";
 
 type SourceType = "법령" | "해석례" | "사규" | "판례";
@@ -104,10 +104,6 @@ export function SimpleResponseCard({
     toast.success("근거 법령이 복사되었습니다.");
   };
 
-  const handleShareSources = () => {
-    toast.info("공유 기능은 준비 중입니다.");
-  };
-
   return (
     <div className="mb-8">
       <div className="max-w-[860px] flex flex-col">
@@ -170,22 +166,13 @@ export function SimpleResponseCard({
                 <Scale className="w-4 h-4 text-foreground" />
                 <h3 className="text-base font-bold text-foreground">근거 법령</h3>
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={handleCopySources}
-                  aria-label="근거 법령 복사"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleShareSources}
-                  aria-label="근거 법령 공유"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                >
-                  <Share className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={handleCopySources}
+                aria-label="근거 법령 복사"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2.5">

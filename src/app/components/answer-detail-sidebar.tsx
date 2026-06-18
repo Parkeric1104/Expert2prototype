@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, FileText, BookOpen, Scale, Gavel, Sparkles, ChevronRight, ArrowLeft, Copy, ExternalLink } from "lucide-react";
+import { X, FileText, BookOpen, Scale, Gavel, Sparkles, ChevronRight, ArrowLeft, Copy } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { SourcesContent } from "@/app/components/sources-and-history-panel";
 import type { PanelSource } from "@/app/components/sources-and-history-panel";
@@ -413,7 +413,6 @@ export function AnswerDetailSidebar({
                         <div className="flex items-center gap-1.5 mb-3">
                           <Scale className="w-4 h-4 text-foreground" />
                           <h3 className="text-base font-bold text-foreground">근거 법령</h3>
-                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {lawSources.map((s, idx) => {
@@ -439,7 +438,6 @@ export function AnswerDetailSidebar({
                         <div className="flex items-center gap-1.5 mb-2">
                           <FileText className="w-4 h-4 text-foreground" />
                           <h3 className="text-base font-bold text-foreground">해석례</h3>
-                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                         </div>
                         <p className="text-xs text-muted-foreground mb-3">참고하실 수 있는 실제 해석례를 아래에 정리해두었어요.</p>
                         <div className="space-y-2">
@@ -465,7 +463,6 @@ export function AnswerDetailSidebar({
                         <div className="flex items-center gap-1.5 mb-3">
                           <Gavel className="w-4 h-4 text-foreground" />
                           <h3 className="text-base font-bold text-foreground">판례</h3>
-                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                         </div>
                         <div className="space-y-2">
                           {caseSources.map((s, idx) => (
@@ -488,7 +485,7 @@ export function AnswerDetailSidebar({
 
                 {/* AI 의견 요약 */}
                 {aiOpinion && showSources && (
-                  <section className="animate-in fade-in duration-300 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 p-5">
+                  <section className="animate-in fade-in duration-300">
                     <div className="flex items-center gap-1.5 mb-4">
                       <Sparkles className="w-4 h-4 text-primary" />
                       <h3 className="text-base font-bold text-foreground">AI 의견 요약</h3>
