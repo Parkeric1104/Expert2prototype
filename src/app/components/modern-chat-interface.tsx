@@ -32,8 +32,7 @@ import {
   DollarSign,
   ClipboardCheck,
   UserCheck,
-  Info,
-  Sparkles
+  Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { getDummyResponse, buildMultiTurnBody } from "@/app/data/dummy-responses";
@@ -1370,21 +1369,6 @@ ${integratedData.aiOpinionSummary}
               className="pointer-events-auto flex items-center gap-1 rounded-full px-1.5 py-1.5 shadow-xl"
               style={{ background: '#1C1C1E' }}
             >
-              {/* AI 상세의견 → 상세 답변 사이드패널의 토론 뷰로 진입 */}
-              <button
-                onClick={() => {
-                  setPreparingAnswerData(lastDetailed.enhancedData || null);
-                  setIsInitialAnswerView(false);
-                  setDetailInitialView("debate");
-                  setShowDetailSidebar(true);
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all hover:bg-white/10 active:scale-95"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                AI 상세의견
-              </button>
-              <div className="w-px h-5 bg-white/20" />
-
               {/* 의견서 작성 */}
               <button
                 onClick={() => handleDraftDocument(lastDetailed.id)}
