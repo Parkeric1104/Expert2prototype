@@ -609,10 +609,12 @@ ${integratedData.aiOpinionSummary}
     suggestedQuestions: getSuggestedQuestions("insufficient"),
   });
 
-  // 휴먼피드백 "계속 진행하기" → 피드백 제거 후 상세 답변 생성 (사용자 메시지 재추가 없음)
+  // 휴먼피드백 "계속 진행하기" → 피드백 제거 후 무조건 상세 답변 생성 (사용자 메시지 재추가 없음)
+  // 휴먼피드백은 '상세 답변'에서만 노출되므로, 진행 시 항상 상세 답변으로 생성한다.
   const proceedWithAnswer = (question: string) => {
     onStepChange?.(2);
     setCurrentStep(2);
+    setAnswerTrack("detailed");
     const loadingMsg: Message = {
       id: (Date.now() + 1).toString(),
       text: "",
@@ -621,12 +623,19 @@ ${integratedData.aiOpinionSummary}
       relatedLaws: relatedLaws,
     };
     setMessages((prev) => prev.filter((m) => !m.needsFeedback).concat(loadingMsg));
-    const { msg, delay } = buildAnswerMessage(question, { isFirst: true });
     setTimeout(() => {
-      setMessages((prev) => prev.filter((m) => !m.isLoading).concat(msg));
+      const enhancedData = generateIntegratedResponse(question);
+      const aiMsg: Message = {
+        id: (Date.now() + 2).toString(),
+        text: "",
+        isUser: false,
+        isEnhancedResponse: true,
+        enhancedData,
+      };
+      setMessages((prev) => prev.filter((m) => !m.isLoading).concat(aiMsg));
       onStepChange?.(3);
       setCurrentStep(3);
-    }, delay);
+    }, DELAY_DETAILED);
   };
 
   // 휴먼피드백 "계속 진행하기" 핸들러

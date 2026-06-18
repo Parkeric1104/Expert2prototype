@@ -72,7 +72,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     { text: "연장·휴일·야간근로수당은 어떻게 계산하나요?",                              questionType: "normal", category: "임금", laws: ["근로기준법 제56조"] },
     { text: "회사가 폐업했는데 밀린 임금·퇴직금은 어떻게 받을 수 있나요?",                questionType: "normal", category: "임금", laws: ["임금채권보장법 제7조"] },
     // ── 휴일·휴가 ──
-    { text: "1년 근무 후 퇴직하면 연차 미사용수당은 며칠분을 받나요?",                   questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제60조"] },
+    { text: "1년 근무 후 퇴직하면 연차 미사용수당은 며칠분을 받나요?",                   questionType: "detailed", category: "휴일·휴가", laws: ["근로기준법 제60조"] },
     { text: "지각·조퇴를 3회 이상 하면 주휴수당을 받을 수 없나요?",                      questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제55조"] },
     { text: "휴일에 근무하고 다른 날 쉬면 휴일근로수당을 받을 수 있나요?",                questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제55조", "근로기준법 제56조"] },
     // ── 근로시간 ──
