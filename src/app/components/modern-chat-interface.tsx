@@ -725,11 +725,25 @@ ${integratedData.aiOpinionSummary}
       m => !m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
     );
 
-    // ── 최초 답변 확정 전(휴먼피드백/질문수정 단계): 질문 교체로 처리 ──
-    // 이전 질문·피드백을 제거하고 새 질문으로 1턴 흐름을 재시작 (멀티턴 횟수 미차감)
+    // ── 휴먼피드백 단계에서의 재제출(질문 수정 등): 휴먼피드백은 첫 질문에 1번만 ──
+    // 이전 질문·피드백을 제거하고 편집 질문으로 교체한 뒤, 피드백 재노출 없이 바로 상세 답변
     if (!hasPriorAnswer) {
-      setMessages([userMsg]);
-      runFirstQuestionFlow(savedInput); // 가드레일 → 복잡도 분류 → 휴먼피드백/간단답변
+      const v = validateQuestion(savedInput);
+      const blocked = v.reason === "inappropriate" || v.reason === "unethical";
+      setMessages([userMsg]); // 이전 질문/피드백 제거
+      if (blocked) {
+        setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
+        setTimeout(() => {
+          setMessages((prev) => prev.filter(m => !m.isLoading).concat({
+            id: (Date.now() + 2).toString(),
+            text: "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다.",
+            isUser: false,
+          }));
+          setChatEnded(true);
+        }, 800);
+        return;
+      }
+      proceedWithAnswer(savedInput); // 상세 답변 (휴먼피드백 재노출 없음)
       return;
     }
 
