@@ -1,10 +1,10 @@
-import { AnswerDetailSidebar } from "@/app/components/answer-detail-sidebar";
 import { SourcesAndHistoryPanel } from "@/app/components/sources-and-history-panel";
 import { useState, useRef, useEffect } from "react";
 import { ChatBubble } from "@/app/components/chat-bubble";
 import { UserMessageBubble } from "@/app/components/user-message-bubble";
 import { ProgressiveLoadingBubble } from "@/app/components/progressive-loading";
-import { ModernAIResponse } from "@/app/components/modern-ai-response";
+import { InlineDetailedAnswer } from "@/app/components/inline-detailed-answer";
+import { AIOpinionDebatePanel } from "@/app/components/ai-opinion-debate-panel";
 import { SimpleResponseCard } from "@/app/components/simple-response-card";
 import { MultiTurnResponse } from "@/app/components/multi-turn-response";
 import { DualPersonaDebate } from "@/app/components/dual-persona-debate";
@@ -173,6 +173,9 @@ export function ModernChatInterface({
   const [isInitialAnswerView, setIsInitialAnswerView] = useState(false); // 최초 답변 생성 시 사이드바인지 여부
   const [autoCloseSidebar, setAutoCloseSidebar] = useState(false); // 사이드바 자동 닫기 플래그
   const [detailInitialView, setDetailInitialView] = useState<"answer" | "debate">("answer"); // 사이드바 최초 진입 뷰
+  // AI 상세의견 토론 오버레이
+  const [showAIDebate, setShowAIDebate] = useState(false);
+  const [aiDebateTargetId, setAiDebateTargetId] = useState<string>("");
   
   // 출처 및 탐색기록 패널 상태
   const [showSourcesPanel, setShowSourcesPanel] = useState(false);
@@ -685,17 +688,7 @@ ${integratedData.aiOpinionSummary}
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // 상세 답변이 새로 생성되면, 결론을 바로 보여주지 않고 상세 답변 사이드패널을 열어
-  // 스트리밍(타이핑) 후 자동으로 닫는다. (메시지당 1회)
-  useEffect(() => {
-    const latestDetailed = [...messages].reverse().find(m => m.isEnhancedResponse && m.enhancedData);
-    if (latestDetailed && !autoStreamedRef.current.has(latestDetailed.id)) {
-      autoStreamedRef.current.add(latestDetailed.id);
-      setPreparingAnswerData({ ...latestDetailed.enhancedData!, aiOpinionSummary: undefined });
-      setIsInitialAnswerView(true); // 타이핑 스트리밍 + 완료 후 자동 닫기
-      setShowDetailSidebar(true);
-    }
-  }, [messages]);
+  // 상세 답변은 채팅 화면 안에서 인라인으로 스트리밍 표시됨 (사이드패널 자동 열기 제거)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -880,6 +873,29 @@ ${integratedData.aiOpinionSummary}
     // Step 3: 결과 확인 완료 -> Step 4: 의견서 작성
     onStepChange?.(4);
     setCurrentStep(4);
+  };
+
+  // AI 상세의견: 토론 오버레이 열기
+  const openAIDebate = (messageId: string) => {
+    setAiDebateTargetId(messageId);
+    setShowAIDebate(true);
+  };
+
+  // AI 의견 반영 → 해당 상세답변에 hasAIOpinion 표시 (인라인 AI 의견 요약 노출)
+  const handleReflectAIOpinion = () => {
+    setMessages((prev) => prev.map((m) =>
+      m.id === aiDebateTargetId ? { ...m, hasAIOpinion: true } : m
+    ));
+    toast.success("AI 의견이 답변에 반영되었습니다.");
+  };
+
+  // AI 의견 반영 삭제
+  const handleDeleteAIOpinion = () => {
+    setMessages((prev) => prev.map((m) =>
+      m.id === aiDebateTargetId ? { ...m, hasAIOpinion: false } : m
+    ));
+    setShowAIDebate(false);
+    toast.success("AI 의견 반영이 삭제되었습니다.");
   };
 
   // Handle AI Opinion Request (Dual Persona Debate) - 레거시(인라인)
@@ -1329,26 +1345,18 @@ ${integratedData.aiOpinionSummary}
                   />
                 )}
                 {message.isEnhancedResponse && message.enhancedData && (
-                  <ModernAIResponse
+                  <InlineDetailedAnswer
                     conclusion={message.enhancedData.conclusion}
                     factAnalysis={message.enhancedData.factAnalysis}
                     queryContent={message.enhancedData.queryRedefinition}
                     reviewContent={message.enhancedData.reviewContent}
                     sources={message.enhancedData.sources}
-                    aiOpinion={message.hasAIOpinion ? message.enhancedData.aiOpinionSummary : undefined}
-                    disclaimer="AI 의견은 참고용이며 부정확한 정보가 포함될 수 있습니다. 중요한 결정은 전문가 상담을 권드립니다."
-                    onRefineSearch={handleRefineSearch}
-                    onDraftDocument={() => handleDraftDocument(message.id)}
-                    onRequestAIOpinion={() => handleRequestAIOpinion(message.id)}
-                    hasAIOpinion={message.hasAIOpinion || false}
-                    questionSummary={generateQuestionSummary(messages.find(m => m.isUser)?.text || "")}
-                    onOpenDetailView={() => {
-                      setPreparingAnswerData(message.enhancedData || null);
-                      setDetailInitialView("answer");
-                      setShowDetailSidebar(true);
-                      setIsInitialAnswerView(false); // 상세 답변 보기는 최초 답변이 아님
-                    }}
-                    showActionButtons={true}
+                    aiOpinion={message.enhancedData.aiOpinionSummary}
+                    stream
+                    onStreamingChange={setIsStreaming}
+                    onSourceClick={handleLawClick}
+                    reflected={message.hasAIOpinion || false}
+                    onOpenDebate={() => openAIDebate(message.id)}
                   />
                 )}
                 {message.isDebate && (
@@ -1480,33 +1488,7 @@ ${integratedData.aiOpinionSummary}
         maxQuestions={MAX_QUESTIONS}
       />
 
-      {/* Answer Detail Sidebar */}
-      {preparingAnswerData && (
-        <AnswerDetailSidebar
-          isOpen={showDetailSidebar}
-          onClose={() => {
-            console.log('[Chat] 사이드바 닫기 - autoCloseSidebar 플래그 초기화');
-            setShowDetailSidebar(false);
-            setAutoCloseSidebar(false);
-            // 검색 모드: 상세의견 확인 후 의견서 작성 자동 시작
-            if (pendingDocDraftAfterSidebar) {
-              setPendingDocDraftAfterSidebar(false);
-              setTimeout(() => handleDraftDocument(), 200);
-            }
-          }}
-          conclusion={preparingAnswerData.conclusion}
-          factAnalysis={preparingAnswerData.factAnalysis}
-          queryContent={preparingAnswerData.queryRedefinition}
-          reviewContent={preparingAnswerData.reviewContent}
-          sources={preparingAnswerData.sources}
-          aiOpinion={preparingAnswerData.aiOpinionSummary}
-          questionSummary={messages.find(m => m.isUser)?.text || initialMessage}
-          isInitialAnswer={isInitialAnswerView}
-          initialView={detailInitialView}
-        />
-      )}
-
-      {/* 출처 및 탐색기록 패널 */}
+      {/* 출처 및 탐색기록 패널 (사이드 패널은 출처·탐색기록 전용) */}
       {showSourcesPanel && (
         <SourcesAndHistoryPanel
           isOpen={showSourcesPanel}
@@ -1515,6 +1497,29 @@ ${integratedData.aiOpinionSummary}
           initialSelectedTitle={selectedSourceTitle}
         />
       )}
+
+      {/* AI 상세의견 토론 오버레이 */}
+      {showAIDebate && (() => {
+        const target = messages.find(m => m.id === aiDebateTargetId);
+        const ai = target?.enhancedData?.aiOpinionSummary;
+        const isObj = ai && typeof ai === "object";
+        const proPoint = isObj ? (ai as any).proConclusion : "법리에 비추어 형식적 요건과 객관적 증빙이 충분해야 인정이 가능하며, 입증이 미흡하면 인정이 어렵습니다.";
+        const conPoint = isObj ? (ai as any).conConclusion : "실질적인 사실관계가 인정된다면 형식과 무관하게 인정 가능성이 높습니다. 현실 정황을 함께 살펴야 합니다.";
+        const summary = isObj ? (ai as any).integratedConclusion : (typeof ai === "string" ? ai : (target?.enhancedData?.conclusion || ""));
+        return (
+          <AIOpinionDebatePanel
+            isOpen={showAIDebate}
+            onClose={() => setShowAIDebate(false)}
+            question={messages.find(m => m.isUser)?.text || initialMessage || ""}
+            proPoint={proPoint}
+            conPoint={conPoint}
+            summary={summary}
+            reflected={!!target?.hasAIOpinion}
+            onReflect={handleReflectAIOpinion}
+            onDelete={handleDeleteAIOpinion}
+          />
+        );
+      })()}
 
     </div>
   );
