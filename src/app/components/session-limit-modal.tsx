@@ -70,13 +70,13 @@ export function SessionLimitModal({
         </AlertDialogHeader>
 
         <AlertDialogFooter className="flex-col sm:flex-col gap-2">
-          {/* Primary: Continue with new session */}
+          {/* Primary: Start a new chat session */}
           <Button
             onClick={onContinueNewSession}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
           >
             <MessageCircle className="w-4 h-4 mr-2" />
-            이어서 질문하기
+            새 채팅에서 시작하기
           </Button>
 
           <div className="flex gap-2 w-full">
