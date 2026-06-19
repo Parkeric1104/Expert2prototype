@@ -1172,7 +1172,7 @@ ${integratedData.aiOpinionSummary}
   // 답변 완료 직후 자동 노출하지 않도록 messages 감시 트리거는 제거.
 
   // 첫 질문 흐름 (가드레일 → 복잡도 분류 → 휴먼피드백/간단답변). 사용자 메시지는 호출 측에서 이미 추가됨
-  const runFirstQuestionFlow = (question: string) => {
+  const runFirstQuestionFlow = (question: string, forceDetailed = false) => {
     const validation = validateQuestion(question);
     const blocked = validation.reason === "inappropriate" || validation.reason === "unethical";
 
@@ -1191,8 +1191,8 @@ ${integratedData.aiOpinionSummary}
       return;
     }
 
-    // 상세 답변이면 휴먼피드백 먼저
-    if (classifyComplexity(question) === "detailed") {
+    // 상세 답변이면 휴먼피드백 먼저 (새 세션 이어가기 등은 강제 상세 분류)
+    if (forceDetailed || classifyComplexity(question) === "detailed") {
       setMessages((prev) => [...prev, makeFeedbackMessage()]);
       return;
     }
@@ -1230,7 +1230,8 @@ ${integratedData.aiOpinionSummary}
     const q = pendingQuestion;
     setPendingQuestion("");
     setPendingAttachedFiles([]);
-    runFirstQuestionFlow(q);
+    // 마지막 질문을 새 채팅의 첫 질문으로 — 상세답변으로 분류하여 프로세스 이어가기
+    runFirstQuestionFlow(q, true);
   };
 
   // If showing document preview, render DocumentView instead
@@ -1470,11 +1471,7 @@ ${integratedData.aiOpinionSummary}
       <SessionLimitModal
         isOpen={showSessionLimitModal}
         onClose={() => setShowSessionLimitModal(false)}
-        onContinueNewSession={() => {
-          // 새 세션 시작: 페이지 리셋하고 질문 자동 전송
-          window.location.reload();
-          // TODO: 페이지 로드 후 pendingQuestion을 입력창에 자동으로 넣고 전송
-        }}
+        onContinueNewSession={handleRetryQuestion}
         onDraftDocument={() => {
           setShowSessionLimitModal(false);
           // 모드에 따라 자동으로 처리 (messageId 없으면 기본 동작)
