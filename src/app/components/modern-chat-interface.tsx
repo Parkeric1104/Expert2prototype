@@ -128,7 +128,7 @@ const FLOATING_ICONS = [
 ];
 
 // 멀티턴 제한 상수 (최대 5회)
-const MAX_QUESTIONS = 5;
+const MAX_QUESTIONS = 3; // 최초 답변 1 + 후속질문 2회
 
 export function ModernChatInterface({
   initialMessage,
@@ -152,9 +152,12 @@ export function ModernChatInterface({
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [documentContent, setDocumentContent] = useState("");
   const [documentData, setDocumentData] = useState<any>(null); // 의견서 조화 데이터
-  // 의견서 작성 — 주제 선택 바텀시트 (여러 맥락인 경우)
+  // 의견서 작성 — 주제 선택 바텀시트 (프로토타입: 최초 선택 시 무조건 노출)
   const [showTopicSheet, setShowTopicSheet] = useState(false);
   const [topicCandidates, setTopicCandidates] = useState<Array<{ title: string; desc: string; basis: string }>>([]);
+  // 의견서 작성 플로우 시작 여부 (최초 선택 후 true) → 이후 멀티턴 불가, 재진입 시 바로 의견서 화면
+  const [opinionFlowStarted, setOpinionFlowStarted] = useState(false);
+  const [lastDraftTopicTitle, setLastDraftTopicTitle] = useState<string>("");
   const [previousSelectedLaws, setPreviousSelectedLaws] = useState<string[]>(selectedLaws);
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number; type: string; data: ArrayBuffer | string }[]>([]);
   const [showSecurityAlert, setShowSecurityAlert] = useState(false);
@@ -713,8 +716,10 @@ ${integratedData.aiOpinionSummary}
     }
 
     // 멀티턴 제한 체크
+    // - 횟수 초과(MAX_QUESTIONS) 또는
+    // - 의견서 작성 플로우를 시작한 세션(멀티턴 불가): 동일하게 세션 전환 모달
     const aiResponseCount = getAIResponseCount();
-    if (aiResponseCount >= MAX_QUESTIONS) {
+    if (opinionFlowStarted || aiResponseCount >= MAX_QUESTIONS) {
       // 질문을 보내지 않고 세션 전환 알럿 표시
       setPendingQuestion(text);
       setPendingAttachedFiles(filesInfo);
@@ -813,20 +818,25 @@ ${integratedData.aiOpinionSummary}
     return { multi: false, topics: [toTopic(cats[0] || "노동법 일반")] };
   };
 
-  // 의견서 작성 시작 (GNB/모달 진입점): 맥락 분석 → 바텀시트(여러 맥락) 또는 바로 상세답변(단일 맥락)
+  // 의견서 작성 진입 (GNB):
+  // - 최초 선택: 프로토타입에서는 주제 선택 모달을 무조건 노출
+  // - 최초 선택이 아닌 경우: 바로 의견서 작성 화면으로 전환
   const startOpinionFlow = () => {
-    const { multi, topics } = analyzeSessionTopics();
-    if (multi) {
-      setTopicCandidates(topics);
-      setShowTopicSheet(true);
-    } else {
-      generateDraftBasisAnswer(topics[0]);
+    if (opinionFlowStarted) {
+      finalizeDraftDocument(lastDraftTopicTitle || undefined);
+      return;
     }
+    const { topics } = analyzeSessionTopics();
+    setTopicCandidates(topics);
+    setShowTopicSheet(true);
   };
 
-  // 주제 선택 후 (또는 단일 맥락) — 의견서 작성용 상세답변을 채팅에 인라인 생성
+  // 주제 선택 후 — 의견서 작성용 상세답변을 채팅에 인라인 생성
+  // (최초 선택 이후 해당 세션은 멀티턴 불가 → opinionFlowStarted로 잠금)
   const generateDraftBasisAnswer = (topic: { title: string; desc: string; basis: string }) => {
     setShowTopicSheet(false);
+    setOpinionFlowStarted(true);
+    setLastDraftTopicTitle(topic.title);
     onStepChange?.(2);
     setCurrentStep(2);
     const loadingMsg: Message = {
@@ -1282,6 +1292,8 @@ ${integratedData.aiOpinionSummary}
     // 새 세션: 기존 대화 초기화 (선택 법령은 상위에서 유지)
     setAnswerTrack(null);
     setChatEnded(false);
+    setOpinionFlowStarted(false);
+    setLastDraftTopicTitle("");
     setInputValue("");
     setUploadedFiles([]);
     const userMsg: Message = {
