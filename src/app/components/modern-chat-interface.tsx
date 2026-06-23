@@ -827,6 +827,13 @@ ${integratedData.aiOpinionSummary}
       return;
     }
     const { topics } = analyzeSessionTopics();
+    // 멀티턴(후속 답변)을 수행한 경우에만 주제 선택 바텀시트 노출
+    // 최초 질문만 있는 경우(단일 턴)에는 바텀시트 없이 바로 상세답변 생성
+    const hasMultiTurn = messages.some((m) => m.isMultiTurnResponse && m.enhancedData);
+    if (!hasMultiTurn) {
+      generateDraftBasisAnswer(topics[0]);
+      return;
+    }
     setTopicCandidates(topics);
     setTopicSheetMode(mode);
     setShowTopicSheet(true);
