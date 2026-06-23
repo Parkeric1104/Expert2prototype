@@ -230,7 +230,7 @@ export function ModernChatInterface({
 
   // 누적 질문 텍스트 (1턴부터 현재까지)
   const getAccumulatedQuestions = (extra?: string): string => {
-    const prior = messages.filter(m => m.isUser).map(m => m.text);
+    const prior = messages.filter(m => m.isUser && m.text !== "의견서 작성" && !m.text.includes("AI 의견")).map(m => m.text);
     if (extra) prior.push(extra);
     return prior.join("\n");
   };
@@ -799,7 +799,7 @@ ${integratedData.aiOpinionSummary}
   // ── 의견서 작성 플로우 (CHA-008) ───────────────────────────────
   // 누적 세션을 분석해 맥락이 여러 개인지 판단하고, 주제 후보를 추출
   const analyzeSessionTopics = (): { multi: boolean; topics: Array<{ title: string; desc: string; basis: string }> } => {
-    const userQs = messages.filter(m => m.isUser && !m.text.includes("AI 의견")).map(m => m.text);
+    const userQs = messages.filter(m => m.isUser && m.text !== "의견서 작성" && !m.text.includes("AI 의견")).map(m => m.text);
     const byCat = new Map<string, string[]>();
     userQs.forEach(q => {
       const cat = detectLawCategory(q);
@@ -839,6 +839,12 @@ ${integratedData.aiOpinionSummary}
     setLastDraftTopicTitle(topic.title);
     onStepChange?.(2);
     setCurrentStep(2);
+    // 사용자가 질문한 것처럼 '의견서 작성' 메시지를 남기고, 응답은 상세 답변으로 표기
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      text: "의견서 작성",
+      isUser: true,
+    };
     const loadingMsg: Message = {
       id: (Date.now() + 1).toString(),
       text: "",
@@ -846,7 +852,7 @@ ${integratedData.aiOpinionSummary}
       isLoading: true,
       relatedLaws,
     };
-    setMessages((prev) => [...prev, loadingMsg]);
+    setMessages((prev) => [...prev, userMsg, loadingMsg]);
     setTimeout(() => {
       const enhancedData = generateIntegratedResponse(topic.basis || topic.title);
       const aiMsg: Message = {
@@ -872,7 +878,7 @@ ${integratedData.aiOpinionSummary}
   // 최종 의견서 생성 (상세답변 하단 'AI 상세의견 반영' 후 'AI 상세의견 작성' CTA에서 호출)
   const finalizeDraftDocument = (topicTitle?: string) => {
     // 1턴부터 마지막 답변까지 누적된 세션 전체 질문을 바탕으로 동작
-    const allUserMessages = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
+    const allUserMessages = messages.filter(m => m.isUser && m.text !== "의견서 작성" && !m.text.includes("AI 의견"));
     const userMessage = allUserMessages.map(m => m.text).join("\n\n[추가 질문]\n");
 
     const doc = generateDocument(userMessage);
@@ -1360,18 +1366,19 @@ ${integratedData.aiOpinionSummary}
             )}
 
             {messages.map((message, index) => {
-              // 현재 메시지의 턴 계산 (사용자 메시지만 카운트)
-              const userMessagesUpToNow = messages.slice(0, index + 1).filter(m => m.isUser).length;
+              // 현재 메시지의 턴 계산 (실제 질문만 카운트 — '의견서 작성'/'AI 의견' 시스템 메시지 제외)
+              const isSystemUserMsg = message.text === "의견서 작성" || message.text.includes("AI 의견");
+              const userMessagesUpToNow = messages.slice(0, index + 1).filter(m => m.isUser && m.text !== "의견서 작성" && !m.text.includes("AI 의견")).length;
               const remainingQuestions = MAX_QUESTIONS - userMessagesUpToNow;
 
               return (
                 <div key={message.id}>
                   {message.isUser && (
-                    <UserMessageBubble 
-                      message={message.text} 
+                    <UserMessageBubble
+                      message={message.text}
                       attachedFiles={message.attachedFiles}
-                      currentTurn={userMessagesUpToNow}
-                      remainingQuestions={remainingQuestions}
+                      currentTurn={isSystemUserMsg ? undefined : userMessagesUpToNow}
+                      remainingQuestions={isSystemUserMsg ? undefined : remainingQuestions}
                       maxQuestions={MAX_QUESTIONS}
                     />
                   )}
@@ -1435,8 +1442,6 @@ ${integratedData.aiOpinionSummary}
                     onSourceClick={handleLawClick}
                     reflected={message.hasAIOpinion || false}
                     onOpenDebate={() => openAIDebate(message.id)}
-                    showDraftButton={message.isDraftBasis || false}
-                    onDraftDocument={() => finalizeDraftDocument(message.draftTopicTitle)}
                   />
                 )}
                 {message.isDebate && (
