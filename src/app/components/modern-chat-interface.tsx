@@ -127,7 +127,7 @@ const FLOATING_ICONS = [
 ];
 
 // 멀티턴 제한 상수 (최대 5회)
-const MAX_QUESTIONS = 3; // 최초 답변 1 + 후속질문 2회
+const MAX_QUESTIONS = 4; // 최초 답변 1 + 멀티턴(후속질문) 3회 (최초 질문은 멀티턴 횟수에 미포함)
 
 export function ModernChatInterface({
   initialMessage,
