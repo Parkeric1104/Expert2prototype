@@ -1423,8 +1423,7 @@ ${integratedData.aiOpinionSummary}
                     onSourceClick={handleLawClick}
                     reflected={message.hasAIOpinion || false}
                     onOpenDebate={() => openAIDebate(message.id)}
-                    showDraftCta={message.isDraftBasis || false}
-                    onDraftFromThis={() => finalizeDraftDocument(message.draftTopicTitle)}
+                    onDraftDocument={() => message.isDraftBasis ? finalizeDraftDocument(message.draftTopicTitle) : startOpinionFlow()}
                   />
                 )}
                 {message.isDebate && (

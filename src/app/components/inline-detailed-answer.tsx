@@ -32,10 +32,8 @@ interface InlineDetailedAnswerProps {
   reflected?: boolean;
   /** AI 상세의견 토론 패널 열기 */
   onOpenDebate?: () => void;
-  /** 의견서 작성 플로우의 상세답변 → 하단 '의견서 작성' CTA 노출 */
-  showDraftCta?: boolean;
-  /** 'AI 상세의견 작성' CTA 클릭 */
-  onDraftFromThis?: () => void;
+  /** 하단 '의견서 작성' 버튼 클릭 (일반 상세답변=플로우 시작 / 의견서용 상세답변=최종 생성) */
+  onDraftDocument?: () => void;
 }
 
 // 법령 제목에서 조항 배지/법령명 분리 (예: "근로기준법 제17조 (근로조건의 명시)" → 제17조 / 근로기준법)
@@ -74,8 +72,7 @@ export function InlineDetailedAnswer({
   onSourceClick,
   reflected = false,
   onOpenDebate,
-  showDraftCta = false,
-  onDraftFromThis,
+  onDraftDocument,
 }: InlineDetailedAnswerProps) {
   const [typingStage, setTypingStage] = useState(stream ? 0 : 5);
   const [displayedFactAnalysis, setDisplayedFactAnalysis] = useState(stream ? "" : factAnalysis);
@@ -321,46 +318,12 @@ export function InlineDetailedAnswer({
             </div>
           )}
 
-          {/* AI 상세의견 진입 (반영 전) */}
-          {aiOpinion && showSources && !reflected && (
-            <section className="animate-in fade-in duration-300">
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-foreground">AI 상세의견</h3>
-                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed" style={{ wordBreak: "keep-all" }}>
-                      두 가지 유형의 AI가 핵심 쟁점을 다각도로 심층 토론하여 결과를 도출합니다. 토론 내용을 확인하고 최종 답변 및 의견서에 반영해 보세요.
-                    </p>
-                    <button
-                      onClick={() => onOpenDebate?.()}
-                      className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      AI 상세의견 보기
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
           {/* AI 의견 요약 (반영 후) */}
           {aiOpinion && showSources && reflected && (
             <section className="animate-in fade-in duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <h3 className="text-base font-bold text-foreground">AI 의견 요약</h3>
-                </div>
-                <button
-                  onClick={() => onOpenDebate?.()}
-                  className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-                >
-                  AI 상세의견 다시 보기
-                </button>
+              <div className="flex items-center gap-1.5 mb-4">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <h3 className="text-base font-bold text-foreground">AI 의견 요약</h3>
               </div>
 
               {typeof aiOpinion === "string" ? (
@@ -399,22 +362,25 @@ export function InlineDetailedAnswer({
             </section>
           )}
 
-          {/* 의견서 작성 CTA (의견서 작성 플로우의 상세답변 하단에 고정 노출) */}
-          {showDraftCta && showSources && (
-            <div className="pt-2 border-t border-border animate-in fade-in duration-300">
-              <div className="rounded-2xl bg-primary/5 border border-primary/20 p-4 flex items-center justify-between gap-3">
-                <p className="text-sm text-foreground" style={{ wordBreak: "keep-all" }}>
-                  내용을 확인하셨다면 이 상세답변을 바탕으로 의견서를 작성합니다.
-                  {aiOpinion ? " (AI 상세의견을 반영하면 의견서에 함께 반영됩니다.)" : ""}
-                </p>
+          {/* 기능 버튼 액션바 (상세 답변 하단): [AI 상세의견] [의견서 작성] */}
+          {showSources && (
+            <div className="pt-4 mt-1 border-t border-border flex items-center gap-2 animate-in fade-in duration-300">
+              {aiOpinion && (
                 <button
-                  onClick={() => onDraftFromThis?.()}
-                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors flex-shrink-0"
+                  onClick={() => onOpenDebate?.()}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary border border-primary/40 bg-primary/5 hover:bg-primary/10 transition-colors"
                 >
-                  <FileText className="w-4 h-4" />
-                  의견서 작성
+                  <Sparkles className="w-4 h-4" />
+                  {reflected ? "AI 상세의견 다시 보기" : "AI 상세의견"}
                 </button>
-              </div>
+              )}
+              <button
+                onClick={() => onDraftDocument?.()}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                의견서 작성
+              </button>
             </div>
           )}
         </div>
