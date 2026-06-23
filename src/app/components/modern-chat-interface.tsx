@@ -1461,21 +1461,29 @@ ${integratedData.aiOpinionSummary}
       </div>
 
       {/* 의견서 작성 - Floating Pill (답변 중단 버튼과 동일한 노출 방식)
-          라벨: 최초(상세답변 받기 전) "상세 답변 받기" → 받은 뒤 "의견서 작성" */}
+          라벨 분기:
+          - 최초 답변이 간단답변(상세답변 아직 없음) → "상세 답변 받기"
+          - 최초 답변이 상세답변 이거나, 의견서 플로우로 상세답변을 받은 뒤 → "의견서 작성" */}
       {(() => {
         const hasDetailed = messages.some(m => m.isEnhancedResponse && m.enhancedData);
         const hasMultiTurn = messages.some(m => m.isMultiTurnResponse && m.enhancedData);
         const showFloating = (hasDetailed || hasMultiTurn) && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
         if (!showFloating) return null;
+        // 최초 답변 유형 판별
+        const firstAnswer = messages.find(m => !m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse));
+        const firstIsDetailed = !!firstAnswer?.isEnhancedResponse;
+        const isOpinionLabel = opinionFlowStarted || firstIsDetailed;
+        const floatingLabel = isOpinionLabel ? "의견서 작성" : "상세 답변 받기";
+        const floatingMode: "detail" | "opinion" = isOpinionLabel ? "opinion" : "detail";
         return (
           <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
             <button
-              onClick={() => startOpinionFlow("detail")}
+              onClick={() => startOpinionFlow(floatingMode)}
               className="pointer-events-auto flex items-center gap-1.5 rounded-full pl-4 pr-5 py-3 shadow-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
               style={{ background: '#3182F6' }}
             >
               <FileText className="w-4 h-4" />
-              {opinionFlowStarted ? "의견서 작성" : "상세 답변 받기"}
+              {floatingLabel}
             </button>
           </div>
         );
