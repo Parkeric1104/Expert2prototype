@@ -1370,6 +1370,8 @@ ${integratedData.aiOpinionSummary}
               const isSystemUserMsg = message.text === "의견서 작성" || message.text.includes("AI 의견");
               const userMessagesUpToNow = messages.slice(0, index + 1).filter(m => m.isUser && m.text !== "의견서 작성" && !m.text.includes("AI 의견")).length;
               const remainingQuestions = MAX_QUESTIONS - userMessagesUpToNow;
+              // 잔여 질문횟수 안내 숨김: 시스템 메시지 또는 의견서 작성 플로우 시작(멀티턴 잠금) 상태
+              const hideRemaining = isSystemUserMsg || opinionFlowStarted;
 
               return (
                 <div key={message.id}>
@@ -1377,8 +1379,8 @@ ${integratedData.aiOpinionSummary}
                     <UserMessageBubble
                       message={message.text}
                       attachedFiles={message.attachedFiles}
-                      currentTurn={isSystemUserMsg ? undefined : userMessagesUpToNow}
-                      remainingQuestions={isSystemUserMsg ? undefined : remainingQuestions}
+                      currentTurn={hideRemaining ? undefined : userMessagesUpToNow}
+                      remainingQuestions={hideRemaining ? undefined : remainingQuestions}
                       maxQuestions={MAX_QUESTIONS}
                     />
                   )}
