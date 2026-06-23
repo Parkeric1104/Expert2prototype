@@ -32,7 +32,9 @@ interface InlineDetailedAnswerProps {
   reflected?: boolean;
   /** AI 상세의견 토론 패널 열기 */
   onOpenDebate?: () => void;
-  /** 하단 '의견서 작성' 버튼 클릭 (일반 상세답변=플로우 시작 / 의견서용 상세답변=최종 생성) */
+  /** 의견서용 상세답변(의견서 작성 플로우로 생성)일 때만 '의견서 작성' 버튼 노출 */
+  showDraftButton?: boolean;
+  /** '의견서 작성' 버튼 클릭 → 이 상세답변 내용으로 의견서 생성 */
   onDraftDocument?: () => void;
 }
 
@@ -72,6 +74,7 @@ export function InlineDetailedAnswer({
   onSourceClick,
   reflected = false,
   onOpenDebate,
+  showDraftButton = false,
   onDraftDocument,
 }: InlineDetailedAnswerProps) {
   const [typingStage, setTypingStage] = useState(stream ? 0 : 5);
@@ -362,25 +365,27 @@ export function InlineDetailedAnswer({
             </section>
           )}
 
-          {/* 기능 버튼 액션바 (상세 답변 하단): [AI 상세의견] [의견서 작성] */}
-          {showSources && (
+          {/* 기능 버튼 액션바 (상세 답변 하단): [AI 상세의견] (+ 의견서용 상세답변일 때만 [의견서 작성]) */}
+          {showSources && (aiOpinion || showDraftButton) && (
             <div className="pt-4 mt-1 border-t border-border flex items-center gap-2 animate-in fade-in duration-300">
               {aiOpinion && (
                 <button
                   onClick={() => onOpenDebate?.()}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary border border-primary/40 bg-primary/5 hover:bg-primary/10 transition-colors"
+                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-primary border border-primary/40 bg-primary/5 hover:bg-primary/10 transition-colors"
                 >
                   <Sparkles className="w-4 h-4" />
                   {reflected ? "AI 상세의견 다시 보기" : "AI 상세의견"}
                 </button>
               )}
-              <button
-                onClick={() => onDraftDocument?.()}
-                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                의견서 작성
-              </button>
+              {showDraftButton && (
+                <button
+                  onClick={() => onDraftDocument?.()}
+                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  의견서 작성
+                </button>
+              )}
             </div>
           )}
         </div>
