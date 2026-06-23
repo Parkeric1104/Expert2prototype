@@ -226,7 +226,8 @@ export function ModernChatInterface({
     return prior.join("\n");
   };
 
-  // 답변 메시지 생성: 최초=복잡도 기반(간단/상세), 후속=멀티턴(간단→상세 승급 가능)
+  // 답변 메시지 생성: 최초=복잡도 기반(간단/상세), 후속=항상 멀티턴(대화형) 답변
+  // (CHA-008: 멀티턴이 진행되면 답변은 항상 멀티턴 답변으로 출력 — n-2/n 상세답변 강제 전환 없음)
   // 반환: { msg, delay }
   const buildAnswerMessage = (
     question: string,
@@ -249,22 +250,7 @@ export function ModernChatInterface({
       return { msg: { ...base, isSimpleResponse: true }, delay: DELAY_SIMPLE };
     }
 
-    // 후속(멀티턴)
-    const turnBeingAnswered = getAIResponseCount() + 1; // 지금 생성하는 답변의 턴 번호
-
-    // 멀티턴 마지막 답변(MAX_QUESTIONS번째)은 트랙과 무관하게 항상 상세 답변
-    if (turnBeingAnswered >= MAX_QUESTIONS) {
-      setAnswerTrack("detailed");
-      return { msg: { ...base, isEnhancedResponse: true }, delay: DELAY_DETAILED };
-    }
-
-    // 간단 트랙에서 n-2번째 턴 도달 후의 턴은 무조건 상세 답변으로 강제 전환
-    // (예: MAX 5회 → 추가질문 3 = 4번째 턴부터 상세 답변)
-    if (answerTrack === "simple" && turnBeingAnswered >= MAX_QUESTIONS - 1) {
-      setAnswerTrack("detailed");
-      return { msg: { ...base, isEnhancedResponse: true }, delay: DELAY_DETAILED };
-    }
-
+    // 후속(멀티턴): 복잡도/턴수와 무관하게 항상 멀티턴(대화형) 답변
     return { msg: { ...base, isMultiTurnResponse: true }, delay: DELAY_SIMPLE };
   };
 
@@ -1152,12 +1138,16 @@ ${integratedData.aiOpinionSummary}
     }
   }, [messages, onMessagesChange]);
 
-  // GNB 의견서 작성 버튼 노출 여부 (상세답변 존재 & 생성/스트리밍/토론 중 아님)
+  // GNB 의견서 작성 버튼 노출 여부 (CHA-008)
+  // - 상세답변이 있으면 노출 (O)
+  // - 간단답변이라도 멀티턴(후속 답변)을 수행하면 노출
+  // - 생성/스트리밍/토론 중에는 미노출
   useEffect(() => {
     if (!onCanDraftDocumentChange) return;
     const hasDetailed = messages.some(m => m.isEnhancedResponse && m.enhancedData);
+    const hasMultiTurn = messages.some(m => m.isMultiTurnResponse && m.enhancedData);
     const busy = messages.some(m => m.isLoading) || isStreaming || messages.some(m => m.isDebate && !m.debateHistory);
-    onCanDraftDocumentChange(hasDetailed && !busy);
+    onCanDraftDocumentChange((hasDetailed || hasMultiTurn) && !busy);
   }, [messages, isStreaming, onCanDraftDocumentChange]);
 
   // 외부에서 의견서 작성 트리거 처리
