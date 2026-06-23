@@ -12,6 +12,8 @@ interface OpinionTopicBottomSheetProps {
   onClose: () => void;
   topics: OpinionTopic[];
   onSelect: (topic: OpinionTopic) => void;
+  /** 진입점에 따른 문구: 'detail'(상세 답변 받기) | 'opinion'(의견서 작성) */
+  mode?: "detail" | "opinion";
 }
 
 export function OpinionTopicBottomSheet({
@@ -19,11 +21,19 @@ export function OpinionTopicBottomSheet({
   onClose,
   topics,
   onSelect,
+  mode = "detail",
 }: OpinionTopicBottomSheetProps) {
   const [customMode, setCustomMode] = useState(false);
   const [customText, setCustomText] = useState("");
 
   if (!isOpen) return null;
+
+  const isOpinion = mode === "opinion";
+  const title = isOpinion ? "어떤 주제로 의견서를 작성할까요?" : "어떤 주제로 상세 답변을 받을까요?";
+  const desc = isOpinion
+    ? "이번 상담에 여러 주제가 포함되어 있어요. 의견서로 정리할 주제를 선택해 주세요."
+    : "이번 상담에 여러 주제가 포함되어 있어요. 상세 답변을 받을 주제를 선택해 주세요.";
+  const placeholder = isOpinion ? "의견서로 작성할 주제를 입력해 주세요." : "상세 답변을 받을 주제를 입력해 주세요.";
 
   const submitCustom = () => {
     const t = customText.trim();
@@ -54,11 +64,11 @@ export function OpinionTopicBottomSheet({
           <div className="flex items-start gap-2.5 mb-1">
             <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <h2 className="text-lg font-bold text-foreground" style={{ wordBreak: "keep-all" }}>
-              어떤 주제로 의견서를 작성할까요?
+              {title}
             </h2>
           </div>
           <p className="text-sm text-muted-foreground mb-5 pl-7" style={{ wordBreak: "keep-all" }}>
-            이번 상담에 여러 주제가 포함되어 있어요. 의견서로 정리할 주제를 선택해 주세요.
+            {desc}
           </p>
 
           {/* 주제 후보 */}
@@ -104,7 +114,7 @@ export function OpinionTopicBottomSheet({
                     }
                   }}
                   rows={2}
-                  placeholder="의견서로 작성할 주제를 입력해 주세요."
+                  placeholder={placeholder}
                   className="w-full bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground resize-none"
                 />
                 <div className="flex justify-end gap-2 mt-2">

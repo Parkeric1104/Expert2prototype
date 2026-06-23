@@ -152,6 +152,7 @@ export function ModernChatInterface({
   const [documentData, setDocumentData] = useState<any>(null); // 의견서 조화 데이터
   // 의견서 작성 — 주제 선택 바텀시트 (프로토타입: 최초 선택 시 무조건 노출)
   const [showTopicSheet, setShowTopicSheet] = useState(false);
+  const [topicSheetMode, setTopicSheetMode] = useState<"detail" | "opinion">("detail"); // 진입점별 문구
   const [topicCandidates, setTopicCandidates] = useState<Array<{ title: string; desc: string; basis: string }>>([]);
   // 의견서 작성 플로우 시작 여부 (최초 선택 후 true) → 이후 멀티턴 불가, 재진입 시 바로 의견서 화면
   const [opinionFlowStarted, setOpinionFlowStarted] = useState(false);
@@ -816,16 +817,18 @@ ${integratedData.aiOpinionSummary}
     return { multi: false, topics: [toTopic(cats[0] || "노동법 일반")] };
   };
 
-  // 의견서 작성 진입 (GNB):
-  // - 최초 선택: 프로토타입에서는 주제 선택 모달을 무조건 노출
+  // 의견서/상세답변 작성 진입:
+  // - 최초 선택: 프로토타입에서는 주제 선택 모달을 무조건 노출 (진입점별 문구 분기)
   // - 최초 선택이 아닌 경우: 바로 의견서 작성 화면으로 전환
-  const startOpinionFlow = () => {
+  // mode: 'detail'(플로팅 '상세 답변 받기') | 'opinion'(세션제한·나가기 모달의 '의견서 작성')
+  const startOpinionFlow = (mode: "detail" | "opinion" = "detail") => {
     if (opinionFlowStarted) {
       finalizeDraftDocument(lastDraftTopicTitle || undefined);
       return;
     }
     const { topics } = analyzeSessionTopics();
     setTopicCandidates(topics);
+    setTopicSheetMode(mode);
     setShowTopicSheet(true);
   };
 
@@ -870,7 +873,7 @@ ${integratedData.aiOpinionSummary}
 
   // 진입점 별칭 (기존 호출부 호환): GNB·세션초과·나가기 모달 모두 의견서 플로우 시작
   const handleDraftDocument = (_messageId?: string) => {
-    startOpinionFlow();
+    startOpinionFlow("opinion");
   };
 
   // 최종 의견서 생성 (상세답변 하단 'AI 상세의견 반영' 후 'AI 상세의견 작성' CTA에서 호출)
@@ -1467,7 +1470,7 @@ ${integratedData.aiOpinionSummary}
         return (
           <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
             <button
-              onClick={startOpinionFlow}
+              onClick={() => startOpinionFlow("detail")}
               className="pointer-events-auto flex items-center gap-1.5 rounded-full pl-4 pr-5 py-3 shadow-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
               style={{ background: '#3182F6' }}
             >
@@ -1617,6 +1620,7 @@ ${integratedData.aiOpinionSummary}
         isOpen={showTopicSheet}
         onClose={() => setShowTopicSheet(false)}
         topics={topicCandidates}
+        mode={topicSheetMode}
         onSelect={(topic) => generateDraftBasisAnswer(topic)}
       />
 
