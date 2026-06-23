@@ -5,6 +5,7 @@ import { UserMessageBubble } from "@/app/components/user-message-bubble";
 import { ProgressiveLoadingBubble } from "@/app/components/progressive-loading";
 import { InlineDetailedAnswer } from "@/app/components/inline-detailed-answer";
 import { AIOpinionDebatePanel } from "@/app/components/ai-opinion-debate-panel";
+import { OpinionTopicBottomSheet } from "@/app/components/opinion-topic-bottom-sheet";
 import { SimpleResponseCard } from "@/app/components/simple-response-card";
 import { MultiTurnResponse } from "@/app/components/multi-turn-response";
 import { DualPersonaDebate } from "@/app/components/dual-persona-debate";
@@ -92,6 +93,8 @@ interface Message {
   isInvalidQuestion?: boolean; // 유효하지 않은 질문
   invalidReason?: "meaningless" | "out-of-scope" | "inappropriate" | "unethical";
   attachedFiles?: Array<{ name: string; size: number; type: string; }>; // 첨부파일 정보
+  isDraftBasis?: boolean; // 의견서 작성 플로우에서 생성된 상세답변 (하단 '의견서 작성' CTA 노출)
+  draftTopicTitle?: string; // 의견서 작성 대상 주제
 }
 
 interface ModernChatInterfaceProps {
@@ -149,6 +152,9 @@ export function ModernChatInterface({
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [documentContent, setDocumentContent] = useState("");
   const [documentData, setDocumentData] = useState<any>(null); // 의견서 조화 데이터
+  // 의견서 작성 — 주제 선택 바텀시트 (여러 맥락인 경우)
+  const [showTopicSheet, setShowTopicSheet] = useState(false);
+  const [topicCandidates, setTopicCandidates] = useState<Array<{ title: string; desc: string; basis: string }>>([]);
   const [previousSelectedLaws, setPreviousSelectedLaws] = useState<string[]>(selectedLaws);
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number; type: string; data: ArrayBuffer | string }[]>([]);
   const [showSecurityAlert, setShowSecurityAlert] = useState(false);
@@ -785,8 +791,77 @@ ${integratedData.aiOpinionSummary}
     alert("AI 노무사의 상세 의견을 확인할 수 있습니다.");
   };
 
-  const handleDraftDocument = (messageId?: string) => {
-    // 1턴부터 해당 답변까지 누적된 세션 전체 질문을 바탕으로 동작
+  // ── 의견서 작성 플로우 (CHA-008) ───────────────────────────────
+  // 누적 세션을 분석해 맥락이 여러 개인지 판단하고, 주제 후보를 추출
+  const analyzeSessionTopics = (): { multi: boolean; topics: Array<{ title: string; desc: string; basis: string }> } => {
+    const userQs = messages.filter(m => m.isUser && !m.text.includes("AI 의견")).map(m => m.text);
+    const byCat = new Map<string, string[]>();
+    userQs.forEach(q => {
+      const cat = detectLawCategory(q);
+      if (!byCat.has(cat)) byCat.set(cat, []);
+      byCat.get(cat)!.push(q);
+    });
+    const cats = [...byCat.keys()];
+    const toTopic = (cat: string) => {
+      const qs = byCat.get(cat)!;
+      const rep = qs[0] || cat;
+      return { title: cat, desc: rep.length > 40 ? rep.slice(0, 40) + "…" : rep, basis: qs.join("\n") };
+    };
+    if (cats.length >= 2) {
+      return { multi: true, topics: cats.slice(0, 2).map(toTopic) };
+    }
+    return { multi: false, topics: [toTopic(cats[0] || "노동법 일반")] };
+  };
+
+  // 의견서 작성 시작 (GNB/모달 진입점): 맥락 분석 → 바텀시트(여러 맥락) 또는 바로 상세답변(단일 맥락)
+  const startOpinionFlow = () => {
+    const { multi, topics } = analyzeSessionTopics();
+    if (multi) {
+      setTopicCandidates(topics);
+      setShowTopicSheet(true);
+    } else {
+      generateDraftBasisAnswer(topics[0]);
+    }
+  };
+
+  // 주제 선택 후 (또는 단일 맥락) — 의견서 작성용 상세답변을 채팅에 인라인 생성
+  const generateDraftBasisAnswer = (topic: { title: string; desc: string; basis: string }) => {
+    setShowTopicSheet(false);
+    onStepChange?.(2);
+    setCurrentStep(2);
+    const loadingMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      text: "",
+      isUser: false,
+      isLoading: true,
+      relatedLaws,
+    };
+    setMessages((prev) => [...prev, loadingMsg]);
+    setTimeout(() => {
+      const enhancedData = generateIntegratedResponse(topic.basis || topic.title);
+      const aiMsg: Message = {
+        id: (Date.now() + 2).toString(),
+        text: "",
+        isUser: false,
+        isEnhancedResponse: true,
+        enhancedData,
+        isDraftBasis: true,
+        draftTopicTitle: topic.title,
+      };
+      setMessages((prev) => prev.filter((m) => !m.isLoading).concat(aiMsg));
+      onStepChange?.(3);
+      setCurrentStep(3);
+    }, DELAY_DETAILED);
+  };
+
+  // 진입점 별칭 (기존 호출부 호환): GNB·세션초과·나가기 모달 모두 의견서 플로우 시작
+  const handleDraftDocument = (_messageId?: string) => {
+    startOpinionFlow();
+  };
+
+  // 최종 의견서 생성 (상세답변 하단 'AI 상세의견 반영' 후 'AI 상세의견 작성' CTA에서 호출)
+  const finalizeDraftDocument = (topicTitle?: string) => {
+    // 1턴부터 마지막 답변까지 누적된 세션 전체 질문을 바탕으로 동작
     const allUserMessages = messages.filter(m => m.isUser && !m.text.includes("AI 의견"));
     const userMessage = allUserMessages.map(m => m.text).join("\n\n[추가 질문]\n");
 
@@ -801,7 +876,7 @@ ${integratedData.aiOpinionSummary}
       client: "[회사명]",
       manager: "[직함 / 성명]",
       reviewType: "종합 검토",
-      reviewTarget: userMessage.substring(0, 30) + "...",
+      reviewTarget: topicTitle ? topicTitle : userMessage.substring(0, 30) + "...",
       version: "v1.0",
       facts: [
         { key: "사업장 규모", value: "[예: 상시근로자 300명]" },
@@ -1348,6 +1423,8 @@ ${integratedData.aiOpinionSummary}
                     onSourceClick={handleLawClick}
                     reflected={message.hasAIOpinion || false}
                     onOpenDebate={() => openAIDebate(message.id)}
+                    showDraftCta={message.isDraftBasis || false}
+                    onDraftFromThis={() => finalizeDraftDocument(message.draftTopicTitle)}
                   />
                 )}
                 {message.isDebate && (
@@ -1507,6 +1584,14 @@ ${integratedData.aiOpinionSummary}
           />
         );
       })()}
+
+      {/* 의견서 작성 — 주제 선택 바텀시트 (여러 맥락) */}
+      <OpinionTopicBottomSheet
+        isOpen={showTopicSheet}
+        onClose={() => setShowTopicSheet(false)}
+        topics={topicCandidates}
+        onSelect={(topic) => generateDraftBasisAnswer(topic)}
+      />
 
     </div>
   );

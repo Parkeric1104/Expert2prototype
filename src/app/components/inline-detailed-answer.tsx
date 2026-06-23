@@ -32,6 +32,10 @@ interface InlineDetailedAnswerProps {
   reflected?: boolean;
   /** AI 상세의견 토론 패널 열기 */
   onOpenDebate?: () => void;
+  /** 의견서 작성 플로우의 상세답변 → 하단 '의견서 작성' CTA 노출 */
+  showDraftCta?: boolean;
+  /** 'AI 상세의견 작성' CTA 클릭 */
+  onDraftFromThis?: () => void;
 }
 
 // 법령 제목에서 조항 배지/법령명 분리 (예: "근로기준법 제17조 (근로조건의 명시)" → 제17조 / 근로기준법)
@@ -70,6 +74,8 @@ export function InlineDetailedAnswer({
   onSourceClick,
   reflected = false,
   onOpenDebate,
+  showDraftCta = false,
+  onDraftFromThis,
 }: InlineDetailedAnswerProps) {
   const [typingStage, setTypingStage] = useState(stream ? 0 : 5);
   const [displayedFactAnalysis, setDisplayedFactAnalysis] = useState(stream ? "" : factAnalysis);
@@ -391,6 +397,25 @@ export function InlineDetailedAnswer({
                 </div>
               )}
             </section>
+          )}
+
+          {/* 의견서 작성 CTA (의견서 작성 플로우의 상세답변 하단에 고정 노출) */}
+          {showDraftCta && showSources && (
+            <div className="pt-2 border-t border-border animate-in fade-in duration-300">
+              <div className="rounded-2xl bg-primary/5 border border-primary/20 p-4 flex items-center justify-between gap-3">
+                <p className="text-sm text-foreground" style={{ wordBreak: "keep-all" }}>
+                  내용을 확인하셨다면 이 상세답변을 바탕으로 의견서를 작성합니다.
+                  {aiOpinion ? " (AI 상세의견을 반영하면 의견서에 함께 반영됩니다.)" : ""}
+                </p>
+                <button
+                  onClick={() => onDraftFromThis?.()}
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors flex-shrink-0"
+                >
+                  <FileText className="w-4 h-4" />
+                  의견서 작성
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
