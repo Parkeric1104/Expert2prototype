@@ -126,8 +126,12 @@ const FLOATING_ICONS = [
   { Icon: UserCheck, delay: 4, duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
-// 멀티턴 제한 상수 (최대 5회)
+// 멀티턴 제한 상수
 const MAX_QUESTIONS = 4; // 최초 답변 1 + 멀티턴(후속질문) 3회 (최초 질문은 멀티턴 횟수에 미포함)
+
+// 사용자가 입력한 실제 질문이 아닌 시스템성 사용자 메시지 (카운트/맥락분석/의견서 누적에서 제외)
+const isSystemUserText = (t: string): boolean =>
+  t === "의견서 작성" || t === "상세 답변 받기" || t.includes("AI 의견");
 
 export function ModernChatInterface({
   initialMessage,
@@ -229,7 +233,7 @@ export function ModernChatInterface({
 
   // 누적 질문 텍스트 (1턴부터 현재까지)
   const getAccumulatedQuestions = (extra?: string): string => {
-    const prior = messages.filter(m => m.isUser && m.text !== "의견서 작성" && !m.text.includes("AI 의견")).map(m => m.text);
+    const prior = messages.filter(m => m.isUser && !isSystemUserText(m.text)).map(m => m.text);
     if (extra) prior.push(extra);
     return prior.join("\n");
   };
@@ -798,7 +802,7 @@ ${integratedData.aiOpinionSummary}
   // ── 의견서 작성 플로우 (CHA-008) ───────────────────────────────
   // 누적 세션을 분석해 맥락이 여러 개인지 판단하고, 주제 후보를 추출
   const analyzeSessionTopics = (): { multi: boolean; topics: Array<{ title: string; desc: string; basis: string }> } => {
-    const userQs = messages.filter(m => m.isUser && m.text !== "의견서 작성" && !m.text.includes("AI 의견")).map(m => m.text);
+    const userQs = messages.filter(m => m.isUser && !isSystemUserText(m.text)).map(m => m.text);
     const byCat = new Map<string, string[]>();
     userQs.forEach(q => {
       const cat = detectLawCategory(q);
@@ -827,13 +831,22 @@ ${integratedData.aiOpinionSummary}
       return;
     }
     const { topics } = analyzeSessionTopics();
-    // 멀티턴(후속 답변)을 수행한 경우에만 주제 선택 바텀시트 노출
-    // 최초 질문만 있는 경우(단일 턴)에는 바텀시트 없이 바로 상세답변 생성
     const hasMultiTurn = messages.some((m) => m.isMultiTurnResponse && m.enhancedData);
+
+    // 단일 턴(후속 없음): 바텀시트 없이 처리
     if (!hasMultiTurn) {
-      generateDraftBasisAnswer(topics[0]);
+      const hasDetailed = messages.some((m) => m.isEnhancedResponse && m.enhancedData);
+      if (hasDetailed) {
+        // 최초 답변이 상세답변 → 바로 의견서 작성 (추가 상세답변 생성 없음)
+        finalizeDraftDocument(topics[0]?.title);
+      } else {
+        // 최초 답변이 간단답변 → 바로 상세 답변 생성
+        generateDraftBasisAnswer(topics[0], "상세 답변 받기");
+      }
       return;
     }
+
+    // 멀티턴 수행: 주제 선택 바텀시트 노출
     setTopicCandidates(topics);
     setTopicSheetMode(mode);
     setShowTopicSheet(true);
@@ -841,16 +854,16 @@ ${integratedData.aiOpinionSummary}
 
   // 주제 선택 후 — 의견서 작성용 상세답변을 채팅에 인라인 생성
   // (최초 선택 이후 해당 세션은 멀티턴 불가 → opinionFlowStarted로 잠금)
-  const generateDraftBasisAnswer = (topic: { title: string; desc: string; basis: string }) => {
+  const generateDraftBasisAnswer = (topic: { title: string; desc: string; basis: string }, entryLabel: string = "의견서 작성") => {
     setShowTopicSheet(false);
     setOpinionFlowStarted(true);
     setLastDraftTopicTitle(topic.title);
     onStepChange?.(2);
     setCurrentStep(2);
-    // 사용자가 질문한 것처럼 '의견서 작성' 메시지를 남기고, 응답은 상세 답변으로 표기
+    // 사용자가 클릭한 버튼명을 질문처럼 메시지로 남기고, 응답은 상세 답변으로 표기
     const userMsg: Message = {
       id: Date.now().toString(),
-      text: "의견서 작성",
+      text: entryLabel,
       isUser: true,
     };
     const loadingMsg: Message = {
@@ -886,7 +899,7 @@ ${integratedData.aiOpinionSummary}
   // 최종 의견서 생성 (상세답변 하단 'AI 상세의견 반영' 후 'AI 상세의견 작성' CTA에서 호출)
   const finalizeDraftDocument = (topicTitle?: string) => {
     // 1턴부터 마지막 답변까지 누적된 세션 전체 질문을 바탕으로 동작
-    const allUserMessages = messages.filter(m => m.isUser && m.text !== "의견서 작성" && !m.text.includes("AI 의견"));
+    const allUserMessages = messages.filter(m => m.isUser && !isSystemUserText(m.text));
     const userMessage = allUserMessages.map(m => m.text).join("\n\n[추가 질문]\n");
 
     const doc = generateDocument(userMessage);
@@ -1364,8 +1377,8 @@ ${integratedData.aiOpinionSummary}
 
             {messages.map((message, index) => {
               // 현재 메시지의 턴 계산 (실제 질문만 카운트 — '의견서 작성'/'AI 의견' 시스템 메시지 제외)
-              const isSystemUserMsg = message.text === "의견서 작성" || message.text.includes("AI 의견");
-              const userMessagesUpToNow = messages.slice(0, index + 1).filter(m => m.isUser && m.text !== "의견서 작성" && !m.text.includes("AI 의견")).length;
+              const isSystemUserMsg = isSystemUserText(message.text);
+              const userMessagesUpToNow = messages.slice(0, index + 1).filter(m => m.isUser && !isSystemUserText(m.text)).length;
               const remainingQuestions = MAX_QUESTIONS - userMessagesUpToNow;
               // 잔여 질문횟수 안내 숨김: 시스템 메시지 또는 의견서 작성 플로우 시작(멀티턴 잠금) 상태
               const hideRemaining = isSystemUserMsg || opinionFlowStarted;
@@ -1474,7 +1487,8 @@ ${integratedData.aiOpinionSummary}
       {(() => {
         const hasDetailed = messages.some(m => m.isEnhancedResponse && m.enhancedData);
         const hasMultiTurn = messages.some(m => m.isMultiTurnResponse && m.enhancedData);
-        const showFloating = (hasDetailed || hasMultiTurn) && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
+        const hasSimple = messages.some(m => m.isSimpleResponse && m.enhancedData);
+        const showFloating = (hasDetailed || hasMultiTurn || hasSimple) && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
         if (!showFloating) return null;
         // 최초 답변 유형 판별
         const firstAnswer = messages.find(m => !m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse));
@@ -1636,7 +1650,7 @@ ${integratedData.aiOpinionSummary}
         onClose={() => setShowTopicSheet(false)}
         topics={topicCandidates}
         mode={topicSheetMode}
-        onSelect={(topic) => generateDraftBasisAnswer(topic)}
+        onSelect={(topic) => generateDraftBasisAnswer(topic, topicSheetMode === "opinion" ? "의견서 작성" : "상세 답변 받기")}
       />
 
     </div>
