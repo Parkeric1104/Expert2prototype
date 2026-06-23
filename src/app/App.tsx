@@ -32,7 +32,6 @@ export default function App() {
   const [selectedPolicy, setSelectedPolicy] = useState<EmbeddingCorrectionPolicy | null>(null);
   const [pendingPoliciesCount, setPendingPoliciesCount] = useState<number>(0);
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
-  const [canDraftDocument, setCanDraftDocument] = useState(false);
 
   // pending 정책 개수 확인 (테스트용: 3개)
   useEffect(() => {
@@ -200,8 +199,6 @@ export default function App() {
       {currentView !== "embedding" && (
         <TopHeader
           variant={currentView === "chat" ? "chat" : currentView === "policy" ? "policy" : "home"}
-          showDraftDocument={currentView === "chat" && canDraftDocument}
-          onDraftDocument={() => setRequestDraftDocument(true)}
           onNavigateToMain={() => handleNavigation(handleNewChat)}
           onNewChat={() => handleNavigation(handleNewChat)}
           onOpenHistory={handleOpenHistory}
@@ -261,7 +258,6 @@ export default function App() {
           questionType={questionType}
           requestDraftDocument={requestDraftDocument}
           onDraftDocumentHandled={() => setRequestDraftDocument(false)}
-          onCanDraftDocumentChange={setCanDraftDocument}
         />
       )}
 

@@ -108,7 +108,6 @@ interface ModernChatInterfaceProps {
   questionType?: string;
   requestDraftDocument?: boolean; // 외부에서 의견서 작성 트리거
   onDraftDocumentHandled?: () => void; // 트리거 처리 완료 콜백
-  onCanDraftDocumentChange?: (canDraft: boolean) => void; // GNB 의견서 작성 버튼 노출 여부
 }
 
 // 배경 아이콘 데이터 - 메인 화면과 동일
@@ -141,7 +140,6 @@ export function ModernChatInterface({
   questionType,
   requestDraftDocument,
   onDraftDocumentHandled,
-  onCanDraftDocumentChange,
 }: ModernChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -1229,17 +1227,6 @@ ${integratedData.aiOpinionSummary}
     }
   }, [messages, onMessagesChange]);
 
-  // GNB 의견서 작성 버튼 노출 여부 (CHA-008)
-  // - 상세답변이 있으면 노출 (O)
-  // - 간단답변이라도 멀티턴(후속 답변)을 수행하면 노출
-  // - 생성/스트리밍/토론 중에는 미노출
-  useEffect(() => {
-    if (!onCanDraftDocumentChange) return;
-    const hasDetailed = messages.some(m => m.isEnhancedResponse && m.enhancedData);
-    const hasMultiTurn = messages.some(m => m.isMultiTurnResponse && m.enhancedData);
-    const busy = messages.some(m => m.isLoading) || isStreaming || messages.some(m => m.isDebate && !m.debateHistory);
-    onCanDraftDocumentChange((hasDetailed || hasMultiTurn) && !busy);
-  }, [messages, isStreaming, onCanDraftDocumentChange]);
 
   // 외부에서 의견서 작성 트리거 처리
   useEffect(() => {
@@ -1469,6 +1456,27 @@ ${integratedData.aiOpinionSummary}
           </div>
         </div>
       </div>
+
+      {/* 의견서 작성 - Floating Pill (답변 중단 버튼과 동일한 노출 방식)
+          라벨: 최초(상세답변 받기 전) "상세 답변 받기" → 받은 뒤 "의견서 작성" */}
+      {(() => {
+        const hasDetailed = messages.some(m => m.isEnhancedResponse && m.enhancedData);
+        const hasMultiTurn = messages.some(m => m.isMultiTurnResponse && m.enhancedData);
+        const showFloating = (hasDetailed || hasMultiTurn) && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
+        if (!showFloating) return null;
+        return (
+          <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
+            <button
+              onClick={startOpinionFlow}
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full pl-4 pr-5 py-3 shadow-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+              style={{ background: '#3182F6' }}
+            >
+              <FileText className="w-4 h-4" />
+              {opinionFlowStarted ? "의견서 작성" : "상세 답변 받기"}
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Input Area - Sticky Bottom (대화 상세에서는 파일 첨부 불가) */}
       <div className="border-t border-border bg-card/80 backdrop-blur-sm">

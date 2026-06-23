@@ -1,4 +1,4 @@
-import { Menu, BookOpen, ChevronLeft, FileText } from "lucide-react";
+import { Menu, BookOpen, ChevronLeft } from "lucide-react";
 
 interface TopHeaderProps {
   variant?: "home" | "chat" | "policy";
@@ -10,8 +10,6 @@ interface TopHeaderProps {
   onNavigateToMain?: () => void;
   pendingPoliciesCount?: number;
   isSidebarOpen?: boolean;
-  showDraftDocument?: boolean; // 채팅 GNB 우측 의견서 작성 버튼 노출
-  onDraftDocument?: () => void;
 }
 
 export function TopHeader({
@@ -24,8 +22,6 @@ export function TopHeader({
   onNavigateToMain,
   pendingPoliciesCount = 0,
   isSidebarOpen = false,
-  showDraftDocument = false,
-  onDraftDocument,
 }: TopHeaderProps) {
   // [1] 정책관리 화면 GNB: ← 메인으로 돌아가기
   if (variant === "policy") {
@@ -66,16 +62,6 @@ export function TopHeader({
             </button>
           </div>
 
-          {showDraftDocument && (
-            <button
-              onClick={onDraftDocument}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-              style={{ background: "#3182F6" }}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              의견서 작성
-            </button>
-          )}
         </div>
       </header>
     );
