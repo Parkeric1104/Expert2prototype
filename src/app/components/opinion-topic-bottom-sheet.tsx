@@ -38,7 +38,7 @@ export function OpinionTopicBottomSheet({
 
       {/* Bottom Sheet */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300">
-        <div className="mx-auto w-full max-w-2xl px-6 pt-5 pb-7">
+        <div className="mx-auto w-full max-w-3xl px-6 pt-5 pb-7">
           {/* grabber + close */}
           <div className="relative flex items-center justify-center mb-4">
             <div className="w-10 h-1 rounded-full bg-border" />
