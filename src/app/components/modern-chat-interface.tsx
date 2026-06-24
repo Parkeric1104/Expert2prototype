@@ -1487,8 +1487,8 @@ ${integratedData.aiOpinionSummary}
       {(() => {
         const hasDetailed = messages.some(m => m.isEnhancedResponse && m.enhancedData);
         const hasMultiTurn = messages.some(m => m.isMultiTurnResponse && m.enhancedData);
-        const hasSimple = messages.some(m => m.isSimpleResponse && m.enhancedData);
-        const showFloating = (hasDetailed || hasMultiTurn || hasSimple) && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
+        // 노출 조건(CHA-008): 상세답변 있음(O) 또는 간단답변 후 멀티턴 수행. 간단답변만(단일 턴)이면 미노출(X)
+        const showFloating = (hasDetailed || hasMultiTurn) && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
         if (!showFloating) return null;
         // 최초 답변 유형 판별
         const firstAnswer = messages.find(m => !m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse));
