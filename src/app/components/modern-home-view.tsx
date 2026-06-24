@@ -52,33 +52,33 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
 
   const prompts = [
     // ── 근로계약 ──
-    { text: "위탁계약·프리랜서계약도 노동법의 보호를 받나요?",                         questionType: "normal", category: "근로계약", laws: ["근로기준법 제2조", "대법원 2004다29736 판결"] },
-    { text: "근로계약서를 작성할 때 꼭 챙겨야 할 내용은 무엇인가요?",                   questionType: "normal", category: "근로계약", laws: ["근로기준법 제17조"] },
-    { text: "퇴직 후 동종업체 취업을 금지하는 전직금지약정도 효력이 있나요? (상세답변)",   questionType: "detailed", category: "근로계약", laws: ["근로기준법 제15조"] },
+    { text: "위탁계약·프리랜서계약도 노동법의 보호를 받나요?",                                    questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제2조", "대법원 2004다29736 판결"] },
+    { text: "근로계약서를 작성할 때 꼭 챙겨야 할 내용은 무엇인가요?",                              questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제17조"] },
+    { text: "퇴직 후 동종업체 취업을 금지하는 전직금지약정도 효력이 있나요? (상세답변)",            questionType: "detailed", category: "근로계약",  laws: ["근로기준법 제15조"] },
     // ── 취업규칙 ──
-    { text: "취업규칙과 근로계약의 내용이 다르면 어느 것이 우선하나요?",                 questionType: "normal", category: "취업규칙", laws: ["근로기준법 제97조"] },
-    { text: "3년 전에 발생한 일을 이제 와서 징계할 수 있나요?",                         questionType: "normal", category: "취업규칙", laws: ["근로기준법 제23조"] },
-    { text: "동일한 사유를 당연퇴직·징계로 중복 규정한 경우 어느 것을 적용하나요? (상세답변)", questionType: "detailed", category: "취업규칙", laws: ["근로기준법 제93조"] },
+    { text: "취업규칙과 근로계약의 내용이 다르면 어느 것이 우선하나요?",                           questionType: "normal",   category: "취업규칙",  laws: ["근로기준법 제97조"] },
+    { text: "3년 전에 발생한 일을 이제 와서 징계할 수 있나요?",                                   questionType: "normal",   category: "취업규칙",  laws: ["근로기준법 제23조"] },
+    { text: "동일한 사유를 당연퇴직·징계로 중복 규정한 경우 어느 것을 적용하나요? (상세답변)",      questionType: "detailed", category: "취업규칙",  laws: ["근로기준법 제93조"] },
     // ── 인사관리 ──
-    { text: "수습 3개월 만에 해고 통보를 받았어요. 정당한가요?",                        questionType: "normal", category: "인사관리", laws: ["근로기준법 제23조", "근로기준법 제35조"] },
-    { text: "저성과자라는 이유로 해고할 수 있나요?",                                  questionType: "normal", category: "인사관리", laws: ["근로기준법 제23조"] },
-    { text: "해고예고수당은 얼마나 받을 수 있나요? (상세답변)",                          questionType: "detailed", category: "인사관리", laws: ["근로기준법 제26조"] },
+    { text: "수습 3개월 만에 해고 통보를 받았어요. 정당한가요?",                                  questionType: "normal",   category: "인사관리",  laws: ["근로기준법 제23조", "근로기준법 제35조"] },
+    { text: "저성과자라는 이유로 해고할 수 있나요?",                                              questionType: "normal",   category: "인사관리",  laws: ["근로기준법 제23조"] },
+    { text: "해고예고수당은 얼마나 받을 수 있나요? (상세답변)",                                   questionType: "detailed", category: "인사관리",  laws: ["근로기준법 제26조"] },
     // ── 모성보호 ──
-    { text: "육아휴직 복직 후 다른 부서로 발령내도 되나요?",                            questionType: "normal", category: "모성보호", laws: ["남녀고용평등법 제19조"] },
-    { text: "육아휴직을 신청했다는 이유로 근로자를 해고할 수 있나요?",                    questionType: "normal", category: "모성보호", laws: ["남녀고용평등법 제19조"] },
-    { text: "회사 사정으로 그만뒀는데 실업급여를 받을 수 있나요? (상세답변)",              questionType: "detailed", category: "모성보호", laws: ["고용보험법 제40조"] },
+    { text: "육아휴직 복직 후 다른 부서로 발령내도 되나요?",                                      questionType: "normal",   category: "모성보호",  laws: ["남녀고용평등법 제19조"] },
+    { text: "육아휴직을 신청했다는 이유로 근로자를 해고할 수 있나요?",                              questionType: "normal",   category: "모성보호",  laws: ["남녀고용평등법 제19조"] },
+    { text: "회사 사정으로 그만뒀는데 실업급여를 받을 수 있나요? (상세답변)",                      questionType: "detailed", category: "모성보호",  laws: ["고용보험법 제40조"] },
     // ── 임금 ──
-    { text: "임금을 받지 못했어요. 임금체불로 신고하면 어떻게 처리되나요?",               questionType: "normal", category: "임금", laws: ["근로기준법 제36조", "근로기준법 제43조"] },
-    { text: "연장·휴일·야간근로수당은 어떻게 계산하나요? (상세답변)",                     questionType: "detailed", category: "임금", laws: ["근로기준법 제56조"] },
-    { text: "회사가 폐업했는데 밀린 임금·퇴직금은 어떻게 받을 수 있나요?",                questionType: "normal", category: "임금", laws: ["임금채권보장법 제7조"] },
+    { text: "임금을 받지 못했어요. 임금체불로 신고하면 어떻게 처리되나요?",                        questionType: "normal",   category: "임금",      laws: ["근로기준법 제36조", "근로기준법 제43조"] },
+    { text: "연장·휴일·야간근로수당은 어떻게 계산하나요? (상세답변)",                             questionType: "detailed", category: "임금",      laws: ["근로기준법 제56조"] },
+    { text: "회사가 폐업했는데 밀린 임금·퇴직금은 어떻게 받을 수 있나요?",                        questionType: "normal",   category: "임금",      laws: ["임금채권보장법 제7조"] },
     // ── 휴일·휴가 ──
-    { text: "1년 근무 후 퇴직하면 연차 미사용수당은 며칠분을 받나요? (상세답변)",          questionType: "detailed", category: "휴일·휴가", laws: ["근로기준법 제60조"] },
-    { text: "지각·조퇴를 3회 이상 하면 주휴수당을 받을 수 없나요?",                      questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제55조"] },
-    { text: "휴일에 근무하고 다른 날 쉬면 휴일근로수당을 받을 수 있나요?",                questionType: "normal", category: "휴일·휴가", laws: ["근로기준법 제55조", "근로기준법 제56조"] },
+    { text: "1년 근무 후 퇴직하면 연차 미사용수당은 며칠분을 받나요? (상세답변)",                  questionType: "detailed", category: "휴일·휴가", laws: ["근로기준법 제60조"] },
+    { text: "지각·조퇴를 3회 이상 하면 주휴수당을 받을 수 없나요?",                               questionType: "normal",   category: "휴일·휴가", laws: ["근로기준법 제55조"] },
+    { text: "휴일에 근무하고 다른 날 쉬면 휴일근로수당을 받을 수 있나요?",                         questionType: "normal",   category: "휴일·휴가", laws: ["근로기준법 제55조", "근로기준법 제56조"] },
     // ── 근로시간 ──
-    { text: "포괄임금제라 야근해도 별도의 추가수당이 없나요? (상세답변)",                 questionType: "detailed", category: "근로시간", laws: ["근로기준법 제56조"] },
-    { text: "연장근로는 1주 12시간을 초과할 수 없다는데 어떻게 판단하나요?",              questionType: "normal", category: "근로시간", laws: ["근로기준법 제53조"] },
-    { text: "단시간근로자가 약정시간을 초과해 근무하면 가산수당을 받나요?",               questionType: "normal", category: "근로시간", laws: ["기간제 및 단시간근로자 보호법 제6조", "근로기준법 제56조"] },
+    { text: "포괄임금제라 야근해도 별도의 추가수당이 없나요? (상세답변)",                          questionType: "detailed", category: "근로시간",  laws: ["근로기준법 제56조"] },
+    { text: "연장근로는 1주 12시간을 초과할 수 없다는데 어떻게 판단하나요?",                       questionType: "normal",   category: "근로시간",  laws: ["근로기준법 제53조"] },
+    { text: "단시간근로자가 약정시간을 초과해 근무하면 가산수당을 받나요?",                        questionType: "normal",   category: "근로시간",  laws: ["기간제 및 단시간근로자 보호법 제6조", "근로기준법 제56조"] },
   ];
 
   const filteredPrompts  = prompts.filter(p => p.category === selectedCategory);
@@ -326,16 +326,26 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
           )}
 
           <div className="flex flex-col gap-2">
-            {paginatedPrompts.map((prompt, idx) => (
-              <button
-                key={`${selectedCategory}-${currentPage}-${idx}`}
-                onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType)}
-                className="flex items-center justify-between w-full px-5 py-4 bg-card border border-border/60 rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
-              >
-                <span className="text-sm text-foreground leading-snug">{prompt.text}</span>
-                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0 ml-4 transition-colors" />
-              </button>
-            ))}
+            {paginatedPrompts.map((prompt, idx) => {
+              const detailedSuffix = " (상세답변)";
+              const isDetailed = prompt.text.endsWith(detailedSuffix);
+              const displayText = isDetailed ? prompt.text.slice(0, -detailedSuffix.length) : prompt.text;
+              return (
+                <button
+                  key={`${selectedCategory}-${currentPage}-${idx}`}
+                  onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType)}
+                  className="flex items-center justify-between w-full px-5 py-4 bg-card border border-border/60 rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
+                >
+                  <span className="text-sm text-foreground leading-snug">
+                    {displayText}
+                    {isDetailed && (
+                      <span className="ml-1.5 text-[11px] font-medium text-primary/60 align-middle">(상세답변)</span>
+                    )}
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0 ml-4 transition-colors" />
+                </button>
+              );
+            })}
           </div>
         </div>
 

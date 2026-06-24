@@ -14,7 +14,7 @@ interface UserMessageBubbleProps {
   maxQuestions?: number; // 최대 질문 횟수 (동적 계산을 위해 추가)
 }
 
-export function UserMessageBubble({ message, attachedFiles, remainingQuestions, currentTurn, maxQuestions = 6 }: UserMessageBubbleProps) {
+export function UserMessageBubble({ message, attachedFiles, remainingQuestions, currentTurn, maxQuestions = 7 }: UserMessageBubbleProps) {
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";

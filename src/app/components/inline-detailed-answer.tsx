@@ -32,10 +32,6 @@ interface InlineDetailedAnswerProps {
   reflected?: boolean;
   /** AI 상세의견 토론 패널 열기 */
   onOpenDebate?: () => void;
-  /** 의견서용 상세답변(의견서 작성 플로우로 생성)일 때만 '의견서 작성' 버튼 노출 */
-  showDraftButton?: boolean;
-  /** '의견서 작성' 버튼 클릭 → 이 상세답변 내용으로 의견서 생성 */
-  onDraftDocument?: () => void;
 }
 
 // 법령 제목에서 조항 배지/법령명 분리 (예: "근로기준법 제17조 (근로조건의 명시)" → 제17조 / 근로기준법)
@@ -74,8 +70,6 @@ export function InlineDetailedAnswer({
   onSourceClick,
   reflected = false,
   onOpenDebate,
-  showDraftButton = false,
-  onDraftDocument,
 }: InlineDetailedAnswerProps) {
   const [typingStage, setTypingStage] = useState(stream ? 0 : 5);
   const [displayedFactAnalysis, setDisplayedFactAnalysis] = useState(stream ? "" : factAnalysis);
@@ -321,74 +315,87 @@ export function InlineDetailedAnswer({
             </div>
           )}
 
+          {/* AI 상세의견 진입 (반영 전) */}
+          {aiOpinion && showSources && !reflected && (
+            <section className="animate-in fade-in duration-300">
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-foreground">AI 상세의견</h3>
+                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed" style={{ wordBreak: "keep-all" }}>
+                      두 가지 유형의 AI가 핵심 쟁점을 다각도로 심층 토론하여 결과를 도출합니다. 토론 내용을 확인하고 최종 답변 및 의견서에 반영해 보세요.
+                    </p>
+                    <button
+                      onClick={() => onOpenDebate?.()}
+                      className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      AI 상세의견 보기
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* AI 의견 요약 (반영 후) */}
           {aiOpinion && showSources && reflected && (
             <section className="animate-in fade-in duration-300">
-              <div className="flex items-center gap-1.5 mb-4">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <h3 className="text-base font-bold text-foreground">AI 의견 요약</h3>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-foreground" />
+                  <h3 className="text-base font-bold text-foreground">AI 의견 요약</h3>
+                </div>
+                <button
+                  onClick={() => onOpenDebate?.()}
+                  className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  AI 상세의견 다시 보기
+                </button>
               </div>
 
               {typeof aiOpinion === "string" ? (
-                <p className="text-sm leading-relaxed text-foreground bg-muted/40 rounded-xl p-4">
-                  {aiOpinion}
-                </p>
+                <div className="bg-card border border-border/60 rounded-xl p-4">
+                  <p className="text-sm leading-relaxed text-foreground">{aiOpinion}</p>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {/* AI 엄격한 법률학자 (보수적) */}
-                  <div className="flex items-start gap-3 bg-muted/40 rounded-xl p-4">
-                    <div className="flex flex-col items-center gap-1 flex-shrink-0 w-14">
-                      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-blue-300 dark:ring-blue-700">
-                        <img src={characterImg} alt="" className="w-full h-full object-cover" />
+                  {/* AI 엄격한 법률학자 */}
+                  <div className="flex items-start gap-4 bg-card border border-border/60 rounded-xl p-4">
+                    <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
+                      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-blue-200 dark:ring-blue-800">
+                        <img src={characterImg} alt="AI 엄격한 법률학자" className="w-full h-full object-cover" />
                       </div>
-                      <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 text-center leading-tight">AI 엄격한 법률학자</span>
+                      <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 text-center leading-tight">AI 엄격한<br/>법률학자</span>
                     </div>
-                    <p className="text-sm leading-relaxed text-foreground flex-1 pt-1">
+                    <p className="text-sm leading-relaxed text-foreground flex-1 pt-0.5">
                       {aiOpinion.proConclusion}
                     </p>
                   </div>
 
-                  {/* AI 실무형 분석가 (허용적) */}
-                  <div className="flex items-start gap-3 bg-muted/40 rounded-xl p-4">
-                    <div className="flex flex-col items-center gap-1 flex-shrink-0 w-14">
-                      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-300 dark:ring-purple-700">
-                        <img src={characterImg} alt="" className="w-full h-full object-cover" />
+                  {/* AI 실무형 분석가 */}
+                  <div className="flex items-start gap-4 bg-card border border-border/60 rounded-xl p-4">
+                    <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
+                      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-200 dark:ring-purple-800">
+                        <img src={characterImg} alt="AI 실무형 분석가" className="w-full h-full object-cover" />
                       </div>
-                      <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 text-center leading-tight">AI 실무형 분석가</span>
+                      <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400 text-center leading-tight">AI 실무형<br/>분석가</span>
                     </div>
-                    <p className="text-sm leading-relaxed text-foreground flex-1 pt-1">
+                    <p className="text-sm leading-relaxed text-foreground flex-1 pt-0.5">
                       {aiOpinion.conConclusion}
                     </p>
                   </div>
                 </div>
               )}
-            </section>
-          )}
 
-          {/* 기능 버튼 액션바 (상세 답변 하단): [AI 상세의견] (+ 의견서용 상세답변일 때만 [의견서 작성]) */}
-          {showSources && (aiOpinion || showDraftButton) && (
-            <div className="pt-4 mt-1 border-t border-border flex items-center gap-2 animate-in fade-in duration-300">
-              {aiOpinion && (
-                <button
-                  onClick={() => onOpenDebate?.()}
-                  className="group inline-flex items-center gap-2 pl-1.5 pr-4 py-1.5 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 shadow-sm hover:shadow-md transition-all active:scale-95"
-                >
-                  <span className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                    <Sparkles className="w-4 h-4" />
-                  </span>
-                  {reflected ? "AI 상세의견 다시 보기" : "AI 상세의견"}
-                </button>
-              )}
-              {showDraftButton && (
-                <button
-                  onClick={() => onDraftDocument?.()}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 shadow-sm transition-all active:scale-95"
-                >
-                  <FileText className="w-4 h-4" />
-                  의견서 작성
-                </button>
-              )}
-            </div>
+              {/* 하단 고지 */}
+              <p className="mt-4 text-[11px] text-muted-foreground text-center leading-relaxed">
+                AI 의견은 참고용이며 부정확한 정보가 포함될 수 있습니다. 중요한 결정은 전문가 상담을 권장드립니다.
+              </p>
+            </section>
           )}
         </div>
       </div>
