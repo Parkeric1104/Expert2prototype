@@ -16,7 +16,10 @@ function figmaAssetResolver() {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // GitHub Pages는 https://parkeric1104.github.io/Expert2prototype/ 하위 경로로 서빙되므로
+  // 프로덕션 빌드에서만 base를 레포명으로 지정 (개발/프리뷰는 루트 유지)
+  base: mode === 'production' ? '/Expert2prototype/' : '/',
   plugins: [
     figmaAssetResolver(),
     // The React and Tailwind plugins are both required for Make, even if
@@ -35,4 +38,4 @@ export default defineConfig({
     port: 5273,
     strictPort: true,
   },
-})
+}))
