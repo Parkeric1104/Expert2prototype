@@ -803,22 +803,24 @@ ${integratedData.aiOpinionSummary}
   // 누적 세션을 분석해 맥락이 여러 개인지 판단하고, 주제 후보를 추출
   const analyzeSessionTopics = (): { multi: boolean; topics: Array<{ title: string; desc: string; basis: string }> } => {
     const userQs = messages.filter(m => m.isUser && !isSystemUserText(m.text)).map(m => m.text);
-    const byCat = new Map<string, string[]>();
-    userQs.forEach(q => {
-      const cat = detectLawCategory(q);
-      if (!byCat.has(cat)) byCat.set(cat, []);
-      byCat.get(cat)!.push(q);
-    });
-    const cats = [...byCat.keys()];
-    const toTopic = (cat: string) => {
-      const qs = byCat.get(cat)!;
-      const rep = qs[0] || cat;
-      return { title: cat, desc: rep.length > 40 ? rep.slice(0, 40) + "…" : rep, basis: qs.join("\n") };
-    };
-    if (cats.length >= 2) {
-      return { multi: true, topics: cats.slice(0, 2).map(toTopic) };
+    const trunc = (q: string) => (q.length > 40 ? q.slice(0, 40) + "…" : q);
+    const toTopic = (q: string) => ({ title: detectLawCategory(q), desc: trunc(q), basis: q });
+
+    // 제안 주제는 항상 2개: 서로 다른 카테고리를 우선 선별하고, 부족하면 다른 질문으로 채움
+    const seenCat = new Set<string>();
+    const picked: string[] = [];
+    for (const q of userQs) {
+      const c = detectLawCategory(q);
+      if (!seenCat.has(c)) { seenCat.add(c); picked.push(q); }
+      if (picked.length === 2) break;
     }
-    return { multi: false, topics: [toTopic(cats[0] || "노동법 일반")] };
+    if (picked.length < 2) {
+      for (const q of userQs) {
+        if (!picked.includes(q)) { picked.push(q); if (picked.length === 2) break; }
+      }
+    }
+    const topics = picked.slice(0, 2).map(toTopic);
+    return { multi: topics.length >= 2, topics };
   };
 
   // 의견서/상세답변 작성 진입:
