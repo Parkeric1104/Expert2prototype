@@ -19,7 +19,7 @@
 ## 실행/배포
 - 개발: `npm install` → `npm run dev` (포트 5273). 빌드: `npm run build`.
 - 배포: main 푸시 시 GitHub Pages 자동 배포. `vite.config.ts`의 `base`는 프로덕션에서만 `/Expert2prototype/`.
-- ⚠️ Figma Make 재푸시 시 스냅샷 덮어쓰기로 인프라 설정이 삭제될 수 있음 → 복원 필요.
+- ⚠️ **Figma Make 푸시 중단.** 코드가 정본(SSOT)이다. Figma Make로 다시 푸시하면 전체 스냅샷으로 코드·인프라·문서가 덮어써지므로 푸시하지 않는다. 디자인 가이드도 `guidelines/Guidelines.md`(저장소)에서 편집한다.
 
 ## 작업 규칙 (커밋)
 - **프로토타입 코드(`src/**`)를 수정하면 그 작업 단위가 끝날 때마다 반드시 커밋한다** (사용자 상시 요청).

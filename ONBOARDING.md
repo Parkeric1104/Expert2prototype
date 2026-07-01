@@ -23,8 +23,7 @@
 - 커밋 후 **두 곳에 푸시**: `git push origin claude/cool-euler` 와 `git push origin claude/cool-euler:main`
 - 커밋 메시지 말미:
   `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`
-- ⚠️ **Figma Make 주의**: Figma Make로 다시 푸시하면 전체 스냅샷으로 덮어써져
-  `.github/workflows/deploy-pages.yml`과 `vite.config.ts`의 `base`가 삭제될 수 있음 → 그 경우 복원 필요.
+- ⚠️ **Figma Make 푸시 중단 (코드가 정본/SSOT).** Figma Make로 다시 푸시하면 전체 스냅샷으로 코드 수정·`.github/workflows/deploy-pages.yml`·`vite.config.ts` base·문서가 덮어써지므로 **더 이상 Figma Make에서 푸시하지 않는다.** 디자인 가이드도 `guidelines/Guidelines.md`(저장소)에서 편집. (과거 푸시로 유실 시 직전 커밋에서 복원)
 
 ## 5. 핵심 화면/플로우 (현재 정책)
 - 답변 유형 3종: 간단답변(`isSimpleResponse`) / 상세답변(`isEnhancedResponse`, 인라인 문서형) / 멀티턴(`isMultiTurnResponse`, 대화형 줄글).
