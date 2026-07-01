@@ -280,8 +280,17 @@ export function HistorySidebarPanel({
                         </p>
                       </div>
 
-                      {/* 삭제 / 채팅 이력보기 버튼 */}
+                      {/* 채팅 이력보기 / 삭제 버튼 */}
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewHistory(chat.id)}
+                          className="flex-1 gap-2 text-xs h-8"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          채팅 이력보기
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -291,15 +300,6 @@ export function HistorySidebarPanel({
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           삭제
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewHistory(chat.id)}
-                          className="flex-1 gap-2 text-xs h-8"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          채팅 이력보기
                         </Button>
                       </div>
                     </div>

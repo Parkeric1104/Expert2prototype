@@ -89,7 +89,7 @@ export function ModernAIResponse({
             {/* 결론 */}
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
-                <Scale className="w-4 h-4 text-primary" />
+                <Scale className="w-4 h-4" style={{ color: '#3182F6' }} />
                 <h3 className="text-sm font-bold" style={{ color: '#191F28' }}>결론</h3>
               </div>
               <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: '#191F28', lineHeight: '1.6' }}>
