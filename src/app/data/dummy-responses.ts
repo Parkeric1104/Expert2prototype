@@ -655,26 +655,22 @@ export const getDummyResponse = (userMessage: string): EnhancedResponseData => {
 export const buildMultiTurnBody = (data: EnhancedResponseData): string => {
   const paras: string[] = [];
 
-  // 1) 결론을 대화체 도입으로
-  if (data.conclusion) paras.push(data.conclusion);
+  // 1) 결론 = 직접 답변(도입 문단)
+  if (data.conclusion) paras.push(data.conclusion.trim());
 
-  // 2) 검토 내용을 풀어서 부연 설명 (서식/번호 표기는 줄글로 완화)
+  // 2) 검토 내용 = 부연 설명. 번호·불릿·줄바꿈을 제거해 자연스러운 줄글 문단으로 정리.
   if (data.reviewContent) {
     const explained = data.reviewContent
-      .replace(/^\s*\d+\.\s*/gm, "")      // "1. " 번호 제거
-      .replace(/^[✓•]\s*/gm, "")          // 체크/불릿 기호 제거
-      .replace(/\n{2,}/g, "\n")           // 빈 줄 정리
+      .replace(/^\s*\d+\.\s*/gm, "")   // "1. " 번호 제거
+      .replace(/^[✓•\-]\s*/gm, "")     // 체크/불릿 기호 제거
+      .replace(/\s*\n+\s*/g, " ")       // 줄바꿈 → 공백(줄글화)
+      .replace(/\s{2,}/g, " ")          // 중복 공백 정리
       .trim();
-    if (explained) paras.push(`좀 더 자세히 말씀드리면, ${explained}`);
+    if (explained) paras.push(explained);
   }
 
-  // 3) 질의 재정의가 있으면 마무리 보강
-  if (data.queryRedefinition) {
-    paras.push(data.queryRedefinition);
-  }
-
-  // 내용이 부족하면 결론만이라도 반환
-  return paras.join("\n\n") || data.conclusion;
+  // 서식 없는 줄글 문단(빈 줄로 구분). 질의 재정의 등 기계적 문장은 본문에서 제외.
+  return paras.join("\n\n") || (data.conclusion || "").trim();
 };
 
 // 답변 하단 후속 추천 질문 (REQ-03) — 맥락 기반, 세무↔노무 교차 추천 포함
