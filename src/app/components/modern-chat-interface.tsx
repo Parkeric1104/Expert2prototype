@@ -680,6 +680,25 @@ ${integratedData.aiOpinionSummary}
     proceedWithAnswer(revisedQuestion);
   };
 
+  // 플로팅 "상세 답변 받기" — 간단답변 track에서 상세답변을 채팅에 인라인 생성.
+  // (상세답변 노출 후에는 플로팅이 "의견서 작성"으로 전환됨)
+  const requestDetailedAnswer = () => {
+    const question = getAccumulatedQuestions() || initialMessage || "";
+    onStepChange?.(2);
+    setCurrentStep(2);
+    setAnswerTrack("detailed");
+    const userMsg: Message = { id: Date.now().toString(), text: "상세 답변 받기", isUser: true };
+    const loadingMsg: Message = { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws };
+    setMessages((prev) => [...prev, userMsg, loadingMsg]);
+    setTimeout(() => {
+      const enhancedData = generateIntegratedResponse(question);
+      const aiMsg: Message = { id: (Date.now() + 2).toString(), text: "", isUser: false, isEnhancedResponse: true, enhancedData };
+      setMessages((prev) => prev.filter((m) => !m.isLoading).concat(aiMsg));
+      onStepChange?.(3);
+      setCurrentStep(3);
+    }, DELAY_DETAILED);
+  };
+
   // 최종 답변 준비 시작 시 호출되는 핸들러
   const handleAnswerPreparationStart = () => {
     console.log('[Modern Chat] 답변 준비 시작 핸들러 호출');
@@ -1520,13 +1539,15 @@ ${integratedData.aiOpinionSummary}
         // 노출 조건(CHA-008): 상세답변 있음(O) 또는 간단답변 후 멀티턴 수행. 간단답변만(단일 턴)이면 미노출(X)
         const showFloating = (hasDetailed || hasMultiTurn) && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
         if (!showFloating) return null;
-        // 1단계 즉시 작성 통일: 모든 진입을 '의견서 작성'(opinion)으로 — 주제선택/즉시 모두 바로 문서 생성
-        const floatingLabel = "의견서 작성";
-        const floatingMode: "detail" | "opinion" = "opinion";
+        // 라벨/동작 분기:
+        //  - 상세답변이 아직 없음(간단답변 track + 멀티턴) → "상세 답변 받기" → 상세답변 생성
+        //  - 상세답변 있음(상세 track이거나 상세답변 받은 뒤) → "의견서 작성" → 1단계 즉시 문서 생성
+        const floatingLabel = hasDetailed ? "의견서 작성" : "상세 답변 받기";
+        const handleFloatingClick = hasDetailed ? () => startOpinionFlow("opinion") : requestDetailedAnswer;
         return (
           <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
             <button
-              onClick={() => startOpinionFlow(floatingMode)}
+              onClick={handleFloatingClick}
               className="pointer-events-auto flex items-center gap-1.5 rounded-full pl-4 pr-5 py-3 shadow-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
               style={{ background: '#3182F6' }}
             >
