@@ -1,0 +1,7 @@
+{
+  "name": "expert2-llm-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "멀티턴 답변용 LLM 프록시 (Gemini 무료 티어) — Vercel 서버리스 함수"
+}
