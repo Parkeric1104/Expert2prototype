@@ -335,6 +335,12 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               const detailedSuffix = " (상세답변)";
               const isDetailed = prompt.text.endsWith(detailedSuffix);
               const displayText = isDetailed ? prompt.text.slice(0, -detailedSuffix.length) : prompt.text;
+              // 프로세스 유형(1~4): 답변유형(간단/상세) × 맥락수(단일/다중) 조합
+              const processType = prompt.contextType
+                ? (prompt.questionType === "detailed"
+                    ? (prompt.contextType === "single" ? 3 : 4)
+                    : (prompt.contextType === "single" ? 1 : 2))
+                : undefined;
               return (
                 <button
                   key={`${selectedCategory}-${currentPage}-${idx}`}
@@ -345,6 +351,9 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
                     {displayText}
                     {isDetailed && (
                       <span className="ml-1.5 text-[11px] font-medium text-primary/60 align-middle">(상세답변)</span>
+                    )}
+                    {processType && (
+                      <span className="ml-1.5 text-[11px] font-medium text-primary/60 align-middle">(유형{processType})</span>
                     )}
                   </span>
                   <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0 ml-4 transition-colors" />
