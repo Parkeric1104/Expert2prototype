@@ -15,14 +15,20 @@ const SYSTEM =
   "(1) 첫 문단: 핵심 결론과 필수 요건을 한두 문장으로 단정한다.\n" +
   "(2) 둘째 문단: 그 근거(관련 법령의 취지, 대법원 판례의 경향)와 지키지 않을 경우의 법적 리스크를 설명한다.\n" +
   "(3) 셋째 문단: '따라서 반드시 ~하셔야 합니다' 형태로 구체적 실무 조치를 안내한다.\n" +
-  "법령·판례 인용은 body 본문에 넣지 말고, 반드시 sources 배열로만 제시한다 " +
+  "각 문단은 paragraphs 배열의 개별 원소로 담는다(문단 하나 = 배열 원소 하나, 총 2~3개).\n" +
+  "법령·판례 인용은 문단 본문에 넣지 말고, 반드시 sources 배열로만 제시한다 " +
   "(name=법령명과 조문 예: '근로기준법 제17조', url=국가법령정보센터 등 공식 링크). " +
   "확실하지 않은 url은 넣지 말 것.";
 
+// paragraphs를 배열로 받아 서버에서 \n\n으로 합친다 → 문단 구분을 확실히 보장.
 const RESPONSE_SCHEMA = {
   type: "OBJECT",
   properties: {
-    body: { type: "STRING" },
+    paragraphs: {
+      type: "ARRAY",
+      description: "2~3개의 문단. 각 원소가 하나의 문단(서식 없는 줄글)이다.",
+      items: { type: "STRING" },
+    },
     sources: {
       type: "ARRAY",
       items: {
@@ -32,7 +38,7 @@ const RESPONSE_SCHEMA = {
       },
     },
   },
-  required: ["body", "sources"],
+  required: ["paragraphs", "sources"],
 };
 
 export default async function handler(req, res) {
@@ -92,7 +98,10 @@ export default async function handler(req, res) {
   let out = { body: "", sources: [] };
   try {
     const parsed = JSON.parse(text);
-    out.body = String(parsed.body ?? "");
+    // 문단 배열을 빈 줄로 합쳐 본문 구성(문단 구분 보장). 구버전 호환으로 body도 허용.
+    out.body = Array.isArray(parsed.paragraphs)
+      ? parsed.paragraphs.map((p) => String(p).trim()).filter(Boolean).join("\n\n")
+      : String(parsed.body ?? "");
     out.sources = Array.isArray(parsed.sources)
       ? parsed.sources.map((s) => ({ name: String(s.name ?? ""), url: String(s.url ?? "") }))
       : [];
