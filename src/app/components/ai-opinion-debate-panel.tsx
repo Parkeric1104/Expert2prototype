@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 type Speaker = "host" | "pro" | "con";
@@ -246,17 +246,25 @@ export function AIOpinionDebatePanel({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
-      <div className="fixed top-0 right-0 h-full w-full max-w-3xl bg-background border-l border-border shadow-2xl z-50 flex flex-col">
+      {/* 전체화면 화면 전환 (사이드패널 아님) */}
+      <div
+        className="fixed inset-0 z-50 flex flex-col animate-in fade-in duration-300"
+        style={{ background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #E9EAFB 75%, #C9CCF4 100%)" }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 h-16 border-b border-border flex-shrink-0">
-          <h2 className="text-lg font-bold text-foreground">AI 상세의견 · 토론</h2>
-          <button onClick={onClose} aria-label="닫기" className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+        <div className="flex-shrink-0 border-b border-border/60 bg-card/70 backdrop-blur">
+          <div className="w-full max-w-3xl mx-auto flex items-center gap-3 px-6 h-16">
+            <button onClick={onClose} aria-label="뒤로" className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h2 className="text-lg font-bold text-foreground">AI 상세의견 · 토론</h2>
+          </div>
         </div>
-        {content}
-        {actionBar}
+        {/* Body (중앙 정렬) */}
+        <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col overflow-hidden">
+          {content}
+          {actionBar}
+        </div>
       </div>
       {loadingPopup}
     </>
