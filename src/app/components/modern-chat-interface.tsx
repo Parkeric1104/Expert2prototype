@@ -837,14 +837,9 @@ ${integratedData.aiOpinionSummary}
     const { topics } = analyzeSessionTopics();
     const hasMultiTurn = messages.some((m) => m.isMultiTurnResponse && m.enhancedData);
 
-    // 팝업 없이 즉시 진행: 최초 상세답변→바로 의견서, 최초 간단답변→상세답변 생성
+    // 1단계 즉시 작성: 간단/상세 구분 없이 바로 의견서 문서 생성 (근거 상세내용은 문서에 포함)
     const proceedImmediate = () => {
-      const hasDetailed = messages.some((m) => m.isEnhancedResponse && m.enhancedData);
-      if (hasDetailed) {
-        finalizeDraftDocument(topics[0]?.title);
-      } else {
-        generateDraftBasisAnswer(topics[0], "상세 답변 받기");
-      }
+      finalizeDraftDocument(topics[0]?.title);
     };
 
     // 단일 턴(후속 없음): 팝업 없이 즉시
@@ -1498,12 +1493,9 @@ ${integratedData.aiOpinionSummary}
         // 노출 조건(CHA-008): 상세답변 있음(O) 또는 간단답변 후 멀티턴 수행. 간단답변만(단일 턴)이면 미노출(X)
         const showFloating = (hasDetailed || hasMultiTurn) && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
         if (!showFloating) return null;
-        // 최초 답변 유형 판별
-        const firstAnswer = messages.find(m => !m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse));
-        const firstIsDetailed = !!firstAnswer?.isEnhancedResponse;
-        const isOpinionLabel = opinionFlowStarted || firstIsDetailed;
-        const floatingLabel = isOpinionLabel ? "의견서 작성" : "상세 답변 받기";
-        const floatingMode: "detail" | "opinion" = isOpinionLabel ? "opinion" : "detail";
+        // 1단계 즉시 작성 통일: 모든 진입을 '의견서 작성'(opinion)으로 — 주제선택/즉시 모두 바로 문서 생성
+        const floatingLabel = "의견서 작성";
+        const floatingMode: "detail" | "opinion" = "opinion";
         return (
           <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
             <button
@@ -1659,16 +1651,11 @@ ${integratedData.aiOpinionSummary}
         topics={topicCandidates}
         mode={topicSheetMode}
         onSelect={(topic) => {
+          // 1단계 즉시 작성: 모드 무관하게 선택 주제로 바로 의견서 문서 생성
           setShowTopicSheet(false);
-          if (topicSheetMode === "opinion") {
-            // 의견서 모드: 중간 상세답변 없이 선택 주제로 바로 의견서 문서 작성 (1단계)
-            setOpinionFlowStarted(true);
-            setLastDraftTopicTitle(topic.title);
-            finalizeDraftDocument(topic.title);
-          } else {
-            // 상세 답변 받기(detail) 모드: 선택 주제로 상세답변 생성
-            generateDraftBasisAnswer(topic, "상세 답변 받기");
-          }
+          setOpinionFlowStarted(true);
+          setLastDraftTopicTitle(topic.title);
+          finalizeDraftDocument(topic.title);
         }}
       />
 
