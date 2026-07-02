@@ -106,6 +106,7 @@ interface ModernChatInterfaceProps {
   onMessagesChange?: (hasMessages: boolean) => void;
   relatedLaws?: string[];
   questionType?: string;
+  contextType?: string; // 프로세스 유형: 멀티턴 맥락 수 (single=즉시 의견서 / multi=주제선택 팝업)
   requestDraftDocument?: boolean; // 외부에서 의견서 작성 트리거
   onDraftDocumentHandled?: () => void; // 트리거 처리 완료 콜백
 }
@@ -142,6 +143,7 @@ export function ModernChatInterface({
   onMessagesChange,
   relatedLaws,
   questionType,
+  contextType,
   requestDraftDocument,
   onDraftDocumentHandled,
 }: ModernChatInterfaceProps) {
@@ -835,20 +837,24 @@ ${integratedData.aiOpinionSummary}
     const { topics } = analyzeSessionTopics();
     const hasMultiTurn = messages.some((m) => m.isMultiTurnResponse && m.enhancedData);
 
-    // 단일 턴(후속 없음): 바텀시트 없이 처리
-    if (!hasMultiTurn) {
+    // 팝업 없이 즉시 진행: 최초 상세답변→바로 의견서, 최초 간단답변→상세답변 생성
+    const proceedImmediate = () => {
       const hasDetailed = messages.some((m) => m.isEnhancedResponse && m.enhancedData);
       if (hasDetailed) {
-        // 최초 답변이 상세답변 → 바로 의견서 작성 (추가 상세답변 생성 없음)
         finalizeDraftDocument(topics[0]?.title);
       } else {
-        // 최초 답변이 간단답변 → 바로 상세 답변 생성
         generateDraftBasisAnswer(topics[0], "상세 답변 받기");
       }
-      return;
-    }
+    };
 
-    // 멀티턴 수행: 주제 선택 바텀시트 노출
+    // 단일 턴(후속 없음): 팝업 없이 즉시
+    if (!hasMultiTurn) { proceedImmediate(); return; }
+
+    // 멀티턴 수행: 추천질문 프로세스 유형(contextType)으로 분기
+    //  - single(단일맥락): 팝업 없이 즉시 의견서 작성 (유형1·3)
+    //  - multi(다중맥락)/미지정: 주제 선택 바텀시트 노출 (유형2·4, 자유질문 기본)
+    if (contextType === "single") { proceedImmediate(); return; }
+
     setTopicCandidates(topics);
     setTopicSheetMode(mode);
     setShowTopicSheet(true);

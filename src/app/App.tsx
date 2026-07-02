@@ -17,6 +17,7 @@ export default function App() {
   const [selectedLaws, setSelectedLaws] = useState<string[]>([]);
   const [relatedLaws, setRelatedLaws] = useState<string[]>([]);
   const [questionType, setQuestionType] = useState<string | undefined>(undefined);
+  const [contextType, setContextType] = useState<string | undefined>(undefined); // 추천질문 프로세스 유형: 멀티턴 맥락 수 (single/multi)
   const [showLawModal, setShowLawModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -45,11 +46,12 @@ export default function App() {
     }
   }, [isAdmin]);
 
-  const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string) => {
+  const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string, promptContextType?: string) => {
     setChatQuery(query);
     setSelectedLaws(laws);
     setRelatedLaws(promptRelatedLaws || []); // 추천 질문의 관련 법령 저장
     setQuestionType(promptQuestionType); // 질문 유형 저장
+    setContextType(promptContextType); // 프로세스 유형: 멀티턴 맥락 수 (single/multi)
     setCurrentView("chat");
     setCurrentStep(1); // 질문 입력 단계
   };
@@ -256,6 +258,7 @@ export default function App() {
           onMessagesChange={setHasChatMessages}
           relatedLaws={relatedLaws}
           questionType={questionType}
+          contextType={contextType}
           requestDraftDocument={requestDraftDocument}
           onDraftDocumentHandled={() => setRequestDraftDocument(false)}
         />

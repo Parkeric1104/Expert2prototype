@@ -11,7 +11,7 @@ import {
 import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 interface ModernHomeViewProps {
-  onStartChat: (query: string, selectedLaws: string[], relatedLaws?: string[], questionType?: string) => void;
+  onStartChat: (query: string, selectedLaws: string[], relatedLaws?: string[], questionType?: string, contextType?: string) => void;
   onOpenLawSelector: () => void;
   selectedLaws: string[];
 }
@@ -32,7 +32,7 @@ const FLOATING_ICONS = [
 ];
 
 const CATEGORIES = ["근로계약", "취업규칙", "인사관리", "모성보호", "임금", "휴일·휴가", "근로시간"];
-const ITEMS_PER_PAGE = 3;
+const ITEMS_PER_PAGE = 4;
 
 export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
@@ -50,11 +50,16 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     return "📎";
   };
 
-  const prompts = [
-    // ── 근로계약 ──
-    { text: "위탁계약·프리랜서계약도 노동법의 보호를 받나요?",                                    questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제2조", "대법원 2004다29736 판결"] },
-    { text: "근로계약서를 작성할 때 꼭 챙겨야 할 내용은 무엇인가요?",                              questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제17조"] },
-    { text: "퇴직 후 동종업체 취업을 금지하는 전직금지약정도 효력이 있나요? (상세답변)",            questionType: "detailed", category: "근로계약",  laws: ["근로기준법 제15조"] },
+  const prompts: Array<{ text: string; questionType: string; category: string; laws: string[]; contextType?: "single" | "multi" }> = [
+    // ── 근로계약 (프로세스 유형 분류: 유형1~4) ──
+    // 유형1 간단·단일맥락 → 멀티턴 후 즉시 의견서 작성
+    { text: "위탁계약·프리랜서계약도 노동법의 보호를 받나요?",                                    questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제2조", "대법원 2004다29736 판결"], contextType: "single" },
+    // 유형2 간단·다중맥락 → 멀티턴 후 주제 선택 팝업
+    { text: "근로계약서를 작성할 때 꼭 챙겨야 할 내용은 무엇인가요?",                              questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제17조"], contextType: "multi" },
+    // 유형3 상세·단일맥락 → 멀티턴 후 즉시 의견서 작성
+    { text: "퇴직 후 동종업체 취업을 금지하는 전직금지약정도 효력이 있나요? (상세답변)",            questionType: "detailed", category: "근로계약",  laws: ["근로기준법 제15조"], contextType: "single" },
+    // 유형4 상세·다중맥락 → 멀티턴 후 주제 선택 팝업
+    { text: "기간제 근로계약을 반복 갱신하면 무기계약직으로 전환되나요? (상세답변)",                questionType: "detailed", category: "근로계약",  laws: ["기간제법 제4조", "대법원 2011두12528 판결"], contextType: "multi" },
     // ── 취업규칙 ──
     { text: "취업규칙과 근로계약의 내용이 다르면 어느 것이 우선하나요?",                           questionType: "normal",   category: "취업규칙",  laws: ["근로기준법 제97조"] },
     { text: "3년 전에 발생한 일을 이제 와서 징계할 수 있나요?",                                   questionType: "normal",   category: "취업규칙",  laws: ["근로기준법 제23조"] },
@@ -144,8 +149,8 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     setUploadedFiles([]);
   };
 
-  const handlePromptClick = (text: string, laws: string[], questionType: string) =>
-    onStartChat(text, selectedLaws, laws, questionType);
+  const handlePromptClick = (text: string, laws: string[], questionType: string, contextType?: string) =>
+    onStartChat(text, selectedLaws, laws, questionType, contextType);
 
   return (
     <div className="flex-1 flex items-start justify-center px-6 relative overflow-y-auto">
@@ -333,7 +338,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               return (
                 <button
                   key={`${selectedCategory}-${currentPage}-${idx}`}
-                  onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType)}
+                  onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType, prompt.contextType)}
                   className="flex items-center justify-between w-full px-5 py-4 bg-card border border-border/60 rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
                 >
                   <span className="text-sm text-foreground leading-snug">
