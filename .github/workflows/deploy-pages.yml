@@ -34,6 +34,11 @@ jobs:
 
       - name: Build (production)
         run: npm run build
+        env:
+          # 멀티턴 답변을 실제 LLM(프록시 경유)로. 저장소 변수(Settings→Variables)로 덮어쓸 수 있고,
+          # 미설정 시 아래 기본값 사용. 값은 키가 아니라 공개 URL이라 노출돼도 안전.
+          VITE_MULTI_TURN_PROVIDER: ${{ vars.VITE_MULTI_TURN_PROVIDER || 'llm' }}
+          VITE_LLM_ENDPOINT: ${{ vars.VITE_LLM_ENDPOINT || 'https://proxy-nine-swart-86.vercel.app/api/multi-turn' }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
