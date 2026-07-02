@@ -36,7 +36,7 @@ import {
   Info
 } from "lucide-react";
 import { toast } from "sonner";
-import { getDummyResponse, buildMultiTurnBody } from "@/app/data/dummy-responses";
+import { getDummyResponse } from "@/app/data/dummy-responses";
 import { validateQuestion, ValidationReason } from "@/app/utils/validate-question";
 import {
   AlertDialog,
@@ -1435,15 +1435,21 @@ ${integratedData.aiOpinionSummary}
                   />
                 )}
                 {/* 멀티턴(대화형) 답변 */}
-                {message.isMultiTurnResponse && message.enhancedData && (
-                  <MultiTurnResponse
-                    body={buildMultiTurnBody(message.enhancedData)}
-                    sources={message.enhancedData.sources}
-                    onLawClick={handleLawClick}
-                    onStreamingChange={setIsStreaming}
-                    stream
-                  />
-                )}
+                {message.isMultiTurnResponse && message.enhancedData && (() => {
+                  const userQs = messages.filter(m => m.isUser && !isSystemUserText(m.text)).map(m => m.text);
+                  return (
+                    <MultiTurnResponse
+                      request={{
+                        question: userQs[userQs.length - 1] ?? initialMessage ?? "",
+                        priorQuestions: userQs.slice(0, -1),
+                        enhancedData: message.enhancedData,
+                      }}
+                      onLawClick={handleLawClick}
+                      onStreamingChange={setIsStreaming}
+                      stream
+                    />
+                  );
+                })()}
                 {message.isEnhancedResponse && message.enhancedData && (
                   <InlineDetailedAnswer
                     conclusion={message.enhancedData.conclusion}

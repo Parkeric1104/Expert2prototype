@@ -1,19 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { Square, ExternalLink } from "lucide-react";
-
-type SourceType = "법령" | "해석례" | "사규" | "판례";
-
-interface MultiTurnSource {
-  type: SourceType;
-  title: string;
-  url?: string;
-}
+import {
+  generateMultiTurnAnswer,
+  type MultiTurnAnswer,
+  type MultiTurnAnswerRequest,
+  type MultiTurnSource,
+} from "@/app/services/multi-turn-answer";
 
 interface MultiTurnResponseProps {
-  /** 대화형 본문 (줄글) */
-  body: string;
-  /** 하단 출처 — 사규는 노출하지 않음 */
-  sources: MultiTurnSource[];
+  /** 답변 생성 요청 (프로바이더: 기본 더미 / VITE 설정 시 LLM 프록시) */
+  request: MultiTurnAnswerRequest;
   onLawClick?: (lawName: string) => void;
   stream?: boolean;
   onStreamingChange?: (active: boolean) => void;
@@ -30,29 +26,38 @@ function displayTitle(s: MultiTurnSource): string {
 }
 
 export function MultiTurnResponse({
-  body,
-  sources,
+  request,
   onLawClick,
   stream = false,
   onStreamingChange,
 }: MultiTurnResponseProps) {
-  // 사규는 출처에 미노출 (인용은 본문에서)
-  const visibleSources = sources.filter((s) => s.type !== "사규");
-
-  const [displayed, setDisplayed] = useState(stream ? "" : body);
-  const [streaming, setStreaming] = useState(stream);
+  const [answer, setAnswer] = useState<MultiTurnAnswer | null>(null);
+  const [displayed, setDisplayed] = useState("");
+  const [streaming, setStreaming] = useState(true);
   const intervalRef = useRef<number | null>(null);
 
+  // 1) 답변 로드 — 프로바이더(더미/LLM)는 서비스에서 결정. 형태는 동일(MultiTurnAnswer).
   useEffect(() => {
+    let cancelled = false;
+    setStreaming(true);
+    generateMultiTurnAnswer(request)
+      .then((a) => { if (!cancelled) setAnswer(a); })
+      .catch(() => { if (!cancelled) setAnswer({ body: "답변을 불러오지 못했습니다.", sources: [] }); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 2) 답변이 로드되면 본문 스트리밍 (더미는 즉시 resolve → 기존 UX 동일)
+  useEffect(() => {
+    if (!answer) return;
+    const body = answer.body;
     if (!stream) {
       setDisplayed(body);
       setStreaming(false);
       return;
     }
-    setStreaming(true);
     setDisplayed("");
     let i = 0;
-    // 본문 길이에 비례해 한 틱당 표시량 조정 (긴 답변도 ~30틱 내 완료)
     const step = Math.max(3, Math.ceil(body.length / 30));
     intervalRef.current = window.setInterval(() => {
       i = Math.min(body.length, i + step);
@@ -66,9 +71,9 @@ export function MultiTurnResponse({
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [answer]);
 
-  // 스트리밍 상태를 부모에 동기화 — 인터벌 이펙트와 분리
+  // 스트리밍 상태를 부모에 동기화
   useEffect(() => {
     onStreamingChange?.(streaming);
     if (streaming) return () => onStreamingChange?.(false);
@@ -77,8 +82,12 @@ export function MultiTurnResponse({
 
   const handleStop = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (answer) setDisplayed(answer.body);
     setStreaming(false);
   };
+
+  // 사규는 출처에 미노출 (인용은 본문에서)
+  const visibleSources = (answer?.sources ?? []).filter((s) => s.type !== "사규");
 
   return (
     <div className="flex justify-start mb-6">
