@@ -153,17 +153,15 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
     onStartChat(text, selectedLaws, laws, questionType, contextType);
 
   return (
-    <div className="flex-1 flex items-start justify-center px-6 relative overflow-y-auto">
+    <div className="flex-1 flex flex-col relative overflow-hidden">
 
-      <div className="absolute bottom-6 left-6 z-20"><CreditStatus /></div>
-      <div className="absolute bottom-4 right-0 left-0 z-20">
-        <p className="text-center text-xs text-muted-foreground/60">
-          AI 답변은 참고용이며 법적 효력이 없습니다. 최종 의사결정 시 반드시 전문가의 확인을 거치시기 바랍니다.
-        </p>
-      </div>
+      <div className="absolute bottom-5 left-6 z-30"><CreditStatus /></div>
+
+      {/* 스크롤 영역 */}
+      <div className="flex-1 min-h-0 w-full flex items-start justify-center px-6 overflow-y-auto">
 
       {/* 메인 콘텐츠 */}
-      <div className="w-full max-w-[760px] flex flex-col items-center gap-7 relative z-10 pt-12 pb-16">
+      <div className="w-full max-w-[760px] flex flex-col items-center gap-7 relative z-10 pt-12 pb-6">
 
         {/* 아바타 + 인삿말 */}
         <div className="flex flex-col items-center gap-5 text-center">
@@ -361,6 +359,14 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
           </div>
         </div>
 
+      </div>
+      </div>{/* /스크롤 영역 */}
+
+      {/* 하단 안내문 (스크롤 영역 밖 푸터 — 콘텐츠와 겹치지 않음) */}
+      <div className="shrink-0 px-6 pb-4 pt-1 relative z-20">
+        <p className="text-center text-xs text-muted-foreground/60">
+          AI 답변은 참고용이며 법적 효력이 없습니다. 최종 의사결정 시 반드시 전문가의 확인을 거치시기 바랍니다.
+        </p>
       </div>
 
       <style>{`
