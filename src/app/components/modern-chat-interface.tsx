@@ -95,7 +95,8 @@ interface Message {
   attachedFiles?: Array<{ name: string; size: number; type: string; }>; // 첨부파일 정보
   isDraftBasis?: boolean; // 의견서 작성 플로우에서 생성된 상세답변 (하단 '의견서 작성' CTA 노출)
   draftTopicTitle?: string; // 의견서 작성 대상 주제
-  isError?: boolean; // LLM/프록시 실패 답변 — 채팅 횟수에 미포함(잔여 횟수 보존)
+  isError?: boolean; // LLM/프록시 실패·가드레일 거부 — 채팅 횟수에 미포함(잔여 횟수 보존)
+  isDetailUpgrade?: boolean; // 간단답변에서 '상세 답변 받기'로 받은 상세답변 — 멀티턴 횟수 미포함(PRD CHA-004)
 }
 
 interface ModernChatInterfaceProps {
@@ -131,6 +132,10 @@ const FLOATING_ICONS = [
 // 멀티턴 제한 상수
 const MAX_QUESTIONS = 4; // 최초 답변 1 + 멀티턴(후속질문) 3회 (최초 질문은 멀티턴 횟수에 미포함)
 
+// 가드레일 거부 문구 (PRD RIS-001) — 세션은 유지하고 재시도를 유도
+const GUARDRAIL_REFUSAL =
+  "죄송합니다. 노무·세법 관련 질문에만 답변드릴 수 있습니다. 관련 질문으로 다시 시도해 주세요.";
+
 // 사용자가 입력한 실제 질문이 아닌 시스템성 사용자 메시지 (카운트/맥락분석/의견서 누적에서 제외)
 const isSystemUserText = (t: string): boolean =>
   t === "의견서 작성" || t === "상세 답변 받기" || t.includes("AI 의견");
@@ -160,6 +165,8 @@ export function ModernChatInterface({
   // 의견서 작성 — 주제 선택 바텀시트 (프로토타입: 최초 선택 시 무조건 노출)
   const [showTopicSheet, setShowTopicSheet] = useState(false);
   const [topicSheetMode, setTopicSheetMode] = useState<"detail" | "opinion">("detail"); // 진입점별 문구
+  // 주제 선택 후 동작: 'opinion'=의견서 문서 생성 / 'detail-upgrade'=상세답변 생성(상세받기 다중맥락)
+  const [topicSheetPurpose, setTopicSheetPurpose] = useState<"opinion" | "detail-upgrade">("opinion");
   const [topicCandidates, setTopicCandidates] = useState<Array<{ title: string; desc: string; basis: string }>>([]);
   // 의견서 작성 플로우 시작 여부 (최초 선택 후 true) → 이후 멀티턴 불가, 재진입 시 바로 의견서 화면
   const [opinionFlowStarted, setOpinionFlowStarted] = useState(false);
@@ -230,7 +237,8 @@ export function ModernChatInterface({
     return messages.filter(m =>
       !m.isUser &&
       !m.isLoading &&
-      !m.isError && // 실패(에러) 답변은 횟수에 미포함 → 잔여 횟수 보존
+      !m.isError && // 실패(에러)·가드레일 거부 답변은 횟수에 미포함 → 잔여 횟수 보존
+      !m.isDetailUpgrade && // '상세 답변 받기'로 받은 상세답변은 멀티턴 횟수 미포함(PRD CHA-004)
       (m.isEnhancedResponse || m.isSimpleResponse || m.isMultiTurnResponse || (m.relatedLaws && m.relatedLaws.length > 0))
     ).length;
   };
@@ -593,25 +601,27 @@ ${integratedData.aiOpinionSummary}
       };
       setMessages([userMsg]);
 
-      // 가드레일: 부적절/위법 질문만 차단 (휴먼피드백 미적용)
+      // 가드레일: 부적절/위법/범위 외 질문 차단 (휴먼피드백 미적용)
       const validation = validateQuestion(initialMessage);
       const blocked =
         questionType === "inappropriate" ||
         validation.reason === "inappropriate" ||
-        validation.reason === "unethical";
+        validation.reason === "unethical" ||
+        validation.reason === "out-of-scope";
 
-      // 차단 질문(가드레일) → 에러 메시지 후 채팅 종료(재시도 불가)
+      // 차단 질문(가드레일) → 거부 메시지. 세션 유지·카운트 제외(PRD RIS-001, CHA-004)
       if (blocked) {
         onStepChange?.(2);
         setCurrentStep(2);
-        setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
+        setMessages([{ ...userMsg, isError: true }, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
         setTimeout(() => {
           setMessages((prev) => prev.filter(m => !m.isLoading).concat({
             id: (Date.now() + 2).toString(),
-            text: "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다.",
+            text: GUARDRAIL_REFUSAL,
             isUser: false,
+            isError: true,
           }));
-          setChatEnded(true);
+          // 세션 유지 → 다른 질문으로 재시도 가능
         }, 800);
         return;
       }
@@ -680,10 +690,10 @@ ${integratedData.aiOpinionSummary}
     proceedWithAnswer(revisedQuestion);
   };
 
-  // 플로팅 "상세 답변 받기" — 간단답변 track에서 상세답변을 채팅에 인라인 생성.
-  // (상세답변 노출 후에는 플로팅이 "의견서 작성"으로 전환됨)
-  const requestDetailedAnswer = () => {
-    const question = getAccumulatedQuestions() || initialMessage || "";
+  // 선택 주제(또는 누적 맥락)로 상세답변을 채팅에 인라인 생성.
+  // isDetailUpgrade=true → 멀티턴 횟수 미포함(PRD CHA-004), opinionFlowStarted 잠그지 않음 → 이후 멀티턴 유지.
+  const generateDetailedAnswerForTopic = (basis: string) => {
+    setShowTopicSheet(false);
     onStepChange?.(2);
     setCurrentStep(2);
     setAnswerTrack("detailed");
@@ -691,12 +701,27 @@ ${integratedData.aiOpinionSummary}
     const loadingMsg: Message = { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws };
     setMessages((prev) => [...prev, userMsg, loadingMsg]);
     setTimeout(() => {
-      const enhancedData = generateIntegratedResponse(question);
-      const aiMsg: Message = { id: (Date.now() + 2).toString(), text: "", isUser: false, isEnhancedResponse: true, enhancedData };
+      const enhancedData = generateIntegratedResponse(basis);
+      const aiMsg: Message = { id: (Date.now() + 2).toString(), text: "", isUser: false, isEnhancedResponse: true, isDetailUpgrade: true, enhancedData };
       setMessages((prev) => prev.filter((m) => !m.isLoading).concat(aiMsg));
       onStepChange?.(3);
       setCurrentStep(3);
     }, DELAY_DETAILED);
+  };
+
+  // 플로팅 "상세 답변 받기" — 간단답변 track에서 상세답변 생성 (Figma SCR-003 · PRD CHA-008)
+  //  - 단일 맥락: 누적 맥락으로 바로 상세답변
+  //  - 여러 맥락: [CHAT_TOPIC_SELECT] 주제 선택 후 해당 맥락으로 상세답변
+  const requestDetailedAnswer = () => {
+    if (contextType === "single") {
+      generateDetailedAnswerForTopic(getAccumulatedQuestions() || initialMessage || "");
+      return;
+    }
+    const { topics } = analyzeSessionTopics();
+    setTopicCandidates(topics);
+    setTopicSheetMode("detail");
+    setTopicSheetPurpose("detail-upgrade");
+    setShowTopicSheet(true);
   };
 
   // 최종 답변 준비 시작 시 호출되는 핸들러
@@ -787,43 +812,47 @@ ${integratedData.aiOpinionSummary}
     // 이전 질문·피드백을 제거하고 편집 질문으로 교체한 뒤, 피드백 재노출 없이 바로 상세 답변
     if (!hasPriorAnswer) {
       const v = validateQuestion(savedInput);
-      const blocked = v.reason === "inappropriate" || v.reason === "unethical";
-      setMessages([userMsg]); // 이전 질문/피드백 제거
+      const blocked = v.reason === "inappropriate" || v.reason === "unethical" || v.reason === "out-of-scope";
       if (blocked) {
-        setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
+        // 가드레일 거부: 세션 유지·카운트 제외(PRD RIS-001, CHA-004)
+        setMessages([{ ...userMsg, isError: true }, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
         setTimeout(() => {
           setMessages((prev) => prev.filter(m => !m.isLoading).concat({
             id: (Date.now() + 2).toString(),
-            text: "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다.",
+            text: GUARDRAIL_REFUSAL,
             isUser: false,
+            isError: true,
           }));
-          setChatEnded(true);
+          // 세션 유지 → 다른 질문으로 재시도 가능
         }, 800);
         return;
       }
+      setMessages([userMsg]); // 이전 질문/피드백 제거
       proceedWithAnswer(savedInput); // 상세 답변 (휴먼피드백 재노출 없음)
       return;
     }
 
     // ── 후속 질문(멀티턴) ──
-    setMessages((prev) => [...prev, userMsg]);
-
-    // 가드레일: 부적절/위법 질문 차단 → 채팅 종료
+    // 가드레일: 부적절/위법/범위 외 질문 차단
     const validation = validateQuestion(savedInput);
     const isBlocked =
-      validation.reason === "inappropriate" || validation.reason === "unethical";
+      validation.reason === "inappropriate" || validation.reason === "unethical" || validation.reason === "out-of-scope";
     if (isBlocked) {
-      setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
+      // 거부: 세션 유지·카운트 제외 → 잔여 횟수로 멀티턴 지속 가능(PRD CHA-004)
+      setMessages((prev) => [...prev, { ...userMsg, isError: true }, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
       setTimeout(() => {
         setMessages((prev) => prev.filter(m => !m.isLoading).concat({
           id: (Date.now() + 2).toString(),
-          text: "죄송합니다. 해당 질문은 답변이 어렵습니다. 노무·세법 관련 합법적인 범위 내의 질문을 부탁드립니다.",
+          text: GUARDRAIL_REFUSAL,
           isUser: false,
+          isError: true,
         }));
-        setChatEnded(true);
+        // 세션 유지 (setChatEnded 하지 않음)
       }, 800);
       return;
     }
+
+    setMessages((prev) => [...prev, userMsg]);
 
     // 로딩 → 멀티턴 답변
     setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
@@ -891,6 +920,7 @@ ${integratedData.aiOpinionSummary}
 
     setTopicCandidates(topics);
     setTopicSheetMode(mode);
+    setTopicSheetPurpose("opinion");
     setShowTopicSheet(true);
   };
 
@@ -1699,8 +1729,13 @@ ${integratedData.aiOpinionSummary}
         topics={topicCandidates}
         mode={topicSheetMode}
         onSelect={(topic) => {
-          // 1단계 즉시 작성: 모드 무관하게 선택 주제로 바로 의견서 문서 생성
           setShowTopicSheet(false);
+          if (topicSheetPurpose === "detail-upgrade") {
+            // 상세 답변 받기(간단 track, 다중맥락): 선택 주제로 상세답변 생성 → 이후 멀티턴/의견서 지속
+            generateDetailedAnswerForTopic(topic.basis || topic.title);
+            return;
+          }
+          // 의견서 작성: 1단계 즉시 — 선택 주제로 바로 의견서 문서 생성
           setOpinionFlowStarted(true);
           setLastDraftTopicTitle(topic.title);
           finalizeDraftDocument(topic.title);

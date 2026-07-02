@@ -71,32 +71,36 @@ export function validateQuestion(message: string): ValidationResult {
   }
   
   // 3. Check if out of labor/HR scope (노무 범위 외)
+  // 세법/노무 통합 서비스 → 노무 + 세법 키워드 모두 in-scope로 인정
   const laborKeywords = [
-    "근로", "노동", "임금", "급여", "퇴직", "해고", "징계", 
+    "근로", "노동", "임금", "급여", "퇴직", "해고", "징계",
     "연차", "휴가", "휴직", "산재", "재해", "안전", "보건",
     "근무", "직장", "회사", "사업주", "근로자", "직원",
     "계약", "고용", "취업", "노조", "조합", "파견",
     "시간외", "연장", "야간", "휴일", "수당", "출산", "육아",
-    "퇴직금", "연봉", "최저임금", "근로시간", "초과근무"
+    "퇴직금", "연봉", "최저임금", "근로시간", "초과근무",
+    // 사회보험(노무 인접)
+    "보험", "4대보험", "국민연금", "건강보험", "고용보험",
+    // 세법
+    "세법", "세무", "세금", "부가세", "부가가치세", "소득세", "법인세",
+    "연말정산", "원천징수", "공제", "과세", "납세", "신고", "환급"
   ];
   const hasLaborKeyword = laborKeywords.some(kw => lowerMessage.includes(kw));
-  
-  // Check for non-labor topics
+
+  // 명시적 비-노무/비-세법 주제 (강한 신호에서만 범위 외 판정 — 오탐 방지)
   const nonLaborKeywords = [
-    "날씨", "음식", "요리", "여행", "영화", "게임", "축구", "야구", "스포츠",
-    "주식", "부동산", "정치", "선거", "코인", "투자", "비트코인",
-    "연예인", "아이돌", "드라마", "소설", "만화", "애니메이션"
+    "날씨", "음식", "요리", "맛집", "메뉴", "저녁", "점심", "야식", "간식",
+    "여행", "영화", "드라마", "게임", "축구", "야구", "농구", "스포츠", "운동",
+    "주식", "부동산", "코인", "비트코인",
+    "정치", "선거", "연예인", "아이돌", "소설", "만화", "애니메이션",
+    "연애", "결혼식", "취미", "노래", "레시피"
   ];
-  
+
   const hasNonLaborKeyword = nonLaborKeywords.some(kw => lowerMessage.includes(kw));
-  
-  // If clearly not labor-related
+
+  // 명시적 비-노무/세법 주제 + 노무/세법 키워드 없음 → 범위 외
+  // (키워드 부재만으로 판정하지 않음 → 미등록 키워드의 정상 질문 오탐 방지)
   if (hasNonLaborKeyword && !hasLaborKeyword) {
-    return { isValid: false, reason: "out-of-scope" };
-  }
-  
-  // If no labor keywords and looks like a question
-  if (!hasLaborKeyword && trimmed.length > 10 && (trimmed.includes("?") || trimmed.includes("?"))) {
     return { isValid: false, reason: "out-of-scope" };
   }
   
