@@ -99,9 +99,9 @@ export function MultiTurnResponse({
   return (
     <div className="flex justify-start mb-6">
       <div className="max-w-[720px] flex flex-col gap-3">
-        <div className="rounded-2xl px-6 py-5 bg-card border border-border shadow-sm">
-          {/* 대화형 본문 (서식 없음) */}
-          <p className="text-[15px] leading-relaxed text-foreground font-normal whitespace-pre-line">
+        <div className="rounded-2xl px-6 py-5 bg-card border border-border/60 shadow-sm">
+          {/* 대화형 본문 (서식 없음) — 한국어 줄바꿈 keep-all 필수 (디자인 가이드 §2) */}
+          <p className="text-[15px] leading-relaxed text-foreground font-normal whitespace-pre-line" style={{ wordBreak: "keep-all" }}>
             {displayed}
             {streaming && (
               <span className="inline-block w-[2px] h-[1.1em] align-text-bottom ml-0.5 bg-primary animate-pulse" />
