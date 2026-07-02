@@ -17,8 +17,10 @@
 //                  properties: { name: {type:"string"}, url: {type:"string"} },
 //                  required: ["name","url"], additionalProperties: false } }
 //              }, required: ["body","sources"], additionalProperties: false } } },
-//            system: "질문 유형을 분석해, 근거를 갖춘 흐르는 줄글 문단으로 답하고,
-//                     관련 법령을 name+url 배열로 제시하라. 서식/번호/불릿을 쓰지 말 것.",
+//            system: "질문 유형을 분석해 3단 흐름의 흐르는 줄글로 답하라(제목/번호/불릿 금지, 2~3문단):
+//                     (1) 핵심 결론·필수 요건 단정, (2) 근거(법령 취지·대법원 판례 경향)와 미준수 리스크,
+//                     (3) '따라서 반드시 ~하셔야' 형태의 실무 조치. 법령 인용은 body가 아니라 sources
+//                     배열(name=법령명 조문, url=공식 링크)로만 제시. (proxy/api/multi-turn.js 의 SYSTEM과 동일)",
 //            messages: [{ role: "user", content: <question(+prior)> }] }
 //      - 응답 JSON을 { body, sources:[{name,url}] } 형태로 그대로 반환
 //   2) 빌드 환경변수 설정:

@@ -658,15 +658,22 @@ export const buildMultiTurnBody = (data: EnhancedResponseData): string => {
   // 1) 결론 = 직접 답변(도입 문단)
   if (data.conclusion) paras.push(data.conclusion.trim());
 
-  // 2) 검토 내용 = 부연 설명. 번호·불릿·줄바꿈을 제거해 자연스러운 줄글 문단으로 정리.
+  // 2) 검토 내용 = 부연 설명. 문단(빈 줄)은 살리고, 각 문단 안의 번호·불릿·단일 줄바꿈만 정리해
+  //    "서식 없는 여러 문단의 줄글"로 만든다. (예시 형태: 핵심 결론 → 근거·판례 → 실무 조치)
   if (data.reviewContent) {
-    const explained = data.reviewContent
-      .replace(/^\s*\d+\.\s*/gm, "")   // "1. " 번호 제거
-      .replace(/^[✓•\-]\s*/gm, "")     // 체크/불릿 기호 제거
-      .replace(/\s*\n+\s*/g, " ")       // 줄바꿈 → 공백(줄글화)
-      .replace(/\s{2,}/g, " ")          // 중복 공백 정리
-      .trim();
-    if (explained) paras.push(explained);
+    const blocks = data.reviewContent
+      .split(/\n\s*\n/) // 빈 줄 = 문단 경계
+      .map((block) =>
+        block
+          .replace(/^\s*\d+\.\s*/gm, "")                 // "1. " 번호 제거
+          .replace(/^\s*[가-힣]\.\s*/gm, "")             // "가. 나." 항목 제거
+          .replace(/^\s*[✓•\-]\s*/gm, "")                // 체크/불릿 기호 제거
+          .replace(/\s*\n+\s*/g, " ")                     // 문단 내 줄바꿈 → 공백(줄글화)
+          .replace(/\s{2,}/g, " ")                        // 중복 공백 정리
+          .trim(),
+      )
+      .filter(Boolean);
+    paras.push(...blocks);
   }
 
   // 서식 없는 줄글 문단(빈 줄로 구분). 질의 재정의 등 기계적 문장은 본문에서 제외.
