@@ -7,6 +7,8 @@
 // ⚠️ API 키는 이 파일/깃에 넣지 않는다. Vercel 프로젝트 환경변수 GEMINI_API_KEY 로만 등록.
 //    무료 키 발급: https://aistudio.google.com/apikey
 
+import { pickFallbackAnswer } from "./_fallback-answers.js";
+
 const MODEL = "gemini-2.5-flash"; // 무료 티어 지원 모델
 
 const SYSTEM =
@@ -83,13 +85,14 @@ export default async function handler(req, res) {
         generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA },
       }),
     });
-  } catch (e) {
-    return res.status(502).json({ body: `LLM 호출 실패: ${e}`, sources: [] });
+  } catch {
+    // 네트워크 등 호출 자체 실패 → 정형화된 답변으로 폴백(에러 노출 안 함)
+    return res.status(200).json(pickFallbackAnswer());
   }
 
   if (!r.ok) {
-    const detail = await r.text();
-    return res.status(502).json({ body: `Gemini 오류 ${r.status}: ${detail.slice(0, 300)}`, sources: [] });
+    // 429(무료 티어 한도 초과) 및 기타 오류 → 정형화된 답변 10종 중 무작위 노출
+    return res.status(200).json(pickFallbackAnswer());
   }
 
   const data = await r.json();
@@ -106,8 +109,11 @@ export default async function handler(req, res) {
       ? parsed.sources.map((s) => ({ name: String(s.name ?? ""), url: String(s.url ?? "") }))
       : [];
   } catch {
-    out.body = text || "답변을 생성하지 못했습니다.";
+    out.body = text || "";
   }
+
+  // 본문이 비었으면(파싱 실패·빈 응답 등) 정형화된 답변으로 폴백
+  if (!out.body.trim()) return res.status(200).json(pickFallbackAnswer());
 
   return res.status(200).json(out);
 }
