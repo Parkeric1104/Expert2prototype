@@ -13,6 +13,8 @@ interface MultiTurnResponseProps {
   onLawClick?: (lawName: string) => void;
   stream?: boolean;
   onStreamingChange?: (active: boolean) => void;
+  /** 답변 생성 실패 시 호출 — 부모가 이 턴을 채팅 횟수에서 제외(잔여 횟수 보존) */
+  onError?: () => void;
 }
 
 // 해석례는 # 접두사로 표시
@@ -30,6 +32,7 @@ export function MultiTurnResponse({
   onLawClick,
   stream = false,
   onStreamingChange,
+  onError,
 }: MultiTurnResponseProps) {
   const [answer, setAnswer] = useState<MultiTurnAnswer | null>(null);
   const [displayed, setDisplayed] = useState("");
@@ -42,7 +45,11 @@ export function MultiTurnResponse({
     setStreaming(true);
     generateMultiTurnAnswer(request)
       .then((a) => { if (!cancelled) setAnswer(a); })
-      .catch(() => { if (!cancelled) setAnswer({ body: "답변을 불러오지 못했습니다.", sources: [] }); });
+      .catch(() => {
+        if (cancelled) return;
+        setAnswer({ body: "일시적인 오류로 답변을 불러오지 못했습니다. 다시 질문해 주세요.", sources: [] });
+        onError?.(); // 이 턴은 채팅 횟수에서 제외 → 잔여 횟수로 계속 진행 가능
+      });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -95,6 +95,7 @@ interface Message {
   attachedFiles?: Array<{ name: string; size: number; type: string; }>; // 첨부파일 정보
   isDraftBasis?: boolean; // 의견서 작성 플로우에서 생성된 상세답변 (하단 '의견서 작성' CTA 노출)
   draftTopicTitle?: string; // 의견서 작성 대상 주제
+  isError?: boolean; // LLM/프록시 실패 답변 — 채팅 횟수에 미포함(잔여 횟수 보존)
 }
 
 interface ModernChatInterfaceProps {
@@ -229,8 +230,27 @@ export function ModernChatInterface({
     return messages.filter(m =>
       !m.isUser &&
       !m.isLoading &&
+      !m.isError && // 실패(에러) 답변은 횟수에 미포함 → 잔여 횟수 보존
       (m.isEnhancedResponse || m.isSimpleResponse || m.isMultiTurnResponse || (m.relatedLaws && m.relatedLaws.length > 0))
     ).length;
+  };
+
+  // 멀티턴 답변 실패 시: 해당 답변과 직전 사용자 질문을 '에러 턴'으로 표시해 채팅 횟수에서 제외.
+  // (프록시가 정상 답변/폴백을 주면 호출되지 않음 — 네트워크·프록시 다운 등 실제 실패에서만 발동)
+  const markMessageError = (aiId: string) => {
+    setMessages((prev) => {
+      const idx = prev.findIndex((m) => m.id === aiId);
+      if (idx === -1 || prev[idx].isError) return prev;
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], isError: true };
+      for (let i = idx - 1; i >= 0; i--) {
+        if (copy[i].isUser && !isSystemUserText(copy[i].text)) {
+          copy[i] = { ...copy[i], isError: true };
+          break;
+        }
+      }
+      return copy;
+    });
   };
 
   // 누적 질문 텍스트 (1턴부터 현재까지)
@@ -1381,10 +1401,10 @@ ${integratedData.aiOpinionSummary}
             {messages.map((message, index) => {
               // 현재 메시지의 턴 계산 (실제 질문만 카운트 — '의견서 작성'/'AI 의견' 시스템 메시지 제외)
               const isSystemUserMsg = isSystemUserText(message.text);
-              const userMessagesUpToNow = messages.slice(0, index + 1).filter(m => m.isUser && !isSystemUserText(m.text)).length;
+              const userMessagesUpToNow = messages.slice(0, index + 1).filter(m => m.isUser && !isSystemUserText(m.text) && !m.isError).length;
               const remainingQuestions = MAX_QUESTIONS - userMessagesUpToNow;
-              // 잔여 질문횟수 안내 숨김: 시스템 메시지 또는 의견서 작성 플로우 시작(멀티턴 잠금) 상태
-              const hideRemaining = isSystemUserMsg || opinionFlowStarted;
+              // 잔여 질문횟수 안내 숨김: 시스템 메시지 / 의견서 작성 플로우 시작(멀티턴 잠금) / 에러 턴(횟수 미소진)
+              const hideRemaining = isSystemUserMsg || opinionFlowStarted || message.isError;
 
               return (
                 <div key={message.id}>
@@ -1446,6 +1466,7 @@ ${integratedData.aiOpinionSummary}
                       }}
                       onLawClick={handleLawClick}
                       onStreamingChange={setIsStreaming}
+                      onError={() => markMessageError(message.id)}
                       stream
                     />
                   );
