@@ -1658,7 +1658,18 @@ ${integratedData.aiOpinionSummary}
         onClose={() => setShowTopicSheet(false)}
         topics={topicCandidates}
         mode={topicSheetMode}
-        onSelect={(topic) => generateDraftBasisAnswer(topic, topicSheetMode === "opinion" ? "의견서 작성" : "상세 답변 받기")}
+        onSelect={(topic) => {
+          setShowTopicSheet(false);
+          if (topicSheetMode === "opinion") {
+            // 의견서 모드: 중간 상세답변 없이 선택 주제로 바로 의견서 문서 작성 (1단계)
+            setOpinionFlowStarted(true);
+            setLastDraftTopicTitle(topic.title);
+            finalizeDraftDocument(topic.title);
+          } else {
+            // 상세 답변 받기(detail) 모드: 선택 주제로 상세답변 생성
+            generateDraftBasisAnswer(topic, "상세 답변 받기");
+          }
+        }}
       />
 
     </div>
