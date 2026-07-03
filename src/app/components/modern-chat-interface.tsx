@@ -906,7 +906,10 @@ ${integratedData.aiOpinionSummary}
     const hasMultiTurn = messages.some((m) => m.isMultiTurnResponse && m.enhancedData);
 
     // 1단계 즉시 작성: 간단/상세 구분 없이 바로 의견서 문서 생성 (근거 상세내용은 문서에 포함)
+    // 의견서 작성 시작 → 세션 잠금(PRD CHA-008·POP-002): 이후 후속 질문은 세션 전환 팝업으로 유도
     const proceedImmediate = () => {
+      setOpinionFlowStarted(true);
+      setLastDraftTopicTitle(topics[0]?.title || "");
       finalizeDraftDocument(topics[0]?.title);
     };
 
