@@ -25,6 +25,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
 
 interface ChatHistoryItem {
   id: string;
@@ -62,6 +69,7 @@ export function HistorySidebarPanel({
 }: HistorySidebarPanelProps) {
   const [expandedChat, setExpandedChat] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [viewTargetId, setViewTargetId] = useState<string | null>(null); // 채팅 이력보기(읽기 전용) 대상
 
   // Mock chat history data (간략화된 버전)
   const initialChatHistory: ChatHistoryItem[] = [
@@ -138,11 +146,13 @@ export function HistorySidebarPanel({
     setExpandedChat(expandedChat === chatId ? null : chatId);
   };
 
+  // 채팅 이력보기: 패널 내 읽기 전용 다이얼로그로 표시
+  // (onViewChatHistory는 App 쪽 스텁이 사이드바를 닫아버려 다이얼로그가 사라지므로 호출하지 않음)
   const handleViewHistory = (chatId: string) => {
-    if (onViewChatHistory) {
-      onViewChatHistory(chatId);
-    }
+    setViewTargetId(chatId);
   };
+
+  const viewTarget = chatHistory.find((c) => c.id === viewTargetId) || null;
 
   const handleConfirmDelete = () => {
     if (!deleteTargetId) return;
@@ -339,6 +349,58 @@ export function HistorySidebarPanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 채팅 이력보기 — 읽기 전용 다이얼로그 */}
+      <Dialog open={!!viewTarget} onOpenChange={(open) => !open && setViewTargetId(null)}>
+        <DialogContent className="max-w-lg rounded-2xl shadow-xl">
+          {viewTarget && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-left" style={{ wordBreak: "keep-all" }}>
+                  {viewTarget.title}
+                </DialogTitle>
+                <DialogDescription className="text-left flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {viewTarget.date} · {viewTarget.category} · 읽기 전용
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                {/* 질문 (사용자) */}
+                <div className="flex justify-end">
+                  <p className="max-w-[85%] rounded-2xl px-4 py-2.5 bg-indigo-600 text-white text-sm" style={{ wordBreak: "keep-all" }}>
+                    {viewTarget.initialQuestion}
+                  </p>
+                </div>
+                {/* 답변 (AI) */}
+                <div className="flex justify-start">
+                  <div className="max-w-[90%] rounded-2xl px-4 py-3 bg-card border border-border/60 shadow-sm space-y-2.5">
+                    <p className="text-sm text-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>
+                      {viewTarget.finalAnswer.summary}
+                    </p>
+                    {viewTarget.finalAnswer.laws.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border">
+                        {viewTarget.finalAnswer.laws.map((law) => (
+                          <span key={law} className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
+                            {law}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* 생성 문서 */}
+                {viewTarget.hasDocument && viewTarget.documentName && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/60 text-xs text-muted-foreground">
+                    <FileText className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
+                    {viewTarget.documentName}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
