@@ -331,13 +331,26 @@ export function InlineDetailedAnswer({
                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed" style={{ wordBreak: "keep-all" }}>
                       두 가지 유형의 AI가 핵심 쟁점을 다각도로 심층 토론하여 결과를 도출합니다. 토론 내용을 확인하고 최종 답변 및 의견서에 반영해 보세요.
                     </p>
-                    <button
-                      onClick={() => onOpenDebate?.()}
-                      className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      AI 상세의견 보기
-                    </button>
+                    {/* CTA 한 줄 배치: AI 상세의견 보기 · 의견서 작성 */}
+                    <div className="mt-3 flex items-center flex-wrap gap-2">
+                      <button
+                        onClick={() => onOpenDebate?.()}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        AI 상세의견 보기
+                      </button>
+                      {onWriteOpinion && (
+                        <button
+                          onClick={onWriteOpinion}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
+                          style={{ background: "#3182F6" }}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          의견서 작성
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -401,8 +414,8 @@ export function InlineDetailedAnswer({
             </section>
           )}
 
-          {/* 답변별 의견서 작성 — 이 상세답변을 기준으로 의견서 발행 (정책 리뷰 2026-07-03) */}
-          {showSources && onWriteOpinion && (
+          {/* 답변별 의견서 작성 — AI 상세의견 카드가 없을 때(미제공·반영 완료)만 별도 행으로 노출 */}
+          {showSources && onWriteOpinion && (!aiOpinion || reflected) && (
             <div className="mt-5 pt-4 border-t border-border flex justify-end">
               <button
                 onClick={onWriteOpinion}
