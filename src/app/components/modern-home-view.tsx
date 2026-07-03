@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { CreditStatus } from "@/app/components/credit-status";
+import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
   Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2
@@ -221,7 +222,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
               className="h-8 flex items-center gap-1.5 px-3 rounded-full text-sm text-foreground/80 hover:text-foreground hover:bg-muted/70 transition-colors whitespace-nowrap flex-shrink-0"
             >
               <Settings2 className="w-4 h-4" />
-              <span>{selectedLaws.length === 0 || selectedLaws.length === 15 ? "전체" : `${selectedLaws.length}개 법령`}</span>
+              <span>{selectedLaws.length === 0 || selectedLaws.length === AVAILABLE_LAWS.length ? "전체" : `${selectedLaws.length}개 법령`}</span>
             </button>
 
             {/* 파일 칩 (첨부 시) */}

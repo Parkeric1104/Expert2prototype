@@ -9,7 +9,7 @@ interface LawSelectionModalProps {
   onConfirm: (laws: string[]) => void;
 }
 
-const AVAILABLE_LAWS = [
+export const AVAILABLE_LAWS = [
   { id: "labor-standards", name: "근로기준법", isDefault: true },
   { id: "equal-employment", name: "남녀고용평등법", isDefault: false },
   { id: "industrial-safety", name: "산업안전보건법", isDefault: false },

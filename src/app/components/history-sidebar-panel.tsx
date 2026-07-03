@@ -243,8 +243,15 @@ export function HistorySidebarPanel({
                   key={chat.id}
                   className="border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all bg-card"
                 >
-                  {/* Accordion Header */}
-                  <div className="p-3">
+                  {/* Accordion Header — 카드 전체 클릭으로 펼침/접힘 (화살표 버튼 병행) */}
+                  <div
+                    className="p-3 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggleExpand(chat.id)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExpand(chat.id); } }}
+                    aria-expanded={expandedChat === chat.id}
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 space-y-1.5 min-w-0">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -258,7 +265,7 @@ export function HistorySidebarPanel({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => toggleExpand(chat.id)}
+                        onClick={(e) => { e.stopPropagation(); toggleExpand(chat.id); }}
                         className="h-7 w-7 p-0 flex-shrink-0"
                         aria-label={expandedChat === chat.id ? "접기" : "펼치기"}
                       >
