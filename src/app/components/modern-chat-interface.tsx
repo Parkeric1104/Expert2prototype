@@ -6,7 +6,6 @@ import { ProgressiveLoadingBubble } from "@/app/components/progressive-loading";
 import { InlineDetailedAnswer } from "@/app/components/inline-detailed-answer";
 import { AIOpinionDebatePanel } from "@/app/components/ai-opinion-debate-panel";
 import { OpinionTopicBottomSheet } from "@/app/components/opinion-topic-bottom-sheet";
-import { OpinionPublishBottomSheet, PublishTopic } from "@/app/components/opinion-publish-bottom-sheet";
 import { SimpleResponseCard } from "@/app/components/simple-response-card";
 import { MultiTurnResponse } from "@/app/components/multi-turn-response";
 import { DualPersonaDebate } from "@/app/components/dual-persona-debate";
@@ -166,16 +165,6 @@ export function ModernChatInterface({
   // 의견서 작성 — 주제 선택 바텀시트 (프로토타입: 최초 선택 시 무조건 노출)
   const [showTopicSheet, setShowTopicSheet] = useState(false);
   const [topicSheetMode, setTopicSheetMode] = useState<"detail" | "opinion">("detail"); // 진입점별 문구
-  // 주제 선택 후 동작 (정책 리뷰 2026-07-03):
-  //  - 'detail-upgrade': 상세답변 스트리밍 → 완료 시 버튼명 '의견서 작성'으로 (표 2·5행)
-  //  - 'opinion-stream': 상세답변 스트리밍 → 완료 시 최종 발행 바텀시트 자동 노출 (표 4행)
-  const [topicSheetPurpose, setTopicSheetPurpose] = useState<"detail-upgrade" | "opinion-stream">("detail-upgrade");
-  // 최종 발행 바텀시트 (의견서 작성 확정 단계)
-  const [publishTopic, setPublishTopic] = useState<PublishTopic | null>(null);
-  // '상세 답변 생성' 플로우에서 선택/확정된 주제 — 이후 '의견서 작성' 클릭 시 발행시트에 사용
-  const [chosenDetailTopic, setChosenDetailTopic] = useState<PublishTopic | null>(null);
-  // 표 4행: 주제 상세답변 스트리밍 완료 시 발행시트 자동 오픈 대상
-  const autoPublishRef = useRef<{ msgId: string; topic: PublishTopic } | null>(null);
   const [topicCandidates, setTopicCandidates] = useState<Array<{ title: string; desc: string; basis: string }>>([]);
   // 의견서 작성 플로우 시작 여부 (최초 선택 후 true) → 이후 멀티턴 불가, 재진입 시 바로 의견서 화면
   const [opinionFlowStarted, setOpinionFlowStarted] = useState(false);
@@ -701,17 +690,15 @@ ${integratedData.aiOpinionSummary}
 
   // 선택 주제(또는 누적 맥락)로 상세답변을 채팅에 인라인 생성.
   // isDetailUpgrade=true → 멀티턴 횟수 미포함(PRD CHA-004).
-  // autoPublish=true → 스트리밍 완료 시 최종 발행 바텀시트 자동 슬라이드업 (정책 표 4행)
   const generateDetailedAnswerForTopic = (
     basis: string,
     topic?: { title: string; desc?: string },
-    autoPublish: boolean = false,
   ) => {
     setShowTopicSheet(false);
     onStepChange?.(2);
     setCurrentStep(2);
     setAnswerTrack("detailed");
-    const userMsg: Message = { id: Date.now().toString(), text: "상세 답변 생성", isUser: true };
+    const userMsg: Message = { id: Date.now().toString(), text: "상세 답변 받기", isUser: true };
     const loadingMsg: Message = { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws };
     setMessages((prev) => [...prev, userMsg, loadingMsg]);
     setTimeout(() => {
@@ -725,31 +712,25 @@ ${integratedData.aiOpinionSummary}
         enhancedData,
         draftTopicTitle: topic?.title,
       };
-      if (autoPublish) {
-        autoPublishRef.current = { msgId: aiMsg.id, topic: { title: topic?.title || "종합 검토", desc: topic?.desc, basis } };
-      }
       setMessages((prev) => prev.filter((m) => !m.isLoading).concat(aiMsg));
       onStepChange?.(3);
       setCurrentStep(3);
     }, DELAY_DETAILED);
   };
 
-  // 플로팅 "상세 답변 생성" (정책 표 1·2·5행 — 리뷰 2026-07-03)
-  //  - 단일 맥락: 누적 맥락으로 바로 상세답변 생성
-  //  - 복수 맥락: [주제 선택 모달] → 선택 시 스트리밍 시작 → 완료 시 버튼명 '의견서 작성'으로 변경
+  // 플로팅 "상세 답변 받기" (정책 확정 2026-07-03)
+  //  - 플로팅 버튼은 항상 '상세 답변 받기' 단일 라벨 (변경 조건 없음)
+  //  - 단일 맥락: 누적 맥락으로 바로 상세답변 생성 / 복수 맥락: [주제 선택 모달] 경유
   const requestDetailedAnswer = () => {
     if (contextType === "single") {
       const { topics } = analyzeSessionTopics();
       const t = topics[0];
-      // 단일맥락: 의견서 본문은 세션 누적 기준(basis 미지정) — 주제 타이틀만 확정
-      if (t) setChosenDetailTopic({ title: t.title, desc: t.desc });
       generateDetailedAnswerForTopic(getAccumulatedQuestions() || initialMessage || "", t ? { title: t.title, desc: t.desc } : undefined);
       return;
     }
     const { topics } = analyzeSessionTopics();
     setTopicCandidates(topics);
     setTopicSheetMode("detail");
-    setTopicSheetPurpose("detail-upgrade");
     setShowTopicSheet(true);
   };
 
@@ -926,41 +907,19 @@ ${integratedData.aiOpinionSummary}
   // - 최초 선택: 프로토타입에서는 주제 선택 모달을 무조건 노출 (진입점별 문구 분기)
   // - 최초 선택이 아닌 경우: 바로 의견서 작성 화면으로 전환
   // mode: 'detail'(플로팅 '상세 답변 받기') | 'opinion'(세션제한·나가기 모달의 '의견서 작성')
-  // '의견서 작성' 버튼 동작 (정책 리뷰 2026-07-03 — 표 3·4·6행):
-  //  - 선택 즉시 입력영역 비활성화(후속 질문 불가)
-  //  - 단일 맥락 또는 이미 주제가 확정된 경우: 즉시 최종 발행 바텀시트 슬라이드업(주제 노출)
-  //  - 복수 맥락(주제 미확정): [주제 선택 모달] → 해당 주제 상세답변 스트리밍 → 완료 시 발행시트 자동 노출
+  // 의견서 작성 진입(세션초과 모달·외부 트리거 전용 — 플로팅에는 의견서 버튼 없음, 정책 확정 2026-07-03)
+  // 선택 즉시 세션 종료(입력영역 비활성화) 후 세션 누적 기준으로 문서 생성
   const startOpinionFlow = (_mode: "detail" | "opinion" = "opinion") => {
     if (opinionFlowStarted && lastDraftTopicTitle) {
       // 재진입(이미 발행 이력): 문서 화면 재오픈
       finalizeDraftDocument(lastDraftTopicTitle || undefined);
       return;
     }
-    setOpinionFlowStarted(true); // 의견서 작성 시작 → 입력영역 비활성화(후속 질문 불가)
+    setOpinionFlowStarted(true); // 세션 종료(후속 질문 불가)
     const { topics } = analyzeSessionTopics();
-
-    // 주제가 이미 확정됨('상세 답변 생성' 플로우에서 선택) → 즉시 발행시트
-    if (chosenDetailTopic) {
-      setPublishTopic(chosenDetailTopic);
-      return;
-    }
-    // 단일 맥락 → 즉시 발행시트 (표 3·6행). 의견서 본문은 세션 누적 질의 기준(basis 미지정)
-    if (contextType === "single") {
-      setPublishTopic({ title: topics[0]?.title || "종합 검토", desc: topics[0]?.desc });
-      return;
-    }
-    // 복수 맥락 + 상세답변 있음 (표 4행): 주제 선택 → 해당 주제 스트리밍 → 완료 시 발행시트 자동
-    setTopicCandidates(topics);
-    setTopicSheetMode("opinion");
-    setTopicSheetPurpose("opinion-stream");
-    setShowTopicSheet(true);
-  };
-
-  // 최종 발행 바텀시트 확정 → 의견서 문서 생성
-  const handlePublishConfirm = (topic: PublishTopic) => {
-    setPublishTopic(null);
-    setLastDraftTopicTitle(topic.title);
-    finalizeDraftDocument(topic.title, topic.basis);
+    const title = topics[0]?.title || "종합 검토";
+    setLastDraftTopicTitle(title);
+    finalizeDraftDocument(title);
   };
 
   // 주제 선택 후 — 의견서 작성용 상세답변을 채팅에 인라인 생성
@@ -1422,9 +1381,6 @@ ${integratedData.aiOpinionSummary}
     setChatEnded(false);
     setOpinionFlowStarted(false);
     setLastDraftTopicTitle("");
-    setChosenDetailTopic(null);
-    setPublishTopic(null);
-    autoPublishRef.current = null;
     setInputValue("");
     setUploadedFiles([]);
     const userMsg: Message = {
@@ -1471,7 +1427,7 @@ ${integratedData.aiOpinionSummary}
   // 비활성화 사유에 따른 placeholder 텍스트
   const getPlaceholder = (): string => {
     if (chatEnded) return "답변이 제한되어 상담이 종료되었습니다.";
-    if (opinionFlowStarted) return "의견서 작성이 시작되어 추가 질문을 할 수 없습니다.";
+    if (opinionFlowStarted) return "의견서 작성으로 세션이 종료되었습니다. 새 채팅에서 질문해 주세요.";
     if (isDebateInProgress) return "AI 상세의견 진행 중...";
     if (isStreaming) return "답변 출력 중...";
     if (isAnswerLoading) return "답변 생성 중...";
@@ -1579,26 +1535,15 @@ ${integratedData.aiOpinionSummary}
                     sources={message.enhancedData.sources}
                     aiOpinion={message.enhancedData.aiOpinionSummary}
                     stream
-                    onStreamingChange={(active) => {
-                      setIsStreaming(active);
-                      // 표 4행: 주제 상세답변 스트리밍 완료 → 최종 발행 바텀시트 자동 슬라이드업
-                      if (!active && autoPublishRef.current?.msgId === message.id) {
-                        const t = autoPublishRef.current.topic;
-                        autoPublishRef.current = null;
-                        setPublishTopic(t);
-                      }
-                    }}
+                    onStreamingChange={setIsStreaming}
                     onSourceClick={handleLawClick}
                     reflected={message.hasAIOpinion || false}
                     onOpenDebate={() => openAIDebate(message.id)}
                     onWriteOpinion={() => {
-                      // 답변별 의견서 작성: 해당 상세답변 기준 (정책 리뷰 요구 3) + 입력 잠금(요구 5)
+                      // 답변별 의견서 작성: 해당 상세답변 기준으로 즉시 문서 생성 + 세션 종료 (정책 확정 2026-07-03)
                       setOpinionFlowStarted(true);
-                      setPublishTopic({
-                        title: topicTitle,
-                        desc: basisQ.length > 44 ? basisQ.slice(0, 44) + "…" : basisQ,
-                        basis: basisQ,
-                      });
+                      setLastDraftTopicTitle(topicTitle);
+                      finalizeDraftDocument(topicTitle, basisQ);
                     }}
                   />
                   );
@@ -1632,20 +1577,15 @@ ${integratedData.aiOpinionSummary}
           - 최초 답변이 간단답변(상세답변 아직 없음) → "상세 답변 받기"
           - 최초 답변이 상세답변 이거나, 의견서 플로우로 상세답변을 받은 뒤 → "의견서 작성" */}
       {(() => {
-        const hasDetailed = messages.some(m => m.isEnhancedResponse && m.enhancedData);
         const hasMultiTurn = messages.some(m => m.isMultiTurnResponse && m.enhancedData);
-        // 노출 조건(CHA-008): 상세답변 있음(O) 또는 간단답변 후 멀티턴 수행. 간단답변만(단일 턴)이면 미노출(X)
-        const showFloating = (hasDetailed || hasMultiTurn) && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
+        // 플로팅 버튼 정책 (확정 2026-07-03):
+        //  - 라벨은 항상 '상세 답변 받기' (변경 조건 없음)
+        //  - 멀티턴 답변 이후에만 노출. 의견서 작성으로 세션 종료 시 미노출
+        //  - 의견서 작성은 각 상세답변 카드의 버튼으로만 진입
+        const showFloating = hasMultiTurn && !opinionFlowStarted && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
         if (!showFloating) return null;
-        // 플로팅 버튼 정책 (리뷰 2026-07-03 표):
-        //  미초과: 상세답변 없음 → '상세 답변 생성' / 있음 → '의견서 작성'
-        //  초과:   복수 맥락 & 주제 미확정 → '상세 답변 생성' / 그 외(단일·주제 확정) → '의견서 작성'
-        const exceeded = getAIResponseCount() >= MAX_QUESTIONS;
-        const isMultiCtx = contextType !== "single";
-        const floatingLabel = exceeded
-          ? (isMultiCtx && !chosenDetailTopic ? "상세 답변 생성" : "의견서 작성")
-          : (hasDetailed ? "의견서 작성" : "상세 답변 생성");
-        const handleFloatingClick = floatingLabel === "의견서 작성" ? () => startOpinionFlow("opinion") : requestDetailedAnswer;
+        const floatingLabel = "상세 답변 받기";
+        const handleFloatingClick = requestDetailedAnswer;
         return (
           <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
             <button
@@ -1802,24 +1742,9 @@ ${integratedData.aiOpinionSummary}
         mode={topicSheetMode}
         onSelect={(topic) => {
           setShowTopicSheet(false);
-          const publish: PublishTopic = { title: topic.title, desc: topic.desc, basis: topic.basis || topic.title };
-          setChosenDetailTopic(publish); // 주제 확정 → 이후 버튼/발행시트에 사용
-          if (topicSheetPurpose === "detail-upgrade") {
-            // 표 2·5행: 선택 주제로 상세답변 스트리밍 → 완료 시 버튼명 '의견서 작성'으로 변경
-            generateDetailedAnswerForTopic(publish.basis!, { title: publish.title, desc: publish.desc });
-            return;
-          }
-          // 표 4행(opinion-stream): 선택 주제로 상세답변 스트리밍 → 완료 시 최종 발행 바텀시트 자동 노출
-          generateDetailedAnswerForTopic(publish.basis!, { title: publish.title, desc: publish.desc }, true);
+          // 선택 주제로 상세답변 생성 (플로팅 '상세 답변 받기' — 복수 맥락 경유)
+          generateDetailedAnswerForTopic(topic.basis || topic.title, { title: topic.title, desc: topic.desc });
         }}
-      />
-
-      {/* 최종 발행 바텀시트 — 의견서 작성 확정 (정책 리뷰 2026-07-03) */}
-      <OpinionPublishBottomSheet
-        isOpen={!!publishTopic}
-        onClose={() => setPublishTopic(null)}
-        topic={publishTopic}
-        onPublish={handlePublishConfirm}
       />
 
     </div>
