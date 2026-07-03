@@ -202,11 +202,17 @@ export function AIOpinionDebatePanel({
               {reflected ? "AI 의견이 이미 반영되었습니다." : "AI 의견을 반영하시겠습니까?"}
             </p>
           </div>
-          <div className="flex items-center flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {reflected ? (
-              <button onClick={onDelete} className="px-5 py-2 rounded-full border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors">
-                삭제하기
-              </button>
+              <>
+                <button onClick={onDelete} className="px-5 py-2 rounded-full border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors">
+                  삭제하기
+                </button>
+                {/* SCR-009 [1-1]: 돌아가기 — 채팅 화면으로 전환 */}
+                <button onClick={onClose} className="px-5 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors">
+                  돌아가기
+                </button>
+              </>
             ) : (
               <button onClick={handleReflect} className="px-5 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors">
                 AI 의견 반영하기
