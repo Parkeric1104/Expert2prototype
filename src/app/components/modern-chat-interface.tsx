@@ -1418,8 +1418,8 @@ ${integratedData.aiOpinionSummary}
   const isAnswerLoading = messages.some(m => m.isLoading);
 
   // 입력 비활성화 조건: 채팅 종료(가드레일) OR 토론 진행 중 OR 답변 생성 중 OR 스트리밍 출력 중
-  // 의견서 작성 버튼 선택 이후 후속 질문 불가 — 입력영역 비활성화 (정책 리뷰 2026-07-03)
-  const isInputDisabled = chatEnded || isDebateInProgress || isAnswerLoading || isStreaming || opinionFlowStarted;
+  // 의견서 작성 이후에도 입력영역은 활성 유지 — 질문 전송 시 세션 전환 팝업 노출(submitQuestion의 opinionFlowStarted 가드)
+  const isInputDisabled = chatEnded || isDebateInProgress || isAnswerLoading || isStreaming;
 
   // 파일 첨부 비활성화: 최초 질문 이후 (첨부는 최초 1회만)
   const isFileUploadDisabled = chatEnded || messages.filter(m => m.isUser).length >= 1;
@@ -1427,7 +1427,6 @@ ${integratedData.aiOpinionSummary}
   // 비활성화 사유에 따른 placeholder 텍스트
   const getPlaceholder = (): string => {
     if (chatEnded) return "답변이 제한되어 상담이 종료되었습니다.";
-    if (opinionFlowStarted) return "의견서 작성으로 세션이 종료되었습니다. 새 채팅에서 질문해 주세요.";
     if (isDebateInProgress) return "AI 상세의견 진행 중...";
     if (isStreaming) return "답변 출력 중...";
     if (isAnswerLoading) return "답변 생성 중...";
