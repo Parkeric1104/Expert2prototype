@@ -32,6 +32,8 @@ interface InlineDetailedAnswerProps {
   reflected?: boolean;
   /** AI 상세의견 토론 패널 열기 */
   onOpenDebate?: () => void;
+  /** 답변별 의견서 작성 — 해당 상세답변을 기준으로 의견서 작성 (정책 리뷰 2026-07-03) */
+  onWriteOpinion?: () => void;
 }
 
 // 법령 제목에서 조항 배지/법령명 분리 (예: "근로기준법 제17조 (근로조건의 명시)" → 제17조 / 근로기준법)
@@ -70,6 +72,7 @@ export function InlineDetailedAnswer({
   onSourceClick,
   reflected = false,
   onOpenDebate,
+  onWriteOpinion,
 }: InlineDetailedAnswerProps) {
   const [typingStage, setTypingStage] = useState(stream ? 0 : 5);
   const [displayedFactAnalysis, setDisplayedFactAnalysis] = useState(stream ? "" : factAnalysis);
@@ -396,6 +399,20 @@ export function InlineDetailedAnswer({
                 AI 의견은 참고용이며 부정확한 정보가 포함될 수 있습니다. 중요한 결정은 전문가 상담을 권장드립니다.
               </p>
             </section>
+          )}
+
+          {/* 답변별 의견서 작성 — 이 상세답변을 기준으로 의견서 발행 (정책 리뷰 2026-07-03) */}
+          {showSources && onWriteOpinion && (
+            <div className="mt-5 pt-4 border-t border-border flex justify-end">
+              <button
+                onClick={onWriteOpinion}
+                className="flex items-center gap-1.5 rounded-full pl-4 pr-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 shadow-sm"
+                style={{ background: "#3182F6" }}
+              >
+                <FileText className="w-4 h-4" />
+                의견서 작성
+              </button>
+            </div>
           )}
         </div>
       </div>
