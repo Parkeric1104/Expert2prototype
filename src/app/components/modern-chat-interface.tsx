@@ -33,8 +33,7 @@ import {
   DollarSign,
   ClipboardCheck,
   UserCheck,
-  Info,
-  History
+  Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { getDummyResponse } from "@/app/data/dummy-responses";
@@ -1496,18 +1495,6 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
-      {/* 읽기 전용 이력 보기 배너 */}
-      {isHistoryView && historySession && (
-        <div className="relative z-20 shrink-0 px-6 pt-4">
-          <div className="max-w-3xl mx-auto flex items-center gap-2 rounded-xl border border-border/60 bg-muted/60 px-4 py-2.5">
-            <History className="w-4 h-4 text-primary flex-shrink-0" />
-            <span className="text-sm text-foreground font-medium" style={{ wordBreak: "keep-all" }}>
-              저장된 상담 이력 · 읽기 전용
-            </span>
-            <span className="text-xs text-muted-foreground truncate">— {historySession.title} ({historySession.date})</span>
-          </div>
-        </div>
-      )}
       {/* Chat Messages Area — 배경은 App 루트 그라데이션을 그대로 노출 (메인 화면과 동일) */}
       <div className="flex-1 relative z-10 px-6 overflow-hidden">
         <div className="max-w-3xl mx-auto h-full flex flex-col">
