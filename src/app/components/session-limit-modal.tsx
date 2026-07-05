@@ -13,7 +13,6 @@ interface SessionLimitModalProps {
   isOpen: boolean;
   onClose: () => void;
   onContinueNewSession: () => void; // "이어서 질문하기"
-  onDraftDocument: () => void; // "의견서 작성"
   onEndConsultation: () => void; // "상담 종료"
   questionCount: number;
   maxQuestions: number;
@@ -23,7 +22,6 @@ export function SessionLimitModal({
   isOpen,
   onClose,
   onContinueNewSession,
-  onDraftDocument,
   onEndConsultation,
   questionCount,
   maxQuestions,
@@ -80,14 +78,14 @@ export function SessionLimitModal({
           </Button>
 
           <div className="flex gap-2 w-full">
-            {/* Secondary: Draft document */}
+            {/* Secondary: 채팅 내용 보기 — 팝업만 닫고 현재 채팅 확인 (2026-07-06 시안) */}
             <Button
-              onClick={onDraftDocument}
+              onClick={onClose}
               variant="outline"
               className="flex-1"
             >
               <FileText className="w-4 h-4 mr-2" />
-              의견서 작성
+              채팅 내용 보기
             </Button>
 
             {/* Secondary: End consultation */}
@@ -97,7 +95,7 @@ export function SessionLimitModal({
               className="flex-1"
             >
               <LogOut className="w-4 h-4 mr-2" />
-              상담 종료
+              채팅 종료
             </Button>
           </div>
         </AlertDialogFooter>

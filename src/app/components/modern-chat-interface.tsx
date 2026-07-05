@@ -1714,11 +1714,6 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
         isOpen={showSessionLimitModal}
         onClose={() => setShowSessionLimitModal(false)}
         onContinueNewSession={handleRetryQuestion}
-        onDraftDocument={() => {
-          setShowSessionLimitModal(false);
-          // 모드에 따라 자동으로 처리 (messageId 없으면 기본 동작)
-          handleDraftDocument();
-        }}
         onEndConsultation={() => {
           setShowSessionLimitModal(false);
           onCompleteDocument?.();
