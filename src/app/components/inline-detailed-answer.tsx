@@ -331,26 +331,14 @@ export function InlineDetailedAnswer({
                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed" style={{ wordBreak: "keep-all" }}>
                       두 가지 유형의 AI가 핵심 쟁점을 다각도로 심층 토론하여 결과를 도출합니다. 토론 내용을 확인하고 최종 답변 및 의견서에 반영해 보세요.
                     </p>
-                    {/* CTA 한 줄 배치: AI 상세의견 보기 · 의견서 작성 */}
-                    <div className="mt-3 flex items-center flex-wrap gap-2">
-                      <button
-                        onClick={() => onOpenDebate?.()}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        AI 상세의견 보기
-                      </button>
-                      {onWriteOpinion && (
-                        <button
-                          onClick={onWriteOpinion}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-                          style={{ background: "#3182F6" }}
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          의견서 작성
-                        </button>
-                      )}
-                    </div>
+                    {/* 카드 내 액션은 '검증(토론)' 하나만 — 의견서 작성은 성격이 달라 카드 푸터로 분리 */}
+                    <button
+                      onClick={() => onOpenDebate?.()}
+                      className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      AI 상세의견 보기
+                    </button>
                   </div>
                 </div>
               </div>
@@ -414,12 +402,16 @@ export function InlineDetailedAnswer({
             </section>
           )}
 
-          {/* 답변별 의견서 작성 — AI 상세의견 카드가 없을 때(미제공·반영 완료)만 별도 행으로 노출 */}
-          {showSources && onWriteOpinion && (!aiOpinion || reflected) && (
-            <div className="mt-5 pt-4 border-t border-border flex justify-end">
+          {/* 의견서 작성 — 답변 카드 푸터의 독립 영역 (검증 액션과 의미가 달라 항상 분리 노출)
+              좌: 동작 안내 마이크로카피 / 우: 문서 발행 액션(토스 블루 전용색) */}
+          {showSources && onWriteOpinion && (
+            <div className="mt-5 pt-4 border-t border-border flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[13px] text-muted-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>
+                이 상세답변을 기준으로 AI 노무의견서를 작성해요.
+              </p>
               <button
                 onClick={onWriteOpinion}
-                className="flex items-center gap-1.5 rounded-full pl-4 pr-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 shadow-sm"
+                className="flex items-center gap-1.5 rounded-full pl-4 pr-5 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95 shadow-sm flex-shrink-0"
                 style={{ background: "#3182F6" }}
               >
                 <FileText className="w-4 h-4" />
