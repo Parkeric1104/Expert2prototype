@@ -718,17 +718,21 @@ ${integratedData.aiOpinionSummary}
     }, DELAY_DETAILED);
   };
 
-  // 플로팅 "상세 답변 받기" (정책 확정 2026-07-03)
+  // 플로팅 "상세 답변 받기" (정책 확정 2026-07-03 · 프로세스 케이스 다이어그램)
   //  - 플로팅 버튼은 항상 '상세 답변 받기' 단일 라벨 (변경 조건 없음)
-  //  - 단일 맥락: 누적 맥락으로 바로 상세답변 생성 / 복수 맥락: [주제 선택 모달] 경유
+  //  - 맥락 수는 클릭 시점의 세션 누적 질문으로 '동적' 판단 (추천질문 태그가 아님):
+  //    같은 맥락(F1)만 있으면 즉시 상세답변, 다른 맥락 질문(F2)이 유입된 후에는 주제 선택 팝업 경유
   const requestDetailedAnswer = () => {
-    if (contextType === "single") {
-      const { topics } = analyzeSessionTopics();
+    const userQs = messages.filter(m => m.isUser && !isSystemUserText(m.text)).map(m => m.text);
+    const distinctContexts = new Set(userQs.map(q => detectLawCategory(q)));
+    const isMultiContext = distinctContexts.size >= 2;
+
+    const { topics } = analyzeSessionTopics();
+    if (!isMultiContext) {
       const t = topics[0];
       generateDetailedAnswerForTopic(getAccumulatedQuestions() || initialMessage || "", t ? { title: t.title, desc: t.desc } : undefined);
       return;
     }
-    const { topics } = analyzeSessionTopics();
     setTopicCandidates(topics);
     setTopicSheetMode("detail");
     setShowTopicSheet(true);
