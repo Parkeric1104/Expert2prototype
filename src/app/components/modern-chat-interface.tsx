@@ -593,12 +593,6 @@ ${integratedData.conclusion}
 ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
 
 
-${integratedData.aiOpinionSummary ? `AI 의견
-========
-${integratedData.aiOpinionSummary}
-
-
-` : ''}
 작성일: ${new Date().toLocaleDateString('ko-KR')}
 작성자: LaborCopilot AI 노무사`;
   };
@@ -1599,12 +1593,16 @@ ${integratedData.aiOpinionSummary}
           - 최초 답변이 간단답변(상세답변 아직 없음) → "상세 답변 받기"
           - 최초 답변이 상세답변 이거나, 의견서 플로우로 상세답변을 받은 뒤 → "의견서 작성" */}
       {(() => {
-        const hasMultiTurn = messages.some(m => m.isMultiTurnResponse && m.enhancedData);
-        // 플로팅 버튼 정책 (확정 2026-07-03):
+        // 플로팅 버튼 정책 (확정 2026-07-03 · PRD CHA-008 §3):
         //  - 라벨은 항상 '상세 답변 받기' (변경 조건 없음)
-        //  - 멀티턴 답변 이후에만 노출. 의견서 작성으로 세션 종료 시 미노출
-        //  - 의견서 작성은 각 상세답변 카드의 버튼으로만 진입
-        const showFloating = hasMultiTurn && !opinionFlowStarted && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
+        //  - 노출 조건: '마지막 답변'이 멀티턴 답변인 경우에만 (상세답변을 받으면 사라지고,
+        //    다시 멀티턴 답변을 받으면 재노출 — 프로세스 케이스 다이어그램 정합)
+        //  - 의견서 작성으로 세션 종료 시 미노출. 의견서 작성은 각 상세답변 카드의 버튼으로만 진입
+        const lastAnswer = [...messages].reverse().find(
+          m => !m.isUser && !m.isLoading && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
+        );
+        const lastIsMultiTurn = !!lastAnswer?.isMultiTurnResponse && !!lastAnswer?.enhancedData;
+        const showFloating = lastIsMultiTurn && !opinionFlowStarted && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
         if (!showFloating) return null;
         const floatingLabel = "상세 답변 받기";
         const handleFloatingClick = requestDetailedAnswer;
