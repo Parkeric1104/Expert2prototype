@@ -407,7 +407,7 @@ export function InlineDetailedAnswer({
           {showSources && onWriteOpinion && (
             <div className="mt-5 pt-4 border-t border-border flex items-center justify-between gap-3 flex-wrap">
               <p className="text-[13px] text-muted-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>
-                이 상세답변을 기준으로 AI 노무의견서를 작성해요.
+                이 답변을 기준으로 의견서를 작성할 수 있습니다.
               </p>
               <button
                 onClick={onWriteOpinion}
