@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { X, FileText, ChevronRight, Pencil } from "lucide-react";
+import { X, FileText, ChevronRight } from "lucide-react";
 
 export interface OpinionTopic {
   title: string;
@@ -23,9 +22,6 @@ export function OpinionTopicBottomSheet({
   onSelect,
   mode = "detail",
 }: OpinionTopicBottomSheetProps) {
-  const [customMode, setCustomMode] = useState(false);
-  const [customText, setCustomText] = useState("");
-
   if (!isOpen) return null;
 
   const isOpinion = mode === "opinion";
@@ -33,13 +29,6 @@ export function OpinionTopicBottomSheet({
   const desc = isOpinion
     ? "이번 상담에 여러 주제가 포함되어 있어요. 의견서로 정리할 주제를 선택해 주세요."
     : "이번 상담에 여러 주제가 포함되어 있어요. 상세 답변을 받을 주제를 선택해 주세요.";
-  const placeholder = isOpinion ? "의견서로 작성할 주제를 입력해 주세요." : "상세 답변을 받을 주제를 입력해 주세요.";
-
-  const submitCustom = () => {
-    const t = customText.trim();
-    if (!t) return;
-    onSelect({ title: t.length > 20 ? t.slice(0, 20) + "…" : t, desc: t, basis: t });
-  };
 
   return (
     <>
@@ -89,51 +78,6 @@ export function OpinionTopicBottomSheet({
                 <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0" />
               </button>
             ))}
-
-            {/* 기타 (직접 입력) */}
-            {!customMode ? (
-              <button
-                onClick={() => setCustomMode(true)}
-                className="w-full flex items-center gap-3 text-left px-4 py-3.5 rounded-2xl bg-card border border-dashed border-border hover:border-primary/40 transition-colors"
-              >
-                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-muted text-muted-foreground flex items-center justify-center">
-                  <Pencil className="w-3.5 h-3.5" />
-                </span>
-                <span className="text-sm font-medium text-foreground">기타 (직접 입력)</span>
-              </button>
-            ) : (
-              <div className="rounded-2xl bg-card border border-primary/40 p-3">
-                <textarea
-                  autoFocus
-                  value={customText}
-                  onChange={(e) => setCustomText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      submitCustom();
-                    }
-                  }}
-                  rows={2}
-                  placeholder={placeholder}
-                  className="w-full bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground resize-none"
-                />
-                <div className="flex justify-end gap-2 mt-2">
-                  <button
-                    onClick={() => { setCustomMode(false); setCustomText(""); }}
-                    className="px-3 py-1.5 rounded-full text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={submitCustom}
-                    disabled={!customText.trim()}
-                    className="px-4 py-1.5 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-40"
-                  >
-                    이 주제로 작성
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
