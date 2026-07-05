@@ -1610,10 +1610,13 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                     onSourceClick={handleLawClick}
                     reflected={message.hasAIOpinion || false}
                     onOpenDebate={isHistoryView ? undefined : () => openAIDebate(message.id)}
-                    onWriteOpinion={isHistoryView ? undefined : () => {
-                      // 답변별 의견서 작성: 해당 상세답변 기준으로 즉시 문서 생성 + 세션 종료 (정책 확정 2026-07-03)
-                      setOpinionFlowStarted(true);
-                      setLastDraftTopicTitle(topicTitle);
+                    onWriteOpinion={() => {
+                      // 답변별 의견서 작성: 해당 상세답변 기준으로 즉시 문서 생성.
+                      // 라이브에서는 세션 종료(정책 확정 2026-07-03), 이력 보기에서는 문서만 생성(읽기 전용)
+                      if (!isHistoryView) {
+                        setOpinionFlowStarted(true);
+                        setLastDraftTopicTitle(topicTitle);
+                      }
                       finalizeDraftDocument(topicTitle, basisQ);
                     }}
                   />
