@@ -10,6 +10,7 @@ import { HistorySidebarPanel } from "@/app/components/history-sidebar-panel";
 import { ChatLeaveConfirmModal } from "@/app/components/chat-leave-confirm-modal";
 import { ServiceFeedbackModal } from "@/app/components/service-feedback-modal";
 import { Toaster } from "@/app/components/ui/sonner";
+import { getHistorySession, ChatHistorySession } from "@/app/data/chat-history";
 
 export default function App() {
   const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding">("home");
@@ -33,6 +34,7 @@ export default function App() {
   const [selectedPolicy, setSelectedPolicy] = useState<EmbeddingCorrectionPolicy | null>(null);
   const [pendingPoliciesCount, setPendingPoliciesCount] = useState<number>(0);
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
+  const [historySession, setHistorySession] = useState<ChatHistorySession | null>(null); // 채팅 이력 보기(전체화면 복원)
 
   // pending 정책 개수 확인 (테스트용: 3개)
   useEffect(() => {
@@ -47,6 +49,7 @@ export default function App() {
   }, [isAdmin]);
 
   const handleStartChat = (query: string, laws: string[], promptRelatedLaws?: string[], promptQuestionType?: string, promptContextType?: string) => {
+    setHistorySession(null); // 새 질문 시작 시 이력 보기 해제
     setChatQuery(query);
     setSelectedLaws(laws);
     setRelatedLaws(promptRelatedLaws || []); // 추천 질문의 관련 법령 저장
@@ -59,6 +62,7 @@ export default function App() {
   const handleNewChat = () => {
     setChatQuery("");
     setSelectedLaws([]);
+    setHistorySession(null);
     setCurrentView("home");
     setCurrentStep(1);
   };
@@ -101,10 +105,16 @@ export default function App() {
   };
 
   const handleViewChatHistory = (chatId: string) => {
-    // 채팅 이력 보기 (읽기 전용)
-    console.log("Viewing chat history:", chatId);
-    // 여기서는 실제로 해당 채팅을 불러와서 읽기 전용으로 표시
-    // 현재는 콘솔 로그만 출력
+    // 채팅 이력 보기 → 채팅 전체 화면으로 전환하여 이전 대화 그대로 복원 (읽기 전용)
+    const session = getHistorySession(chatId);
+    if (!session) return;
+    setHistorySession(session);
+    setChatQuery("");
+    setSelectedLaws([]);
+    setContextType(undefined);
+    setQuestionType(undefined);
+    setCurrentView("chat");
+    setCurrentStep(3);
     setShowSidebar(false);
   };
 
@@ -250,7 +260,9 @@ export default function App() {
 
       {currentView === "chat" && (
         <ModernChatInterface
+          key={historySession ? `history-${historySession.id}` : "live"}
           initialMessage={chatQuery}
+          historySession={historySession ?? undefined}
           selectedLaws={selectedLaws}
           onOpenLawSelector={handleOpenLawSelector}
           onStepChange={handleStepChange}

@@ -33,10 +33,12 @@ import {
   DollarSign,
   ClipboardCheck,
   UserCheck,
-  Info
+  Info,
+  History
 } from "lucide-react";
 import { toast } from "sonner";
 import { getDummyResponse } from "@/app/data/dummy-responses";
+import { ChatHistorySession } from "@/app/data/chat-history";
 import { validateQuestion, ValidationReason } from "@/app/utils/validate-question";
 import {
   AlertDialog,
@@ -111,6 +113,7 @@ interface ModernChatInterfaceProps {
   contextType?: string; // 프로세스 유형: 멀티턴 맥락 수 (single=즉시 의견서 / multi=주제선택 팝업)
   requestDraftDocument?: boolean; // 외부에서 의견서 작성 트리거
   onDraftDocumentHandled?: () => void; // 트리거 처리 완료 콜백
+  historySession?: ChatHistorySession; // 채팅 이력 보기(전체화면 복원, 읽기 전용)
 }
 
 // 배경 아이콘 데이터 - 메인 화면과 동일
@@ -152,7 +155,9 @@ export function ModernChatInterface({
   contextType,
   requestDraftDocument,
   onDraftDocumentHandled,
+  historySession,
 }: ModernChatInterfaceProps) {
+  const isHistoryView = !!historySession; // 읽기 전용 이력 보기
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -652,6 +657,38 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
       }, delay);
     }
   }, [initialMessage, questionType]);
+
+  // 채팅 이력 보기: 저장된 대화를 그대로 복원 (읽기 전용). enhancedData는 근거 질문으로 생성.
+  useEffect(() => {
+    if (!historySession) return;
+    let seq = 0;
+    let lastUserText = "";
+    const restored: Message[] = [];
+    for (const turn of historySession.turns) {
+      if (turn.role === "user") {
+        lastUserText = turn.text || "";
+        restored.push({ id: `h-${seq++}`, text: turn.text || "", isUser: true, lawCategory: detectLawCategory(turn.text || "") });
+      } else {
+        const basis = turn.basedOn || lastUserText;
+        const data = generateIntegratedResponse(basis);
+        // 읽기 전용이므로 AI 상세의견 카드는 노출하지 않음(상호작용 방지)
+        const enhancedData = { ...data, aiOpinionSummary: undefined };
+        restored.push({
+          id: `h-${seq++}`,
+          text: "",
+          isUser: false,
+          enhancedData,
+          isSimpleResponse: turn.answerType === "simple",
+          isEnhancedResponse: turn.answerType === "enhanced",
+          isMultiTurnResponse: turn.answerType === "multiturn",
+        });
+      }
+    }
+    setMessages(restored);
+    onStepChange?.(3);
+    setCurrentStep(3);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historySession]);
 
   // 휴먼피드백(사실관계 확인) 메시지 생성 — 최초 질문이 상세 답변일 때만 사용
   const makeFeedbackMessage = (): Message => ({
@@ -1440,13 +1477,14 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
   // 휴먼피드백 대기 중: 입력영역 비활성화. '질문 수정'/추천질문 선택 시(feedbackEditMode)에만 편집 허용
   const feedbackPending = messages.some(m => m.needsFeedback);
   const isInputDisabled =
-    chatEnded || isDebateInProgress || isAnswerLoading || isStreaming || (feedbackPending && !feedbackEditMode);
+    isHistoryView || chatEnded || isDebateInProgress || isAnswerLoading || isStreaming || (feedbackPending && !feedbackEditMode);
 
   // 파일 첨부 비활성화: 최초 질문 이후 (첨부는 최초 1회만)
   const isFileUploadDisabled = chatEnded || messages.filter(m => m.isUser).length >= 1;
 
   // 비활성화 사유에 따른 placeholder 텍스트
   const getPlaceholder = (): string => {
+    if (isHistoryView) return "저장된 상담 이력입니다. 새 질문은 '새 채팅'에서 진행해 주세요.";
     if (chatEnded) return "답변이 제한되어 상담이 종료되었습니다.";
     if (feedbackPending && !feedbackEditMode) return "계속 진행하기 또는 질문 수정을 선택해 주세요.";
     if (isDebateInProgress) return "AI 상세의견 진행 중...";
@@ -1458,6 +1496,18 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
+      {/* 읽기 전용 이력 보기 배너 */}
+      {isHistoryView && historySession && (
+        <div className="relative z-20 shrink-0 px-6 pt-4">
+          <div className="max-w-3xl mx-auto flex items-center gap-2 rounded-xl border border-border/60 bg-muted/60 px-4 py-2.5">
+            <History className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="text-sm text-foreground font-medium" style={{ wordBreak: "keep-all" }}>
+              저장된 상담 이력 · 읽기 전용
+            </span>
+            <span className="text-xs text-muted-foreground truncate">— {historySession.title} ({historySession.date})</span>
+          </div>
+        </div>
+      )}
       {/* Chat Messages Area — 배경은 App 루트 그라데이션을 그대로 노출 (메인 화면과 동일) */}
       <div className="flex-1 relative z-10 px-6 overflow-hidden">
         <div className="max-w-3xl mx-auto h-full flex flex-col">
@@ -1538,7 +1588,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                       onLawClick={handleLawClick}
                       onStreamingChange={setIsStreaming}
                       onError={() => markMessageError(message.id)}
-                      stream
+                      stream={!isHistoryView}
                     />
                   );
                 })()}
@@ -1555,12 +1605,12 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                     reviewContent={message.enhancedData.reviewContent}
                     sources={message.enhancedData.sources}
                     aiOpinion={message.enhancedData.aiOpinionSummary}
-                    stream
+                    stream={!isHistoryView}
                     onStreamingChange={setIsStreaming}
                     onSourceClick={handleLawClick}
                     reflected={message.hasAIOpinion || false}
-                    onOpenDebate={() => openAIDebate(message.id)}
-                    onWriteOpinion={() => {
+                    onOpenDebate={isHistoryView ? undefined : () => openAIDebate(message.id)}
+                    onWriteOpinion={isHistoryView ? undefined : () => {
                       // 답변별 의견서 작성: 해당 상세답변 기준으로 즉시 문서 생성 + 세션 종료 (정책 확정 2026-07-03)
                       setOpinionFlowStarted(true);
                       setLastDraftTopicTitle(topicTitle);
@@ -1607,7 +1657,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
           m => !m.isUser && !m.isLoading && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
         );
         const lastIsMultiTurn = !!lastAnswer?.isMultiTurnResponse && !!lastAnswer?.enhancedData;
-        const showFloating = lastIsMultiTurn && !opinionFlowStarted && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
+        const showFloating = !isHistoryView && lastIsMultiTurn && !opinionFlowStarted && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
         if (!showFloating) return null;
         const floatingLabel = "상세 답변 받기";
         const handleFloatingClick = requestDetailedAnswer;

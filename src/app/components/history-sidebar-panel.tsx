@@ -25,13 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/app/components/ui/dialog";
+import { CHAT_HISTORY } from "@/app/data/chat-history";
 
 interface ChatHistoryItem {
   id: string;
@@ -69,66 +63,18 @@ export function HistorySidebarPanel({
 }: HistorySidebarPanelProps) {
   const [expandedChat, setExpandedChat] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [viewTargetId, setViewTargetId] = useState<string | null>(null); // 채팅 이력보기(읽기 전용) 대상
 
-  // Mock chat history data (간략화된 버전)
-  const initialChatHistory: ChatHistoryItem[] = [
-    {
-      id: "1",
-      title: "구내식당 이동 중 사고 업무상 재해 검토",
-      initialQuestion: "점심시간에 회사 구내식당으로 이동하던 중 계단에서 미끄러져 발목을 다쳤습니다...",
-      finalAnswer: {
-        summary: "해당 사고는 사업주의 지배·관리 하에 있다고 볼 수 있는 '구내식당 이동' 중 발생하였으므로...",
-        fullDetails: "",
-        laws: ["산업재해보상보험법 제37조"],
-      },
-      date: "2026-02-24",
-      category: "산업재해 · 안전보건",
-      hasDocument: true,
-      documentName: "구내식당_사고_법률검토의견서.pdf",
-    },
-    {
-      id: "2",
-      title: "수습기간 만료 통보의 정당성 검토",
-      initialQuestion: "입사 3개월 수습기간 만료 직전에 '업무 능력 부족'을 이유로...",
-      finalAnswer: {
-        summary: "수습기간 만료 통보는 실질적으로 해고에 해당하므로...",
-        fullDetails: "",
-        laws: ["근로기준법 제23조"],
-      },
-      date: "2026-02-23",
-      category: "해고 · 징계",
-      hasDocument: true,
-      documentName: "수습기간_해고_법률검토의견서.pdf",
-    },
-    {
-      id: "3",
-      title: "주 52시간 근로시간 위반 여부 분석",
-      initialQuestion: "우리 회사는 주 60시간 정도 근무하고 있습니다...",
-      finalAnswer: {
-        summary: "주 52시간을 초과하는 근로는 근로기준법 위반입니다...",
-        fullDetails: "",
-        laws: ["근로기준법 제50조"],
-      },
-      date: "2026-02-22",
-      category: "근로시간 · 휴게",
-      hasDocument: false,
-    },
-    {
-      id: "4",
-      title: "연차휴가 미사용 수당 계산 방법",
-      initialQuestion: "퇴직 예정인데 연차 10일을 사용하지 못했습니다...",
-      finalAnswer: {
-        summary: "미사용 연차휴가에 대해서는 통상임금으로 계산한 수당을...",
-        fullDetails: "",
-        laws: ["근로기준법 제60조"],
-      },
-      date: "2026-02-21",
-      category: "휴가 · 휴직",
-      hasDocument: true,
-      documentName: "연차수당_계산_법률검토의견서.pdf",
-    },
-  ];
+  // 채팅 이력 — 공용 더미(추천질문 4유형별) 기반. 카드 표시용으로 매핑
+  const initialChatHistory: ChatHistoryItem[] = CHAT_HISTORY.map((h) => ({
+    id: h.id,
+    title: h.title,
+    initialQuestion: h.initialQuestion,
+    finalAnswer: { summary: h.summary, fullDetails: "", laws: h.laws },
+    date: h.date,
+    category: h.category,
+    hasDocument: h.hasDocument,
+    documentName: h.documentName,
+  }));
 
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>(initialChatHistory);
 
@@ -146,13 +92,11 @@ export function HistorySidebarPanel({
     setExpandedChat(expandedChat === chatId ? null : chatId);
   };
 
-  // 채팅 이력보기: 패널 내 읽기 전용 다이얼로그로 표시
-  // (onViewChatHistory는 App 쪽 스텁이 사이드바를 닫아버려 다이얼로그가 사라지므로 호출하지 않음)
+  // 채팅 이력보기: 채팅 전체 화면으로 전환하여 이전 대화 그대로 복원 (2026-07-06)
   const handleViewHistory = (chatId: string) => {
-    setViewTargetId(chatId);
+    onViewChatHistory?.(chatId);
+    onClose();
   };
-
-  const viewTarget = chatHistory.find((c) => c.id === viewTargetId) || null;
 
   const handleConfirmDelete = () => {
     if (!deleteTargetId) return;
@@ -356,58 +300,6 @@ export function HistorySidebarPanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* 채팅 이력보기 — 읽기 전용 다이얼로그 */}
-      <Dialog open={!!viewTarget} onOpenChange={(open) => !open && setViewTargetId(null)}>
-        <DialogContent className="max-w-lg rounded-2xl shadow-xl">
-          {viewTarget && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-left" style={{ wordBreak: "keep-all" }}>
-                  {viewTarget.title}
-                </DialogTitle>
-                <DialogDescription className="text-left flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {viewTarget.date} · {viewTarget.category} · 읽기 전용
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
-                {/* 질문 (사용자) */}
-                <div className="flex justify-end">
-                  <p className="max-w-[85%] rounded-2xl px-4 py-2.5 bg-indigo-600 text-white text-sm" style={{ wordBreak: "keep-all" }}>
-                    {viewTarget.initialQuestion}
-                  </p>
-                </div>
-                {/* 답변 (AI) */}
-                <div className="flex justify-start">
-                  <div className="max-w-[90%] rounded-2xl px-4 py-3 bg-card border border-border/60 shadow-sm space-y-2.5">
-                    <p className="text-sm text-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>
-                      {viewTarget.finalAnswer.summary}
-                    </p>
-                    {viewTarget.finalAnswer.laws.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border">
-                        {viewTarget.finalAnswer.laws.map((law) => (
-                          <span key={law} className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
-                            {law}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {/* 생성 문서 */}
-                {viewTarget.hasDocument && viewTarget.documentName && (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/60 text-xs text-muted-foreground">
-                    <FileText className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
-                    {viewTarget.documentName}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
