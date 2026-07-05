@@ -732,9 +732,14 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
   //  - 맥락 수는 클릭 시점의 세션 누적 질문으로 '동적' 판단 (추천질문 태그가 아님):
   //    같은 맥락(F1)만 있으면 즉시 상세답변, 다른 맥락 질문(F2)이 유입된 후에는 주제 선택 팝업 경유
   const requestDetailedAnswer = () => {
+    // 맥락 수 판단 — 추천질문 프로세스 유형(유형1~4) 우선:
+    //  - contextType 'single'(유형1·3): 항상 즉시 상세답변 / 'multi'(유형2·4): 항상 주제 선택 팝업
+    //  - 자유질문(태그 없음): 클릭 시점의 세션 실제 맥락 수로 동적 판단 (케이스 다이어그램)
     const userQs = messages.filter(m => m.isUser && !isSystemUserText(m.text)).map(m => m.text);
     const distinctContexts = new Set(userQs.map(q => detectLawCategory(q)));
-    const isMultiContext = distinctContexts.size >= 2;
+    const dynamicMulti = distinctContexts.size >= 2;
+    const isMultiContext =
+      contextType === "single" ? false : contextType === "multi" ? true : dynamicMulti;
 
     const { topics } = analyzeSessionTopics();
     if (!isMultiContext) {
