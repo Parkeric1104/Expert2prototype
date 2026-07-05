@@ -1699,14 +1699,12 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
       />
 
       {/* Chat Leave Confirm Modal */}
+      {/* 나가기 확인 — 의견서 작성 버튼 미노출(정책: 의견서 진입점은 상세답변 카드 버튼으로 단일화.
+          상세답변이 n개일 때 어떤 답변 기준인지 모호 + 오조작 시 세션 종료 비용) */}
       <ChatLeaveConfirmModal
         isOpen={showLeaveConfirmModal}
         onClose={() => setShowLeaveConfirmModal(false)}
         onConfirm={pendingLeaveAction}
-        onDraftDocument={() => {
-          // 모드에 따라 자동으로 처리 (messageId 없으면 기본 동작)
-          handleDraftDocument();
-        }}
       />
 
       {/* Session Limit Modal */}

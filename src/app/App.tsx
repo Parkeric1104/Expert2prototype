@@ -302,15 +302,12 @@ export default function App() {
       {/* Toast Notifications */}
       <Toaster />
 
-      {/* Leave Confirm Modal - 모드별 버튼 구성 상이 */}
+      {/* Leave Confirm Modal — 의견서 작성 버튼 미노출 (정책: 의견서 진입점은 상세답변 카드
+          버튼으로 단일화. 상세답변 n개 시 어떤 답변 기준인지 모호 + 오조작 시 세션 종료 비용) */}
       <ChatLeaveConfirmModal
         isOpen={showLeaveConfirmModal}
         onClose={() => setShowLeaveConfirmModal(false)}
         onConfirm={handleLeaveConfirm}
-        onDraftDocument={hasChatMessages ? () => {
-          setShowLeaveConfirmModal(false);
-          setRequestDraftDocument(true);
-        } : undefined}
       />
     </div>
   );
