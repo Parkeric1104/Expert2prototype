@@ -158,6 +158,21 @@ export function ModernChatInterface({
   const [isTyping, setIsTyping] = useState(false);
   // 가드레일 차단 시 채팅 종료 (재시도 불가)
   const [chatEnded, setChatEnded] = useState(false);
+  // 휴먼피드백 진행 중 입력영역 잠금 — '질문 수정'/추천질문 선택 시에만 편집 허용 (2026-07-06 개선)
+  const [feedbackEditMode, setFeedbackEditMode] = useState(false);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+
+  // 휴먼피드백이 해소되면(진행/재질문) 편집 모드 초기화
+  useEffect(() => {
+    if (!messages.some(m => m.needsFeedback)) setFeedbackEditMode(false);
+  }, [messages]);
+
+  // 피드백 카드에서 질문 수정/추천질문 선택 → 입력창 잠금 해제 + 자동 입력 + 포커스
+  const handleFeedbackQuestionSelect = (question: string) => {
+    setFeedbackEditMode(true);
+    setInputValue(question);
+    setTimeout(() => chatInputRef.current?.focus(), 0);
+  };
   const [showDocPreview, setShowDocPreview] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [documentContent, setDocumentContent] = useState("");
@@ -1423,7 +1438,10 @@ ${integratedData.aiOpinionSummary}
 
   // 입력 비활성화 조건: 채팅 종료(가드레일) OR 토론 진행 중 OR 답변 생성 중 OR 스트리밍 출력 중
   // 의견서 작성 이후에도 입력영역은 활성 유지 — 질문 전송 시 세션 전환 팝업 노출(submitQuestion의 opinionFlowStarted 가드)
-  const isInputDisabled = chatEnded || isDebateInProgress || isAnswerLoading || isStreaming;
+  // 휴먼피드백 대기 중: 입력영역 비활성화. '질문 수정'/추천질문 선택 시(feedbackEditMode)에만 편집 허용
+  const feedbackPending = messages.some(m => m.needsFeedback);
+  const isInputDisabled =
+    chatEnded || isDebateInProgress || isAnswerLoading || isStreaming || (feedbackPending && !feedbackEditMode);
 
   // 파일 첨부 비활성화: 최초 질문 이후 (첨부는 최초 1회만)
   const isFileUploadDisabled = chatEnded || messages.filter(m => m.isUser).length >= 1;
@@ -1431,6 +1449,7 @@ ${integratedData.aiOpinionSummary}
   // 비활성화 사유에 따른 placeholder 텍스트
   const getPlaceholder = (): string => {
     if (chatEnded) return "답변이 제한되어 상담이 종료되었습니다.";
+    if (feedbackPending && !feedbackEditMode) return "계속 진행하기 또는 질문 수정을 선택해 주세요.";
     if (isDebateInProgress) return "AI 상세의견 진행 중...";
     if (isStreaming) return "답변 출력 중...";
     if (isAnswerLoading) return "답변 생성 중...";
@@ -1478,7 +1497,7 @@ ${integratedData.aiOpinionSummary}
                     originalQuestion={messages.find(m => m.isUser)?.text || ""}
                     onSubmitRevision={handleRevisedQuestion}
                     suggestedQuestions={message.suggestedQuestions}
-                    onQuestionSelect={(question) => setInputValue(question)}
+                    onQuestionSelect={handleFeedbackQuestionSelect}
                   />
                 )}
                 {/* 가드레일 차단 등 일반 텍스트 응답 */}
@@ -1610,6 +1629,7 @@ ${integratedData.aiOpinionSummary}
             {/* Input Row */}
             <div className="flex items-center gap-3 px-4 py-3">
               <input
+                ref={chatInputRef}
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
