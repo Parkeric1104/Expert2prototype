@@ -105,8 +105,9 @@ export function SimpleResponseCard({
   };
 
   return (
-    <div className="mb-8">
-      <div className="max-w-[860px] flex flex-col">
+    <div className="flex justify-start mb-6">
+      {/* 다른 답변 유형(상세·멀티턴)과 동일한 흰색 카드 컨테이너로 통일 */}
+      <div className="w-full max-w-[760px] bg-card rounded-2xl shadow-sm border border-border/60 px-6 py-5 flex flex-col">
         {/* ── 제목 + 복사 ── */}
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-lg font-bold text-foreground leading-snug" style={{ wordBreak: "keep-all" }}>
@@ -160,7 +161,7 @@ export function SimpleResponseCard({
 
         {/* ── 근거 법령 ── */}
         {visibleSources.length > 0 && (
-          <div className="mt-10">
+          <div className="mt-6 pt-4 border-t border-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Scale className="w-4 h-4 text-foreground" />
