@@ -650,7 +650,6 @@ export const getDummyResponse = (userMessage: string): EnhancedResponseData => {
             text: "반대로 독립적으로 사업을 영위하며 스스로 위험을 부담하는 경우에는 근로자로 보기 어려울 수 있습니다.",
           },
         ],
-        note: "실제 근무 형태에 따라 판단이 달라지므로, 구체적 사실관계를 바탕으로 검토가 필요합니다.",
       },
       sources: [
         {
