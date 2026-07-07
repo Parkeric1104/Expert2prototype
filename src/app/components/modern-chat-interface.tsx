@@ -1511,8 +1511,8 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
               const isSystemUserMsg = isSystemUserText(message.text);
               const userMessagesUpToNow = messages.slice(0, index + 1).filter(m => m.isUser && !isSystemUserText(m.text) && !m.isError).length;
               const remainingQuestions = MAX_QUESTIONS - userMessagesUpToNow;
-              // 잔여 질문횟수 안내 숨김: 시스템 메시지 / 의견서 작성 플로우 시작(멀티턴 잠금) / 에러 턴(횟수 미소진)
-              const hideRemaining = isSystemUserMsg || opinionFlowStarted || message.isError;
+              // 잔여 질문횟수 안내 숨김: 이력 보기 / 시스템 메시지 / 의견서 작성 플로우 시작(멀티턴 잠금) / 에러 턴(횟수 미소진)
+              const hideRemaining = isHistoryView || isSystemUserMsg || opinionFlowStarted || message.isError;
 
               return (
                 <div key={message.id}>

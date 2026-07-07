@@ -115,6 +115,38 @@ export const CHAT_HISTORY: ChatHistorySession[] = [
     hasDocument: true,
     documentName: "구내식당_사고_산재_법률검토의견서.pdf",
   },
+
+  // ── 혼합 케이스: 간단답변(1) + 멀티턴(2) + 상세답변(3) ──
+  {
+    id: "h5",
+    title: "연차·임금·퇴직금 종합 상담 이력",
+    date: "2026-02-20",
+    category: "휴가 · 휴직",
+    contextType: "multi",
+    answerTrack: "simple",
+    turns: [
+      // 간단답변
+      { role: "user", text: "연차휴가를 쓸 때 회사에 사유를 밝혀야 하나요?" },
+      { role: "ai", answerType: "simple" },
+      // 멀티턴 ×2
+      { role: "user", text: "그럼 반차도 사유 없이 쓸 수 있나요?", basedOn: "연차 반차 사유" },
+      { role: "ai", answerType: "multiturn", basedOn: "연차 반차 사유" },
+      { role: "user", text: "연차를 미리 당겨서 사용할 수도 있나요?", basedOn: "연차 선사용" },
+      { role: "ai", answerType: "multiturn", basedOn: "연차 선사용" },
+      // 상세답변 ×3
+      { role: "user", text: "퇴직 시 미사용 연차휴가 수당은 어떻게 계산하나요?", basedOn: "연차휴가 미사용 수당" },
+      { role: "ai", answerType: "enhanced", basedOn: "연차휴가 미사용 수당" },
+      { role: "user", text: "포괄임금제에서도 연장근로수당을 따로 지급해야 하나요?", basedOn: "포괄임금제 연장근로수당" },
+      { role: "ai", answerType: "enhanced", basedOn: "포괄임금제 연장근로수당" },
+      { role: "user", text: "퇴직금 중간정산은 언제 가능한가요?", basedOn: "퇴직금 중간정산" },
+      { role: "ai", answerType: "enhanced", basedOn: "퇴직금 중간정산" },
+    ],
+    initialQuestion: "연차휴가를 쓸 때 회사에 사유를 밝혀야 하나요?",
+    summary: "연차 사용 사유 고지 의무부터 미사용 연차수당·포괄임금·퇴직금 중간정산까지 상세 검토했습니다.",
+    laws: ["근로기준법 제60조", "근로기준법 제56조", "근로자퇴직급여 보장법 제8조"],
+    hasDocument: true,
+    documentName: "연차_임금_퇴직금_종합_법률검토의견서.pdf",
+  },
 ];
 
 export const getHistorySession = (id: string): ChatHistorySession | undefined =>
