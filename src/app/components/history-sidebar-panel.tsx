@@ -225,19 +225,11 @@ export function HistorySidebarPanel({
                   {/* Accordion Content */}
                   {expandedChat === chat.id && (
                     <div className="border-t border-border p-3 space-y-3 bg-muted/20">
-                      {/* 질문 전체 노출 */}
+                      {/* 질문 전체 노출 (답변 영역은 채팅 이력보기에서 확인) */}
                       <div className="bg-background/60 rounded p-2">
                         <p className="text-xs text-muted-foreground mb-1">질문</p>
                         <p className="text-xs text-foreground">
                           {chat.initialQuestion}
-                        </p>
-                      </div>
-
-                      {/* 결론 전체 노출 */}
-                      <div className="bg-background/60 rounded p-2">
-                        <p className="text-xs text-muted-foreground mb-1">결론</p>
-                        <p className="text-xs text-foreground">
-                          {chat.finalAnswer.summary}
                         </p>
                       </div>
 
