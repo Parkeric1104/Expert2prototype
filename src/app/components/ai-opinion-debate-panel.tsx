@@ -214,9 +214,15 @@ export function AIOpinionDebatePanel({
                 </button>
               </>
             ) : (
-              <button onClick={handleReflect} className="px-5 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors">
-                AI 의견 반영하기
-              </button>
+              <>
+                {/* SCR-009 목업: 반영 전에도 [돌아가기] 명시 노출 (채팅 화면으로 복귀) */}
+                <button onClick={onClose} className="px-5 py-2 rounded-full border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors">
+                  돌아가기
+                </button>
+                <button onClick={handleReflect} className="px-5 py-2 rounded-full text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors">
+                  AI 의견 반영하기
+                </button>
+              </>
             )}
           </div>
         </div>
