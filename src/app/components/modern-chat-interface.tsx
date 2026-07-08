@@ -612,23 +612,28 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
       };
       setMessages([userMsg]);
 
-      // 가드레일: 부적절/위법/범위 외 질문 차단 (휴먼피드백 미적용)
+      // 가드레일: 부적절/위법/범위 외/무의미 질문 차단 (휴먼피드백 미적용)
       const validation = validateQuestion(initialMessage);
       const blocked =
         questionType === "inappropriate" ||
         validation.reason === "inappropriate" ||
         validation.reason === "unethical" ||
-        validation.reason === "out-of-scope";
+        validation.reason === "out-of-scope" ||
+        validation.reason === "meaningless";
 
       // 차단 질문(가드레일) → 거부 메시지. 세션 유지·카운트 제외(PRD RIS-001, CHA-004)
       if (blocked) {
+        const refusal =
+          validation.reason === "meaningless"
+            ? "질문을 이해하지 못했습니다. 노무·세법 관련 질문을 구체적으로 입력해 주세요."
+            : GUARDRAIL_REFUSAL;
         onStepChange?.(2);
         setCurrentStep(2);
         setMessages([{ ...userMsg, isError: true }, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
         setTimeout(() => {
           setMessages((prev) => prev.filter(m => !m.isLoading).concat({
             id: (Date.now() + 2).toString(),
-            text: GUARDRAIL_REFUSAL,
+            text: refusal,
             isUser: false,
             isError: true,
           }));
@@ -841,6 +846,9 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
   ) => {
     if (!text.trim()) return;
 
+    // 답변 생성/스트리밍 중에는 전송 차단 (입력 비활성 우회한 초고속 연타·중복 전송 방지)
+    if (messages.some(m => m.isLoading) || isStreaming) return;
+
     // AI 상세의견 진행 중에는 입력 불가
     const isDebateInProgress = messages.some(m => m.isDebate && !m.debateHistory);
     if (isDebateInProgress) {
@@ -876,14 +884,15 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
     // 이전 질문·피드백을 제거하고 편집 질문으로 교체한 뒤, 피드백 재노출 없이 바로 상세 답변
     if (!hasPriorAnswer) {
       const v = validateQuestion(savedInput);
-      const blocked = v.reason === "inappropriate" || v.reason === "unethical" || v.reason === "out-of-scope";
+      const blocked = v.reason === "inappropriate" || v.reason === "unethical" || v.reason === "out-of-scope" || v.reason === "meaningless";
       if (blocked) {
         // 가드레일 거부: 세션 유지·카운트 제외(PRD RIS-001, CHA-004)
+        const refusal = v.reason === "meaningless" ? "질문을 이해하지 못했습니다. 노무·세법 관련 질문을 구체적으로 입력해 주세요." : GUARDRAIL_REFUSAL;
         setMessages([{ ...userMsg, isError: true }, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
         setTimeout(() => {
           setMessages((prev) => prev.filter(m => !m.isLoading).concat({
             id: (Date.now() + 2).toString(),
-            text: GUARDRAIL_REFUSAL,
+            text: refusal,
             isUser: false,
             isError: true,
           }));
@@ -900,14 +909,15 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
     // 가드레일: 부적절/위법/범위 외 질문 차단
     const validation = validateQuestion(savedInput);
     const isBlocked =
-      validation.reason === "inappropriate" || validation.reason === "unethical" || validation.reason === "out-of-scope";
+      validation.reason === "inappropriate" || validation.reason === "unethical" || validation.reason === "out-of-scope" || validation.reason === "meaningless";
     if (isBlocked) {
       // 거부: 세션 유지·카운트 제외 → 잔여 횟수로 멀티턴 지속 가능(PRD CHA-004)
+      const refusal = validation.reason === "meaningless" ? "질문을 이해하지 못했습니다. 노무·세법 관련 질문을 구체적으로 입력해 주세요." : GUARDRAIL_REFUSAL;
       setMessages((prev) => [...prev, { ...userMsg, isError: true }, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
       setTimeout(() => {
         setMessages((prev) => prev.filter(m => !m.isLoading).concat({
           id: (Date.now() + 2).toString(),
-          text: GUARDRAIL_REFUSAL,
+          text: refusal,
           isUser: false,
           isError: true,
         }));
