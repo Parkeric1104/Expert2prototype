@@ -1,5 +1,8 @@
 import { Menu, BookOpen, ChevronLeft } from "lucide-react";
 
+// 사용자 매뉴얼(Figma 덱) — 메인 화면 GNB에서 새 탭으로 오픈
+const USER_MANUAL_URL = "https://www.figma.com/deck/1ZXPBZL2hOhbLcfZiKLBH6";
+
 interface TopHeaderProps {
   variant?: "home" | "chat" | "policy";
   onNewChat?: () => void;
@@ -81,7 +84,7 @@ export function TopHeader({
 
         <nav className="flex items-center gap-5">
           <button
-            onClick={() => console.log("사용자 매뉴얼 열기")}
+            onClick={() => window.open(USER_MANUAL_URL, "_blank", "noopener,noreferrer")}
             className="flex items-center gap-1.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
           >
             <BookOpen className="w-4 h-4" />
