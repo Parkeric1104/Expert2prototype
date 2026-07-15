@@ -25,17 +25,21 @@ export function PolicyRegisterInlineCTA({ onRegister, onDismiss }: PolicyRegiste
   }, []);
 
   return (
-    <div className="w-full flex items-center justify-center gap-1 -mt-3" style={{ wordBreak: "keep-all" }}>
+    // 입력 카드와 짝을 이루는 더블박스 — 입력창 바로 아래에 동일 스타일 박스로 배치
+    <div
+      className="w-full -mt-4 bg-card border border-border/60 rounded-2xl shadow-sm px-4 py-3 flex items-center gap-2"
+      style={{ wordBreak: "keep-all" }}
+    >
       <button
         onClick={() => {
           trackCta("clicked");
           onRegister();
         }}
-        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm text-primary hover:bg-primary/5 transition-colors"
+        className="flex-1 inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors text-left"
       >
-        <FilePlus2 className="w-3.5 h-3.5 flex-shrink-0" />
-        <span>회사 규정을 등록하면 귀사 기준으로 답변받아요</span>
-        <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
+        <FilePlus2 className="w-4 h-4 flex-shrink-0" />
+        <span className="flex-1">회사 규정을 등록하면 귀사 기준으로 답변받아요</span>
+        <ChevronRight className="w-4 h-4 flex-shrink-0" />
       </button>
       <button
         onClick={() => {
