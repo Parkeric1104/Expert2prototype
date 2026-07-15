@@ -14,6 +14,7 @@ import {
   PolicyRegisterInlineCTA,
   POLICY_NUDGE_PENDING_KEY,
   POLICY_NUDGE_DISMISS_KEY,
+  POLICY_NUDGE_TITLE_KEY,
 } from "@/app/components/policy-register-inline-cta";
 
 interface ModernHomeViewProps {
@@ -54,6 +55,10 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
       typeof window !== "undefined" &&
       localStorage.getItem(POLICY_NUDGE_PENDING_KEY) === "1" &&
       localStorage.getItem(POLICY_NUDGE_DISMISS_KEY) !== "1"
+  );
+  // 직전 노무 질문 요약 타이틀(초개인화 문구용)
+  const [policyNudgeTitle] = useState<string>(
+    () => (typeof window !== "undefined" ? localStorage.getItem(POLICY_NUDGE_TITLE_KEY) ?? "" : "")
   );
 
   const fileInputRef    = useRef<HTMLInputElement>(null);
@@ -295,8 +300,12 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
           {/* 미등록 순간 유도 힌트 — 입력 카드 하단에 통합된 섹션(더블박스) */}
           {showPolicyNudge && (
             <PolicyRegisterInlineCTA
+              historyTitle={policyNudgeTitle || undefined}
               onRegister={() => {
-                if (typeof window !== "undefined") localStorage.removeItem(POLICY_NUDGE_PENDING_KEY);
+                if (typeof window !== "undefined") {
+                  localStorage.removeItem(POLICY_NUDGE_PENDING_KEY);
+                  localStorage.removeItem(POLICY_NUDGE_TITLE_KEY);
+                }
                 setShowPolicyNudge(false);
                 onOpenPolicyManagement?.();
               }}

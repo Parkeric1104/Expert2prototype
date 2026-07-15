@@ -16,7 +16,7 @@ import { DocumentCompleteModal } from "@/app/components/document-complete-modal"
 import { AIDebateResultModal } from "@/app/components/ai-debate-result-modal";
 import { ChatLeaveConfirmModal } from "@/app/components/chat-leave-confirm-modal";
 import { SessionLimitModal } from "@/app/components/session-limit-modal";
-import { POLICY_NUDGE_PENDING_KEY } from "@/app/components/policy-register-inline-cta";
+import { POLICY_NUDGE_PENDING_KEY, POLICY_NUDGE_TITLE_KEY } from "@/app/components/policy-register-inline-cta";
 import { 
   Send, 
   Paperclip, 
@@ -118,6 +118,8 @@ interface ModernChatInterfaceProps {
 
 // 미등록 순간 유도 넛지 대상 추천질문 (파일럿: 이 질문 세션 발생 시 메인 배너 트리거)
 const POLICY_CTA_TEST_QUESTION = "취업규칙과 근로계약의 내용이 다르면 어느 것이 우선하나요?";
+// 초개인화 문구용 요약 타이틀 (AI 요약 제목 형태 · 원문 대신 비식별 요약 사용)
+const POLICY_CTA_TEST_TITLE = "취업규칙과 근로계약 우선순위";
 
 // 배경 아이콘 데이터 - 메인 화면과 동일
 const FLOATING_ICONS = [
@@ -170,7 +172,10 @@ export function ModernChatInterface({
     const hasAnswer = messages.some(
       (m) => !m.isUser && !m.isLoading && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
     );
-    if (hasAnswer) localStorage.setItem(POLICY_NUDGE_PENDING_KEY, "1");
+    if (hasAnswer) {
+      localStorage.setItem(POLICY_NUDGE_PENDING_KEY, "1");
+      localStorage.setItem(POLICY_NUDGE_TITLE_KEY, POLICY_CTA_TEST_TITLE);
+    }
   }, [messages, isPolicyCtaTest, isHistoryView]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);

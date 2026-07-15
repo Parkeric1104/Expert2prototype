@@ -12,13 +12,15 @@ const trackCta = (event: "shown" | "clicked" | "dismissed") =>
 // 이력 기반 넛지 상태 키 (chat에서 set, home에서 read)
 export const POLICY_NUDGE_PENDING_KEY = "policy-nudge-pending-v1"; // 사규 관련 노무 세션 발생
 export const POLICY_NUDGE_DISMISS_KEY = "policy-nudge-dismissed-v1"; // '다시 안 보기' 영구 억제
+export const POLICY_NUDGE_TITLE_KEY = "policy-nudge-title-v1"; // 직전 노무 질문 요약 타이틀(초개인화)
 
 interface PolicyRegisterInlineCTAProps {
   onRegister: () => void;
   onDismiss: () => void;
+  historyTitle?: string; // 직전 노무 질문 요약 타이틀 — 있으면 초개인화 문구 노출
 }
 
-export function PolicyRegisterInlineCTA({ onRegister, onDismiss }: PolicyRegisterInlineCTAProps) {
+export function PolicyRegisterInlineCTA({ onRegister, onDismiss, historyTitle }: PolicyRegisterInlineCTAProps) {
   // 노출 시 1회 계측
   useEffect(() => {
     trackCta("shown");
@@ -35,11 +37,19 @@ export function PolicyRegisterInlineCTA({ onRegister, onDismiss }: PolicyRegiste
           trackCta("clicked");
           onRegister();
         }}
-        className="flex-1 inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors text-left"
+        className="flex-1 min-w-0 flex flex-col items-start gap-0.5 text-left"
       >
-        <FilePlus2 className="w-3 h-3 flex-shrink-0" />
-        <span>회사 규정을 등록하면 이를 참조해 더 구체적인 의견을 드려요</span>
-        <ChevronRight className="w-3 h-3 flex-shrink-0" />
+        {historyTitle && (
+          <span className="flex items-center w-full min-w-0 text-xs text-foreground/70">
+            <span className="min-w-0 truncate">「{historyTitle}」</span>
+            <span className="flex-shrink-0 ml-0.5">질문하셨네요?</span>
+          </span>
+        )}
+        <span className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors">
+          <FilePlus2 className="w-3 h-3 flex-shrink-0" />
+          <span>회사 규정을 등록하면 이를 참조해 더 구체적인 의견을 드려요</span>
+          <ChevronRight className="w-3 h-3 flex-shrink-0" />
+        </span>
       </button>
       <button
         onClick={() => {
