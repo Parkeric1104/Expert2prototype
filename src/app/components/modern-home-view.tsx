@@ -178,21 +178,6 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
       {/* 메인 콘텐츠 */}
       <div className="w-full max-w-[760px] flex flex-col items-center gap-7 relative z-10 pt-12 pb-6">
 
-        {/* 미등록 순간 유도 넛지 (이력 기반 · 소프트 배너 · 비차단) */}
-        {showPolicyNudge && (
-          <PolicyRegisterInlineCTA
-            onRegister={() => {
-              if (typeof window !== "undefined") localStorage.removeItem(POLICY_NUDGE_PENDING_KEY);
-              setShowPolicyNudge(false);
-              onOpenPolicyManagement?.();
-            }}
-            onDismiss={() => {
-              if (typeof window !== "undefined") localStorage.setItem(POLICY_NUDGE_DISMISS_KEY, "1");
-              setShowPolicyNudge(false);
-            }}
-          />
-        )}
-
         {/* 아바타 + 인삿말 */}
         <div className="flex flex-col items-center gap-5 text-center">
           <div className="w-[96px] h-[96px] rounded-full bg-primary/10 flex items-center justify-center shadow-sm overflow-hidden">
@@ -316,6 +301,21 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
               파일 첨부 시 노무 관련 질문으로 분류됩니다. 세법 관련 질문은 파일을 제거한 후 질문해 주세요.
             </p>
           </div>
+        )}
+
+        {/* 미등록 순간 유도 힌트 (이력 기반 · 입력창 하단 인라인 · 레이아웃 비침해) */}
+        {showPolicyNudge && (
+          <PolicyRegisterInlineCTA
+            onRegister={() => {
+              if (typeof window !== "undefined") localStorage.removeItem(POLICY_NUDGE_PENDING_KEY);
+              setShowPolicyNudge(false);
+              onOpenPolicyManagement?.();
+            }}
+            onDismiss={() => {
+              if (typeof window !== "undefined") localStorage.setItem(POLICY_NUDGE_DISMISS_KEY, "1");
+              setShowPolicyNudge(false);
+            }}
+          />
         )}
 
         {/* 추천 질문 */}
