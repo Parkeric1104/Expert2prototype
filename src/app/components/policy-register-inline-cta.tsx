@@ -27,7 +27,7 @@ export function PolicyRegisterInlineCTA({ onRegister, onDismiss }: PolicyRegiste
   return (
     // 입력 카드에 통합된 하단 섹션(더블박스) — 상단 구분선으로 입력 영역과 분리, 하단 라운드 상속
     <div
-      className="w-full border-t border-border/60 rounded-b-2xl px-4 py-2.5 flex items-center gap-2"
+      className="w-full border-t border-border/60 rounded-b-2xl bg-muted/50 px-4 py-2.5 flex items-center gap-2"
       style={{ wordBreak: "keep-all" }}
     >
       <button
@@ -38,7 +38,7 @@ export function PolicyRegisterInlineCTA({ onRegister, onDismiss }: PolicyRegiste
         className="flex-1 inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors text-left"
       >
         <FilePlus2 className="w-3 h-3 flex-shrink-0" />
-        <span className="flex-1">회사 규정을 등록하면 귀사 기준으로 답변받아요</span>
+        <span>회사 규정을 등록하면 귀사 기준으로 답변받아요</span>
         <ChevronRight className="w-3 h-3 flex-shrink-0" />
       </button>
       <button
