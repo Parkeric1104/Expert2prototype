@@ -16,7 +16,7 @@ import { DocumentCompleteModal } from "@/app/components/document-complete-modal"
 import { AIDebateResultModal } from "@/app/components/ai-debate-result-modal";
 import { ChatLeaveConfirmModal } from "@/app/components/chat-leave-confirm-modal";
 import { SessionLimitModal } from "@/app/components/session-limit-modal";
-import { PolicyRegisterInlineCTA } from "@/app/components/policy-register-inline-cta";
+import { POLICY_NUDGE_PENDING_KEY } from "@/app/components/policy-register-inline-cta";
 import { 
   Send, 
   Paperclip, 
@@ -114,12 +114,10 @@ interface ModernChatInterfaceProps {
   requestDraftDocument?: boolean; // 외부에서 의견서 작성 트리거
   onDraftDocumentHandled?: () => void; // 트리거 처리 완료 콜백
   historySession?: ChatHistorySession; // 채팅 이력 보기(전체화면 복원, 읽기 전용)
-  onOpenPolicyManagement?: () => void; // 정책 문서 관리 진입 (미등록 CTA 클릭)
 }
 
-// 미등록 순간 유도 CTA 테스트 대상 추천질문 (파일럿: 이 질문에만 적용)
+// 미등록 순간 유도 넛지 대상 추천질문 (파일럿: 이 질문 세션 발생 시 메인 배너 트리거)
 const POLICY_CTA_TEST_QUESTION = "취업규칙과 근로계약의 내용이 다르면 어느 것이 우선하나요?";
-const POLICY_CTA_DISMISS_KEY = "policy-cta-dismissed-v1";
 
 // 배경 아이콘 데이터 - 메인 화면과 동일
 const FLOATING_ICONS = [
@@ -158,18 +156,22 @@ export function ModernChatInterface({
   relatedLaws,
   questionType,
   contextType,
-  onOpenPolicyManagement,
   requestDraftDocument,
   onDraftDocumentHandled,
   historySession,
 }: ModernChatInterfaceProps) {
   const isHistoryView = !!historySession; // 읽기 전용 이력 보기
   const [messages, setMessages] = useState<Message[]>([]);
-  // 미등록 순간 유도 CTA (파일럿: 특정 추천질문에만) — '다시 안 보기' 영구 억제
+  // 미등록 순간 유도 넛지 (파일럿) — 사규 관련 노무 세션 발생 여부 판별 (메인화면에서 이력 기반 노출)
   const isPolicyCtaTest = (initialMessage ?? "").trim() === POLICY_CTA_TEST_QUESTION;
-  const [policyCtaDismissed, setPolicyCtaDismissed] = useState<boolean>(
-    () => typeof window !== "undefined" && localStorage.getItem(POLICY_CTA_DISMISS_KEY) === "1"
-  );
+  // 파일럿 대상 세션에서 답변이 생성되면 '사규 관련 노무 세션 발생'을 기록 → 메인 배너 트리거
+  useEffect(() => {
+    if (isHistoryView || !isPolicyCtaTest || typeof window === "undefined") return;
+    const hasAnswer = messages.some(
+      (m) => !m.isUser && !m.isLoading && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
+    );
+    if (hasAnswer) localStorage.setItem(POLICY_NUDGE_PENDING_KEY, "1");
+  }, [messages, isPolicyCtaTest, isHistoryView]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   // 가드레일 차단 시 채팅 종료 (재시도 불가)
@@ -1649,25 +1651,6 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                 </div>
               );
             })}
-
-            {/* 미등록 순간 유도 CTA — 파일럿: 취업규칙 추천질문 답변에만, 노무 답변 완료 후 노출 */}
-            {(() => {
-              const hasAnswer = messages.some(
-                (m) => !m.isUser && !m.isLoading && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
-              );
-              const showPolicyCta =
-                isPolicyCtaTest && !isHistoryView && !policyCtaDismissed && hasAnswer && !isAnswerLoading && !isStreaming;
-              if (!showPolicyCta) return null;
-              return (
-                <PolicyRegisterInlineCTA
-                  onRegister={() => onOpenPolicyManagement?.()}
-                  onDismiss={() => {
-                    if (typeof window !== "undefined") localStorage.setItem(POLICY_CTA_DISMISS_KEY, "1");
-                    setPolicyCtaDismissed(true);
-                  }}
-                />
-              );
-            })()}
 
             <div ref={messagesEndRef} />
           </div>

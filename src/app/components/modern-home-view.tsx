@@ -10,11 +10,17 @@ import {
   BookOpen, Award, DollarSign, ClipboardCheck, UserCheck
 } from "lucide-react";
 import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
+import {
+  PolicyRegisterInlineCTA,
+  POLICY_NUDGE_PENDING_KEY,
+  POLICY_NUDGE_DISMISS_KEY,
+} from "@/app/components/policy-register-inline-cta";
 
 interface ModernHomeViewProps {
   onStartChat: (query: string, selectedLaws: string[], relatedLaws?: string[], questionType?: string, contextType?: string) => void;
   onOpenLawSelector: () => void;
   selectedLaws: string[];
+  onOpenPolicyManagement?: () => void; // 미등록 넛지 배너 → 정책 문서 관리 진입
 }
 
 const FLOATING_ICONS = [
@@ -35,12 +41,20 @@ const FLOATING_ICONS = [
 const CATEGORIES = ["근로계약", "취업규칙", "인사관리", "모성보호", "임금", "휴일·휴가", "근로시간"];
 const ITEMS_PER_PAGE = 4;
 
-export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }: ModernHomeViewProps) {
+export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onOpenPolicyManagement }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("근로계약");
   const [currentPage, setCurrentPage]   = useState(1);
+
+  // 미등록 순간 유도 넛지 (이력 기반): 사규 관련 노무 세션 발생 + '다시 안 보기' 안 함 → 노출
+  const [showPolicyNudge, setShowPolicyNudge] = useState<boolean>(
+    () =>
+      typeof window !== "undefined" &&
+      localStorage.getItem(POLICY_NUDGE_PENDING_KEY) === "1" &&
+      localStorage.getItem(POLICY_NUDGE_DISMISS_KEY) !== "1"
+  );
 
   const fileInputRef    = useRef<HTMLInputElement>(null);
 
@@ -163,6 +177,21 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws }:
 
       {/* 메인 콘텐츠 */}
       <div className="w-full max-w-[760px] flex flex-col items-center gap-7 relative z-10 pt-12 pb-6">
+
+        {/* 미등록 순간 유도 넛지 (이력 기반 · 소프트 배너 · 비차단) */}
+        {showPolicyNudge && (
+          <PolicyRegisterInlineCTA
+            onRegister={() => {
+              if (typeof window !== "undefined") localStorage.removeItem(POLICY_NUDGE_PENDING_KEY);
+              setShowPolicyNudge(false);
+              onOpenPolicyManagement?.();
+            }}
+            onDismiss={() => {
+              if (typeof window !== "undefined") localStorage.setItem(POLICY_NUDGE_DISMISS_KEY, "1");
+              setShowPolicyNudge(false);
+            }}
+          />
+        )}
 
         {/* 아바타 + 인삿말 */}
         <div className="flex flex-col items-center gap-5 text-center">

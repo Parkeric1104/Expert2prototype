@@ -255,6 +255,7 @@ export default function App() {
           onStartChat={handleStartChat}
           onOpenLawSelector={handleOpenLawSelector}
           selectedLaws={selectedLaws}
+          onOpenPolicyManagement={handleOpenPolicyUpload}
         />
       )}
 
@@ -273,7 +274,6 @@ export default function App() {
           contextType={contextType}
           requestDraftDocument={requestDraftDocument}
           onDraftDocumentHandled={() => setRequestDraftDocument(false)}
-          onOpenPolicyManagement={handleOpenPolicyUpload}
         />
       )}
 
