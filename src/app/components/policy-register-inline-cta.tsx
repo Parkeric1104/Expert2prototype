@@ -38,7 +38,7 @@ export function PolicyRegisterInlineCTA({ onRegister, onDismiss }: PolicyRegiste
         className="flex-1 inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors text-left"
       >
         <FilePlus2 className="w-3 h-3 flex-shrink-0" />
-        <span>회사 규정을 등록하면 귀사 기준으로 답변받아요</span>
+        <span>회사 규정을 등록하면 이를 참조해 더 구체적인 의견을 드려요</span>
         <ChevronRight className="w-3 h-3 flex-shrink-0" />
       </button>
       <button
