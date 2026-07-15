@@ -9,6 +9,7 @@ import { EnhancedChatHistoryModal } from "@/app/components/enhanced-chat-history
 import { HistorySidebarPanel } from "@/app/components/history-sidebar-panel";
 import { ChatLeaveConfirmModal } from "@/app/components/chat-leave-confirm-modal";
 import { ServiceFeedbackModal } from "@/app/components/service-feedback-modal";
+import { POLICY_NUDGE_PENDING_KEY, POLICY_NUDGE_DISMISS_KEY } from "@/app/components/policy-register-inline-cta";
 import { Toaster } from "@/app/components/ui/sonner";
 import { getHistorySession, ChatHistorySession } from "@/app/data/chat-history";
 
@@ -184,14 +185,27 @@ export default function App() {
     }
   };
 
+  // 메인 진입 시 규정등록 배너가 뜰 예정인지 (규정등록 배너 > 피드백 팝업 우선순위)
+  const willShowPolicyNudge = (): boolean => {
+    try {
+      return (
+        localStorage.getItem(POLICY_NUDGE_PENDING_KEY) === "1" &&
+        localStorage.getItem(POLICY_NUDGE_DISMISS_KEY) !== "1"
+      );
+    } catch {
+      return false;
+    }
+  };
+
   const handleLeaveConfirm = () => {
     if (pendingNavigationAction) {
       pendingNavigationAction();
       setPendingNavigationAction(null);
     }
     setShowLeaveConfirmModal(false);
-    // 답변 완료 + 세션 종료 → 노출 빈도 조건 충족 시에만 평가 요청
-    if (shouldShowFeedbackOnLeave()) {
+    // 규정등록 배너가 우선 — 배너가 뜰 예정이면 피드백 팝업은 이번엔 노출하지 않음
+    // (shouldShowFeedbackOnLeave는 카운터를 소모하므로 단축평가로 호출 자체를 건너뜀)
+    if (!willShowPolicyNudge() && shouldShowFeedbackOnLeave()) {
       setShowServiceFeedback(true);
     }
   };
