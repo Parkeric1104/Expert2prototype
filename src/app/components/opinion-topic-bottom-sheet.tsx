@@ -38,29 +38,22 @@ export function OpinionTopicBottomSheet({
     // 딤(스크림) 없음 — 위쪽 대화가 그대로 보이고 스크롤 가능. 닫기는 X, 내리기/올리기는 토글 버튼
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300">
       <div className="mx-auto w-full max-w-3xl px-6 pt-4 pb-7">
-        {/* grabber + 우측 컨트롤(접/펼침 + 닫기) */}
-        <div className="relative flex items-center justify-center mb-3">
+        {/* 우측 컨트롤(접/펼침 + 닫기) — 가운데 드래그 바 제거 */}
+        <div className="flex items-center justify-end gap-1 mb-3">
           <button
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? "펼치기" : "접기"}
-            className="w-10 h-1.5 rounded-full bg-border hover:bg-muted-foreground/40 transition-colors"
-          />
-          <div className="absolute right-0 flex items-center gap-1">
-            <button
-              onClick={() => setCollapsed((c) => !c)}
-              aria-label={collapsed ? "펼치기" : "접기"}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              {collapsed ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-            </button>
-            <button
-              onClick={onClose}
-              aria-label="닫기"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            {collapsed ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          </button>
+          <button
+            onClick={onClose}
+            aria-label="닫기"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* 제목 — 접힘 상태에서도 무엇인지 보이도록 항상 노출 */}
