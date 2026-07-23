@@ -1690,7 +1690,8 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
           m => !m.isUser && !m.isLoading && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
         );
         const lastIsMultiTurn = !!lastAnswer?.isMultiTurnResponse && !!lastAnswer?.enhancedData;
-        const showFloating = !isHistoryView && lastIsMultiTurn && !opinionFlowStarted && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview;
+        // 주제 선택 시트가 열려 있으면(접힘 포함) 플로팅 '상세 답변 받기'는 중복 → 미노출
+        const showFloating = !isHistoryView && lastIsMultiTurn && !opinionFlowStarted && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview && !showTopicSheet;
         if (!showFloating) return null;
         const floatingLabel = "상세 답변 받기";
         const handleFloatingClick = requestDetailedAnswer;
