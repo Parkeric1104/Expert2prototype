@@ -32,8 +32,8 @@ export function OpinionTopicBottomSheet({
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 z-50" onClick={onClose} />
+      {/* Scrim — 비차단(pointer-events-none): 위쪽 대화를 스크롤·열람할 수 있도록 클릭/스크롤을 통과시킴 */}
+      <div className="fixed inset-0 bg-black/10 z-40 pointer-events-none" aria-hidden />
 
       {/* Bottom Sheet */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300">

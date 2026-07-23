@@ -966,23 +966,37 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
   // 누적 세션을 분석해 맥락이 여러 개인지 판단하고, 주제 후보를 추출
   const analyzeSessionTopics = (): { multi: boolean; topics: Array<{ title: string; desc: string; basis: string }> } => {
     const userQs = messages.filter(m => m.isUser && !isSystemUserText(m.text)).map(m => m.text);
-    const trunc = (q: string) => (q.length > 40 ? q.slice(0, 40) + "…" : q);
-    const toTopic = (q: string) => ({ title: detectLawCategory(q), desc: trunc(q), basis: q });
+    // 정규화: '(상세답변)' 마커·공백 차이를 무시해 사실상 같은 질문을 중복 제거
+    const norm = (q: string) => q.replace(/\s*\(상세답변\)\s*/g, "").replace(/\s+/g, " ").trim();
+    const trunc = (q: string) => { const n = norm(q); return n.length > 30 ? n.slice(0, 30) + "…" : n; };
+    const toTopic = (q: string) => ({
+      title: trunc(q),
+      desc: `${detectLawCategory(q)} · 이 쟁점을 중심으로 상세 답변을 정리합니다.`,
+      basis: q,
+    });
 
-    // 제안 주제는 항상 2개: 서로 다른 카테고리를 우선 선별하고, 부족하면 다른 질문으로 채움
+    // 1) 정규화 기준으로 중복 질문 제거 (동일 항목 노출 방지)
+    const uniqQs: string[] = [];
+    const seenQ = new Set<string>();
+    for (const q of userQs) {
+      const k = norm(q);
+      if (k && !seenQ.has(k)) { seenQ.add(k); uniqQs.push(q); }
+    }
+
+    // 2) 서로 다른 카테고리를 우선 선별, 부족하면 다른 질문으로 채움 (최대 2개)
     const seenCat = new Set<string>();
     const picked: string[] = [];
-    for (const q of userQs) {
+    for (const q of uniqQs) {
       const c = detectLawCategory(q);
       if (!seenCat.has(c)) { seenCat.add(c); picked.push(q); }
       if (picked.length === 2) break;
     }
     if (picked.length < 2) {
-      for (const q of userQs) {
+      for (const q of uniqQs) {
         if (!picked.includes(q)) { picked.push(q); if (picked.length === 2) break; }
       }
     }
-    const topics = picked.slice(0, 2).map(toTopic);
+    const topics = picked.map(toTopic);
     return { multi: topics.length >= 2, topics };
   };
 
