@@ -2,7 +2,6 @@ import { defineConfig } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { policyBotApi } from './server/policy-api.mjs'
 
 
 function figmaAssetResolver() {
@@ -27,8 +26,6 @@ export default defineConfig(({ mode }) => ({
     // Tailwind is not being actively used – do not remove them
     react(),
     tailwindcss(),
-    // 기획 정책 챗봇 로컬 API (POC) — 개발서버에서만 동작, 데이터는 data/policy-bot.db
-    policyBotApi(),
   ],
   resolve: {
     alias: {
@@ -36,18 +33,10 @@ export default defineConfig(({ mode }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  build: {
-    rollupOptions: {
-      input: {
-        // 멀티 페이지: 프로토타입 본체 + 내부용 기획 정책 챗봇(별도 주소 /policy-bot.html)
-        main: path.resolve(__dirname, 'index.html'),
-        policyBot: path.resolve(__dirname, 'policy-bot.html'),
-      },
-    },
-  },
   server: {
-    // 다른 인스턴스(5173)와 포트 충돌 방지
-    port: 5273,
-    strictPort: true,
+    // 프리뷰 하니스가 할당하는 PORT를 우선 사용, 없으면 로컬 개발 기본값 5273
+    // (다른 챗/인스턴스와 포트 충돌 시 자동 포트로 안전하게 회피)
+    port: process.env.PORT ? Number(process.env.PORT) : 5273,
+    strictPort: false,
   },
 }))
