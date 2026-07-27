@@ -33,6 +33,15 @@ export default defineConfig(({ mode }) => ({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        // 멀티 페이지: 프로토타입 본체 + 내부용 기획 정책 챗봇(별도 주소 /policy-bot.html)
+        main: path.resolve(__dirname, 'index.html'),
+        policyBot: path.resolve(__dirname, 'policy-bot.html'),
+      },
+    },
+  },
   server: {
     // 다른 인스턴스(5173)와 포트 충돌 방지
     port: 5273,
