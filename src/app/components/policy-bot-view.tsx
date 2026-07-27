@@ -5,7 +5,7 @@
 // 답변 엔진: 기본 오프라인 검색 / VITE_POLICY_BOT_PROVIDER=llm 시 Claude 프록시
 
 import { useEffect, useRef, useState } from "react";
-import { BookOpenText, FileText, Send, Sparkles } from "lucide-react";
+import { BookOpenText, FileText, History, Send, Sparkles } from "lucide-react";
 import {
   generatePolicyBotAnswer,
   PolicyBotSource,
@@ -29,6 +29,23 @@ const SUGGESTED_QUESTIONS = [
 
 const REPO_BLOB_URL = "https://github.com/Parkeric1104/Expert2prototype/blob/main/";
 
+interface ChatLogRow {
+  id: number;
+  question: string;
+  answer: string;
+  sources: string; // JSON 문자열
+  offline: number;
+  created_at: string;
+}
+
+function hasNoSource(log: ChatLogRow): boolean {
+  try {
+    return (JSON.parse(log.sources) as unknown[]).length === 0;
+  } catch {
+    return true;
+  }
+}
+
 // 임베드 모드(위젯 iframe 안에서 열림): 헤더의 프로토타입 이동 링크를 숨기고 여백을 줄인다
 const IS_EMBED = (() => {
   try {
@@ -43,6 +60,8 @@ export function PolicyBotView() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [kb, setKb] = useState<{ source: KbSource; docCount: number }>(getKbStatus());
+  const [showLogs, setShowLogs] = useState(false);
+  const [logs, setLogs] = useState<ChatLogRow[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 로컬 DB(POC)에서 지식 베이스 로드 — 실패 시 번들 문서 유지
@@ -55,6 +74,20 @@ export function PolicyBotView() {
   }, [messages, isLoading]);
 
   const llmEnabled = (import.meta.env.VITE_POLICY_BOT_PROVIDER as string) === "llm";
+
+  const toggleLogs = async () => {
+    const next = !showLogs;
+    setShowLogs(next);
+    if (next) {
+      try {
+        const res = await fetch("/api/policy-bot/logs");
+        const data = await res.json();
+        setLogs(Array.isArray(data.logs) ? data.logs : []);
+      } catch {
+        setLogs([]);
+      }
+    }
+  };
 
   const ask = async (question: string) => {
     const q = question.trim();
@@ -96,21 +129,74 @@ export function PolicyBotView() {
               </p>
             </div>
           </div>
-          {!IS_EMBED && (
-            <a
-              href="./"
-              className="px-4 py-2 rounded-full text-xs font-medium bg-card border border-border text-foreground/70 hover:border-primary/40 transition-all"
-            >
-              프로토타입으로
-            </a>
-          )}
+          <div className="flex items-center gap-2">
+            {kb.source === "local-db" && (
+              <button
+                onClick={toggleLogs}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium border transition-all ${
+                  showLogs
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-card border-border text-foreground/70 hover:border-primary/40"
+                }`}
+              >
+                <History className="w-3.5 h-3.5" />
+                질문 로그
+              </button>
+            )}
+            {!IS_EMBED && (
+              <a
+                href="./"
+                className="px-4 py-2 rounded-full text-xs font-medium bg-card border border-border text-foreground/70 hover:border-primary/40 transition-all"
+              >
+                프로토타입으로
+              </a>
+            )}
+          </div>
         </div>
       </header>
 
       {/* 대화 영역 */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-6">
         <div className="mx-auto w-full max-w-3xl pb-6">
-          {messages.length === 0 && (
+          {showLogs && (
+            <div className="pt-4 animate-in fade-in duration-300">
+              <div className="flex items-baseline justify-between mb-3">
+                <h2 className="text-lg font-bold text-foreground">질문 로그</h2>
+                <span className="text-xs text-muted-foreground">
+                  최근 {logs.length}건 · <span className="text-destructive font-medium">빨간 배지</span>
+                  는 근거 문서를 못 찾은 질문 (문서 보강 후보)
+                </span>
+              </div>
+              {logs.length === 0 && (
+                <div className="bg-card border border-border/60 rounded-xl px-5 py-4 shadow-sm text-sm text-muted-foreground">
+                  아직 저장된 질문이 없어요.
+                </div>
+              )}
+              <div className="flex flex-col gap-2">
+                {logs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="bg-card border border-border/60 rounded-xl px-5 py-4 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-foreground flex-1">{log.question}</p>
+                      {hasNoSource(log) && (
+                        <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-semibold flex-shrink-0">
+                          문서 없음
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{log.answer}</p>
+                    <p className="text-[11px] text-muted-foreground/70 mt-1.5">
+                      {log.created_at} · {log.offline ? "오프라인 검색" : "Claude"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!showLogs && messages.length === 0 && (
             <div className={`${IS_EMBED ? "pt-2" : "pt-10"} animate-in fade-in duration-300`}>
               <h1 className={`${IS_EMBED ? "text-lg" : "text-[22px]"} font-bold text-foreground mb-2`}>
                 세법/노무 도우미의 기획 정책, 무엇이든 물어보세요
@@ -133,7 +219,7 @@ export function PolicyBotView() {
             </div>
           )}
 
-          {messages.map((m, i) =>
+          {!showLogs && messages.map((m, i) =>
             m.role === "user" ? (
               <div key={i} className="flex justify-end mt-6">
                 <div className="bg-primary text-primary-foreground rounded-2xl px-5 py-3 text-sm max-w-[80%]">
@@ -176,7 +262,7 @@ export function PolicyBotView() {
             ),
           )}
 
-          {isLoading && (
+          {!showLogs && isLoading && (
             <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
               <Sparkles className="w-4 h-4 text-primary animate-pulse" />
               정책 문서를 찾는 중
@@ -186,7 +272,8 @@ export function PolicyBotView() {
         </div>
       </div>
 
-      {/* 입력 영역 */}
+      {/* 입력 영역 (로그 보기 중에는 숨김) */}
+      {showLogs ? null : (
       <div className="px-6 pb-6">
         <div className="mx-auto w-full max-w-3xl">
           <form
@@ -216,6 +303,7 @@ export function PolicyBotView() {
           </p>
         </div>
       </div>
+      )}
     </div>
   );
 }

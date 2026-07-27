@@ -5,15 +5,12 @@
 //
 // 지식 소스 (우선순위):
 //   1. 로컬 SQLite DB (POC) — 개발서버의 /api/policy-bot/policies 에서 런타임 로드
-//      (data/policy-bot.db, server/policy-db.mjs — 최초 실행 시 저장소 문서로 자동 시드)
+//      (data/policy-bot.db, server/policy-db.mjs — 최초 실행 시 기획 정책 문서로 자동 시드)
 //   2. 번들 문서(폴백) — API가 없는 환경(GitHub Pages 배포본 등)에서는 빌드 시
-//      raw로 포함된 docs/policies/*.md + ONBOARDING/Guidelines/DESIGN_SYSTEM 사용
+//      raw로 포함된 docs/policies/*.md 사용
 //
+// 범위: **기획 정책 문서만** (PRD Q1 결정 2026-07-27 — 디자인 가이드/온보딩 제외)
 // ⚠️ ECM(OneFFICE) 자동 동기화는 현재 불가(그룹웨어 인증 필요) — docs/policies/README.md 참조.
-
-import onboardingRaw from "../../../ONBOARDING.md?raw";
-import guidelinesRaw from "../../../guidelines/Guidelines.md?raw";
-import designSystemRaw from "../../../DESIGN_SYSTEM.md?raw";
 
 export interface PolicyDoc {
   /** 파일 경로 기반 id */
@@ -58,11 +55,6 @@ function buildDocs(): PolicyDoc[] {
       content,
     });
   }
-  docs.push(
-    { id: "onboarding", title: titleOf(onboardingRaw, "ONBOARDING"), source: "ONBOARDING.md", content: onboardingRaw },
-    { id: "guidelines", title: titleOf(guidelinesRaw, "디자인 가이드"), source: "guidelines/Guidelines.md", content: guidelinesRaw },
-    { id: "design-system", title: titleOf(designSystemRaw, "디자인 시스템"), source: "DESIGN_SYSTEM.md", content: designSystemRaw },
-  );
   return docs;
 }
 

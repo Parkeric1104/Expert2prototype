@@ -47,7 +47,7 @@ function titleOf(content, fallback) {
   return m ? m[1].trim() : fallback;
 }
 
-/** 저장소 문서 → 시드 대상 목록 (프론트 번들 KB와 동일한 소스 셋) */
+/** 시드 대상: 기획 정책 문서만 (PRD Q1 결정 2026-07-27 — 디자인 가이드/온보딩 제외) */
 function collectSeedDocs() {
   const docs = [];
   const policiesDir = path.join(ROOT, "docs", "policies");
@@ -63,20 +63,14 @@ function collectSeedDocs() {
       });
     }
   }
-  for (const [id, rel] of [
-    ["onboarding", "ONBOARDING.md"],
-    ["guidelines", "guidelines/Guidelines.md"],
-    ["design-system", "DESIGN_SYSTEM.md"],
-  ]) {
-    const p = path.join(ROOT, rel);
-    if (!existsSync(p)) continue;
-    const content = readFileSync(p, "utf-8");
-    docs.push({ id, title: titleOf(content, rel), source: rel, content });
-  }
   return docs;
 }
 
 export function seedIfEmpty(database, { force = false } = {}) {
+  // 과거 시드(범위 축소 전)에 들어간 비정책 문서 제거 — 기존 로컬 DB 자동 마이그레이션
+  database
+    .prepare("DELETE FROM policies WHERE id IN ('onboarding', 'guidelines', 'design-system')")
+    .run();
   const count = database.prepare("SELECT COUNT(*) AS n FROM policies").get().n;
   if (count > 0 && !force) return { seeded: 0, skipped: true };
   if (force) database.exec("DELETE FROM policies");
