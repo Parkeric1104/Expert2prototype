@@ -29,6 +29,15 @@ const SUGGESTED_QUESTIONS = [
 
 const REPO_BLOB_URL = "https://github.com/Parkeric1104/Expert2prototype/blob/main/";
 
+// 임베드 모드(위젯 iframe 안에서 열림): 헤더의 프로토타입 이동 링크를 숨기고 여백을 줄인다
+const IS_EMBED = (() => {
+  try {
+    return new URLSearchParams(window.location.search).get("embed") === "1";
+  } catch {
+    return false;
+  }
+})();
+
 export function PolicyBotView() {
   const [messages, setMessages] = useState<BotMessage[]>([]);
   const [input, setInput] = useState("");
@@ -80,12 +89,14 @@ export function PolicyBotView() {
               </p>
             </div>
           </div>
-          <a
-            href="./"
-            className="px-4 py-2 rounded-full text-xs font-medium bg-card border border-border text-foreground/70 hover:border-primary/40 transition-all"
-          >
-            프로토타입으로
-          </a>
+          {!IS_EMBED && (
+            <a
+              href="./"
+              className="px-4 py-2 rounded-full text-xs font-medium bg-card border border-border text-foreground/70 hover:border-primary/40 transition-all"
+            >
+              프로토타입으로
+            </a>
+          )}
         </div>
       </header>
 
@@ -93,8 +104,8 @@ export function PolicyBotView() {
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-6">
         <div className="mx-auto w-full max-w-3xl pb-6">
           {messages.length === 0 && (
-            <div className="pt-10 animate-in fade-in duration-300">
-              <h1 className="text-[22px] font-bold text-foreground mb-2">
+            <div className={`${IS_EMBED ? "pt-2" : "pt-10"} animate-in fade-in duration-300`}>
+              <h1 className={`${IS_EMBED ? "text-lg" : "text-[22px]"} font-bold text-foreground mb-2`}>
                 세법/노무 도우미의 기획 정책, 무엇이든 물어보세요
               </h1>
               <p className="text-sm text-muted-foreground mb-6">
