@@ -1,11 +1,13 @@
 // 기획 정책 챗봇 — 지식 베이스 (Policy KB)
 //
-// 빌드 시점에 저장소 문서를 raw로 불러와 "## 제목" 단위로 청크 분할하고,
-// 간단한 한국어 키워드 스코어링으로 질문과 관련된 청크를 검색한다.
+// 문서를 "## 제목" 단위로 청크 분할하고, 간단한 한국어 키워드 스코어링으로
+// 질문과 관련된 청크를 검색한다.
 //
-// 소스:
-//   - docs/policies/*.md  (ECM 내보내기 문서 — 폴더에 추가하면 자동 포함)
-//   - ONBOARDING.md, guidelines/Guidelines.md, DESIGN_SYSTEM.md
+// 지식 소스 (우선순위):
+//   1. 로컬 SQLite DB (POC) — 개발서버의 /api/policy-bot/policies 에서 런타임 로드
+//      (data/policy-bot.db, server/policy-db.mjs — 최초 실행 시 저장소 문서로 자동 시드)
+//   2. 번들 문서(폴백) — API가 없는 환경(GitHub Pages 배포본 등)에서는 빌드 시
+//      raw로 포함된 docs/policies/*.md + ONBOARDING/Guidelines/DESIGN_SYSTEM 사용
 //
 // ⚠️ ECM(OneFFICE) 자동 동기화는 현재 불가(그룹웨어 인증 필요) — docs/policies/README.md 참조.
 
@@ -64,7 +66,7 @@ function buildDocs(): PolicyDoc[] {
   return docs;
 }
 
-export const POLICY_DOCS: PolicyDoc[] = buildDocs();
+const BUNDLED_DOCS: PolicyDoc[] = buildDocs();
 
 // "##" 헤딩 단위 청크 분할 (헤딩 이전 서두는 문서 제목 섹션으로)
 function chunkDoc(doc: PolicyDoc): PolicyChunk[] {
@@ -94,7 +96,46 @@ function chunkDoc(doc: PolicyDoc): PolicyChunk[] {
   return chunks;
 }
 
-export const POLICY_CHUNKS: PolicyChunk[] = POLICY_DOCS.flatMap(chunkDoc);
+// ── 지식 베이스 상태 (기본: 번들 문서 → initPolicyKb() 성공 시 로컬 DB로 교체) ──
+
+export type KbSource = "bundled" | "local-db";
+
+let currentDocs: PolicyDoc[] = BUNDLED_DOCS;
+let currentChunks: PolicyChunk[] = BUNDLED_DOCS.flatMap(chunkDoc);
+let kbSource: KbSource = "bundled";
+
+export function getKbStatus(): { source: KbSource; docCount: number } {
+  return { source: kbSource, docCount: currentDocs.length };
+}
+
+/**
+ * 로컬 DB API에서 문서를 로드해 지식 베이스를 교체한다.
+ * API가 없거나 실패하면(배포본 등) 번들 문서를 그대로 사용한다.
+ */
+export async function initPolicyKb(): Promise<{ source: KbSource; docCount: number }> {
+  try {
+    const res = await fetch("/api/policy-bot/policies");
+    if (res.ok) {
+      const data = await res.json();
+      const docs: PolicyDoc[] = (data.docs ?? []).map(
+        (d: { id: string; title: string; source: string; content: string }) => ({
+          id: d.id,
+          title: d.title,
+          source: d.source,
+          content: d.content,
+        }),
+      );
+      if (docs.length > 0) {
+        currentDocs = docs;
+        currentChunks = docs.flatMap(chunkDoc);
+        kbSource = "local-db";
+      }
+    }
+  } catch {
+    // API 없음(프로덕션 정적 배포 등) → 번들 문서 유지
+  }
+  return getKbStatus();
+}
 
 // ── 검색 (간단 키워드 스코어링) ──
 // 한국어는 조사 붙은 어절 단위라 완전 일치가 잘 안 되므로,
@@ -140,7 +181,7 @@ export interface RetrievedChunk extends PolicyChunk {
 export function searchPolicyChunks(query: string, k = 4): RetrievedChunk[] {
   const tokens = tokenize(query);
   if (tokens.length === 0) return [];
-  const scored = POLICY_CHUNKS.map((c) => ({ ...c, score: scoreChunk(c, tokens) }))
+  const scored = currentChunks.map((c) => ({ ...c, score: scoreChunk(c, tokens) }))
     .filter((c) => c.score >= tokens.length * 2) // 잡음 컷
     .sort((a, b) => b.score - a.score);
   return scored.slice(0, k);

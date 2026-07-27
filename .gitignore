@@ -10,3 +10,6 @@ dist/
 # 로컬 도구
 .claude/worktrees/
 .DS_Store
+
+# 기획 정책 챗봇 로컬 DB (POC) — 데이터는 각자 로컬에만 보관
+data/

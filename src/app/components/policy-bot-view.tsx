@@ -10,7 +10,7 @@ import {
   generatePolicyBotAnswer,
   PolicyBotSource,
 } from "@/app/services/policy-bot-answer";
-import { POLICY_DOCS } from "@/app/data/policy-kb";
+import { getKbStatus, initPolicyKb, KbSource } from "@/app/data/policy-kb";
 
 interface BotMessage {
   role: "user" | "assistant";
@@ -42,7 +42,13 @@ export function PolicyBotView() {
   const [messages, setMessages] = useState<BotMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [kb, setKb] = useState<{ source: KbSource; docCount: number }>(getKbStatus());
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 로컬 DB(POC)에서 지식 베이스 로드 — 실패 시 번들 문서 유지
+  useEffect(() => {
+    initPolicyKb().then(setKb);
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -85,7 +91,8 @@ export function PolicyBotView() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                문서 {POLICY_DOCS.length}개 기반 · {llmEnabled ? "Claude 연동" : "오프라인 검색 모드"}
+                문서 {kb.docCount}개 기반 ({kb.source === "local-db" ? "로컬 DB" : "내장 문서"}) ·{" "}
+                {llmEnabled ? "Claude 연동" : "오프라인 검색 모드"}
               </p>
             </div>
           </div>

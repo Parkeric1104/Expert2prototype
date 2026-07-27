@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { policyBotApi } from './server/policy-api.mjs'
 
 
 function figmaAssetResolver() {
@@ -26,6 +27,8 @@ export default defineConfig(({ mode }) => ({
     // Tailwind is not being actively used – do not remove them
     react(),
     tailwindcss(),
+    // 기획 정책 챗봇 로컬 API (POC) — 개발서버에서만 동작, 데이터는 data/policy-bot.db
+    policyBotApi(),
   ],
   resolve: {
     alias: {

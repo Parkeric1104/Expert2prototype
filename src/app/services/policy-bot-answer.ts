@@ -99,15 +99,37 @@ async function llmProvider(req: PolicyBotRequest): Promise<PolicyBotAnswer> {
   };
 }
 
+// 대화 로그를 로컬 DB(POC)에 저장 — API 없는 환경(배포본)에서는 조용히 무시
+function logChat(question: string, answer: PolicyBotAnswer): void {
+  try {
+    void fetch("/api/policy-bot/logs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question,
+        answer: answer.body,
+        sources: answer.sources,
+        offline: answer.offline,
+      }),
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
 export async function generatePolicyBotAnswer(req: PolicyBotRequest): Promise<PolicyBotAnswer> {
   const useLlm = (import.meta.env.VITE_POLICY_BOT_PROVIDER as string) === "llm";
+  let answer: PolicyBotAnswer;
   if (useLlm) {
     try {
-      return await llmProvider(req);
+      answer = await llmProvider(req);
     } catch (e) {
       console.warn("[policy-bot] LLM 프록시 실패 — 오프라인 검색 모드로 폴백", e);
-      return offlineProvider(req);
+      answer = await offlineProvider(req);
     }
+  } else {
+    answer = await offlineProvider(req);
   }
-  return offlineProvider(req);
+  logChat(req.question, answer);
+  return answer;
 }
