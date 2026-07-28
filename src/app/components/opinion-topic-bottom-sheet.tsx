@@ -69,7 +69,8 @@ export function OpinionTopicBottomSheet({
             </p>
 
             {/* 디자인 정합: 옅은 카드(테두리) · 제목(카테고리) + 설명(질문) · 번호배지/화살표 없음 */}
-            <div className="space-y-2.5 max-h-[52vh] overflow-y-auto pb-1 -mr-2 pr-2">
+            {/* 주제 3개까지 노출, 4개째부터 스크롤 */}
+            <div className="space-y-2.5 max-h-[288px] overflow-y-auto pb-1 -mr-2 pr-2">
               {topics.map((t, idx) => (
                 <button
                   key={idx}
