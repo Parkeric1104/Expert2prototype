@@ -35,7 +35,7 @@ import {
   ClipboardCheck,
   UserCheck,
   Info,
-  ChevronUp
+  ChevronDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { getDummyResponse } from "@/app/data/dummy-responses";
@@ -245,7 +245,7 @@ export function ModernChatInterface({
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [showScrollTop, setShowScrollTop] = useState(false); // 스크롤 내려간 경우에만 '맨 위로' 노출
+  const [showScrollBottom, setShowScrollBottom] = useState(false); // 바텀에 도달하지 않은 경우에만 '맨 아래로' 노출
   const fileInputRef = useRef<HTMLInputElement>(null);
   // 상세 답변 자동 스트리밍 사이드패널을 이미 띄운 메시지 id 집합 (중복 방지)
   const autoStreamedRef = useRef<Set<string>>(new Set());
@@ -1551,7 +1551,10 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
           {/* 내부에서만 스크롤 가능 */}
           <div
             ref={scrollContainerRef}
-            onScroll={(e) => setShowScrollTop(e.currentTarget.scrollTop > 240)}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              setShowScrollBottom(el.scrollHeight - el.scrollTop - el.clientHeight > 240);
+            }}
             className="flex-1 overflow-y-auto px-6 py-6"
           >
             {messages.length === 0 && (
@@ -1724,14 +1727,19 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
         );
       })()}
 
-      {/* 맨 위로 — 스크롤이 내려간 경우에만 노출 (요청: 바텀 기본 미노출, 스크롤 시 상단 이동) */}
-      {showScrollTop && (
+      {/* 맨 아래로 — 바텀에 도달하지 않은 경우에만 노출 (스크롤 위로 올린 상태에서 최신 답변으로 이동) */}
+      {showScrollBottom && (
         <button
-          onClick={() => scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="맨 위로"
+          onClick={() =>
+            scrollContainerRef.current?.scrollTo({
+              top: scrollContainerRef.current.scrollHeight,
+              behavior: "smooth",
+            })
+          }
+          aria-label="맨 아래로"
           className="fixed bottom-28 right-6 z-30 w-10 h-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all animate-in fade-in slide-in-from-bottom-2 duration-200"
         >
-          <ChevronUp className="w-5 h-5" />
+          <ChevronDown className="w-5 h-5" />
         </button>
       )}
 
