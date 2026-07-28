@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ChevronDown, ChevronUp } from "lucide-react";
 
 export interface OpinionTopic {
   title: string;
@@ -31,8 +31,8 @@ export function OpinionTopicBottomSheet({
   const isOpinion = mode === "opinion";
   const title = isOpinion ? "어떤 주제로 의견서를 작성할까요?" : "어떤 주제로 상세 답변을 받을까요?";
   const desc = isOpinion
-    ? "이번 상담에 여러 주제가 포함되어 있어요. 의견서로 정리할 주제를 선택해 주세요."
-    : "이번 상담에 여러 주제가 포함되어 있어요. 상세 답변을 받을 주제를 선택해 주세요.";
+    ? "지금까지의 대화에서 도출된 핵심 쟁점입니다. 의견서로 정리할 주제를 선택해 주세요."
+    : "지금까지의 대화에서 도출된 핵심 쟁점입니다. 정리할 주제를 선택해 주세요.";
 
   return (
     // 딤(스크림) 없음 — 위쪽 대화가 그대로 보이고 스크롤 가능. 닫기는 X, 내리기/올리기는 토글 버튼
@@ -56,18 +56,15 @@ export function OpinionTopicBottomSheet({
           </button>
         </div>
 
-        {/* 제목 — 접힘 상태에서도 무엇인지 보이도록 항상 노출 */}
-        <div className="flex items-start gap-2.5 mb-1">
-          <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-          <h2 className="text-lg font-bold text-foreground" style={{ wordBreak: "keep-all" }}>
-            {title}
-          </h2>
-        </div>
+        {/* 제목 — 접힘 상태에서도 무엇인지 보이도록 항상 노출 (디자인 정합: 아이콘 없음) */}
+        <h2 className="text-lg font-bold text-foreground mb-1" style={{ wordBreak: "keep-all" }}>
+          {title}
+        </h2>
 
         {/* 본문(설명 + 주제) — 접으면 숨김 */}
         {!collapsed && (
           <>
-            <p className="text-sm text-muted-foreground mb-5 pl-7" style={{ wordBreak: "keep-all" }}>
+            <p className="text-sm text-muted-foreground mb-5" style={{ wordBreak: "keep-all" }}>
               {desc}
             </p>
 

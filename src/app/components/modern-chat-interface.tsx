@@ -1697,18 +1697,22 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
         // 주제 선택 시트가 열려 있으면(접힘 포함) 플로팅 '상세 답변 받기'는 중복 → 미노출
         const showFloating = !isHistoryView && lastIsMultiTurn && !opinionFlowStarted && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview && !showTopicSheet;
         if (!showFloating) return null;
-        const floatingLabel = "상세 답변 받기";
         const handleFloatingClick = requestDetailedAnswer;
         return (
-          <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
-            <button
-              onClick={handleFloatingClick}
-              className="pointer-events-auto flex items-center gap-1.5 rounded-full pl-4 pr-5 py-3 shadow-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-              style={{ background: '#3182F6' }}
-            >
-              <FileText className="w-4 h-4" />
-              {floatingLabel}
-            </button>
+          <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center px-6 pointer-events-none">
+            {/* 디자인 정합: 좌측 안내문 + 우측 라이트블루 '상세답변받기' 버튼의 바(bar) */}
+            <div className="pointer-events-auto w-full max-w-3xl flex items-center justify-between gap-4 rounded-2xl bg-card/95 backdrop-blur border border-border/60 shadow-xl pl-5 pr-3 py-3">
+              <p className="text-sm text-muted-foreground" style={{ wordBreak: "keep-all" }}>
+                지금까지의 대화에서 다룬 주제 중 하나를 골라 상세 답변을 받아보실 수 있어요.
+              </p>
+              <button
+                onClick={handleFloatingClick}
+                className="flex-shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+                style={{ background: '#E5EEFF', color: '#3182F6' }}
+              >
+                상세답변받기
+              </button>
+            </div>
           </div>
         );
       })()}
