@@ -1636,6 +1636,28 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                     />
                   );
                 })()}
+                {/* 상세답변받기 — 플로팅 아님. 멀티턴 답변 뒤에 인라인 고정 노출 (마지막 답변 & 스트리밍 종료 시) */}
+                {message.isMultiTurnResponse && message.enhancedData && (() => {
+                  const laterAnswerOrLoading = messages
+                    .slice(index + 1)
+                    .some(m => m.isLoading || (!m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)));
+                  const showDetailBar = !isHistoryView && !isStreaming && !laterAnswerOrLoading;
+                  if (!showDetailBar) return null;
+                  return (
+                    <div className="w-full max-w-[760px] mt-4 flex items-center justify-between gap-4 rounded-2xl bg-card border border-border/60 shadow-sm px-5 py-3">
+                      <p className="text-sm text-muted-foreground" style={{ wordBreak: "keep-all" }}>
+                        지금까지의 대화에서 다룬 주제 중 하나를 골라 상세 답변을 받아보실 수 있어요.
+                      </p>
+                      <button
+                        onClick={requestDetailedAnswer}
+                        className="flex-shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+                        style={{ background: "#E5EEFF", color: "#3182F6" }}
+                      >
+                        상세답변받기
+                      </button>
+                    </div>
+                  );
+                })()}
                 {message.isEnhancedResponse && message.enhancedData && (() => {
                   // 이 상세답변의 기준 질의(직전 실제 사용자 질문) — 답변별 의견서 작성에 사용
                   const priorUser = [...messages.slice(0, index)].reverse().find(m => m.isUser && !isSystemUserText(m.text));
@@ -1690,42 +1712,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
         </div>
       </div>
 
-      {/* 의견서 작성 - Floating Pill (답변 중단 버튼과 동일한 노출 방식)
-          라벨 분기:
-          - 최초 답변이 간단답변(상세답변 아직 없음) → "상세 답변 받기"
-          - 최초 답변이 상세답변 이거나, 의견서 플로우로 상세답변을 받은 뒤 → "의견서 작성" */}
-      {(() => {
-        // 플로팅 버튼 정책 (확정 2026-07-03 · PRD CHA-008 §3):
-        //  - 라벨은 항상 '상세 답변 받기' (변경 조건 없음)
-        //  - 노출 조건: '마지막 답변'이 멀티턴 답변인 경우에만 (상세답변을 받으면 사라지고,
-        //    다시 멀티턴 답변을 받으면 재노출 — 프로세스 케이스 다이어그램 정합)
-        //  - 의견서 작성으로 세션 종료 시 미노출. 의견서 작성은 각 상세답변 카드의 버튼으로만 진입
-        const lastAnswer = [...messages].reverse().find(
-          m => !m.isUser && !m.isLoading && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
-        );
-        const lastIsMultiTurn = !!lastAnswer?.isMultiTurnResponse && !!lastAnswer?.enhancedData;
-        // 주제 선택 시트가 열려 있으면(접힘 포함) 플로팅 '상세 답변 받기'는 중복 → 미노출
-        const showFloating = !isHistoryView && lastIsMultiTurn && !opinionFlowStarted && !isAnswerLoading && !isStreaming && !isDebateInProgress && !showDocPreview && !showTopicSheet;
-        if (!showFloating) return null;
-        const handleFloatingClick = requestDetailedAnswer;
-        return (
-          <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center px-6 pointer-events-none">
-            {/* 디자인 정합: 좌측 안내문 + 우측 라이트블루 '상세답변받기' 버튼의 바(bar) */}
-            <div className="pointer-events-auto w-full max-w-3xl flex items-center justify-between gap-4 rounded-2xl bg-card/95 backdrop-blur border border-border/60 shadow-xl pl-5 pr-3 py-3">
-              <p className="text-sm text-muted-foreground" style={{ wordBreak: "keep-all" }}>
-                지금까지의 대화에서 다룬 주제 중 하나를 골라 상세 답변을 받아보실 수 있어요.
-              </p>
-              <button
-                onClick={handleFloatingClick}
-                className="flex-shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-                style={{ background: '#E5EEFF', color: '#3182F6' }}
-              >
-                상세답변받기
-              </button>
-            </div>
-          </div>
-        );
-      })()}
+      {/* '상세답변받기'는 더 이상 플로팅이 아님 — 멀티턴 답변 뒤 인라인으로 노출(위 메시지 렌더 참조) */}
 
       {/* 맨 아래로 — 바텀에 도달하지 않은 경우에만 노출 (스크롤 위로 올린 상태에서 최신 답변으로 이동) */}
       {showScrollBottom && (
