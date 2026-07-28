@@ -3,7 +3,7 @@ import { CreditStatus } from "@/app/components/credit-status";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
-  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles
+  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search
 } from "lucide-react";
 import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
@@ -424,9 +424,10 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                 <button
                   key={`${selectedCategory}-${currentPage}-${idx}`}
                   onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType, prompt.contextType)}
-                  className="flex items-center justify-between w-full px-5 py-4 bg-card border border-border/60 rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
+                  className="flex items-center gap-3 w-full px-2 py-3.5 rounded-lg hover:bg-muted/40 transition-colors text-left group"
                 >
-                  <span className="text-sm text-foreground leading-snug">
+                  <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span className="flex-1 text-sm text-foreground leading-snug">
                     {displayText}
                     {isDetailed && !processLabel && (
                       <span className="ml-1.5 text-[11px] font-medium text-primary/60 align-middle">(상세답변)</span>
@@ -435,7 +436,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                       <span className="ml-1.5 text-[11px] font-medium text-primary/60 align-middle">({processLabel})</span>
                     )}
                   </span>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0 ml-4 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0 transition-colors" />
                 </button>
               );
             })}
