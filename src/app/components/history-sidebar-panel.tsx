@@ -10,8 +10,12 @@ import {
   BookOpen,
   FileStack,
   Eye,
-  Trash2
+  Trash2,
+  Download
 } from "lucide-react";
+
+// 사용자 매뉴얼(Figma 덱) — 햄버거 메뉴 하단에서 새 탭으로 오픈
+const USER_MANUAL_URL = "https://www.figma.com/deck/1ZXPBZL2hOhbLcfZiKLBH6";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -269,6 +273,15 @@ export function HistorySidebarPanel({
             </div>
           </ScrollArea>
         </div>
+
+        {/* 하단: 사용자 메뉴얼(PDF) — GNB에서 이동(디자인 정합) */}
+        <button
+          onClick={() => window.open(USER_MANUAL_URL, "_blank", "noopener,noreferrer")}
+          className="flex-shrink-0 flex items-center justify-between px-4 py-3.5 border-t border-border text-sm text-foreground/80 hover:text-foreground hover:bg-muted/60 transition-colors"
+        >
+          <span>사용자 메뉴얼(PDF)</span>
+          <Download className="w-4 h-4" />
+        </button>
       </div>
 
       {/* 삭제 확인 다이얼로그 */}

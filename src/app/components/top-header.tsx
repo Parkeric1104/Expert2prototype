@@ -1,7 +1,4 @@
-import { Menu, BookOpen, ChevronLeft } from "lucide-react";
-
-// 사용자 매뉴얼(Figma 덱) — 메인 화면 GNB에서 새 탭으로 오픈
-const USER_MANUAL_URL = "https://www.figma.com/deck/1ZXPBZL2hOhbLcfZiKLBH6";
+import { Menu, ChevronLeft } from "lucide-react";
 
 interface TopHeaderProps {
   variant?: "home" | "chat" | "policy";
@@ -70,10 +67,10 @@ export function TopHeader({
     );
   }
 
-  // [1-1] 메인/홈 화면 GNB: ☰ (좌측), 사용자 매뉴얼 (우측) — 배경과 이어지도록 보더 없음
+  // [1-1] 메인/홈 화면 GNB: ☰ (좌측)만. 사용자 매뉴얼은 햄버거 메뉴 하단으로 이동(디자인 정합)
   return (
     <header className="bg-white">
-      <div className="h-14 flex items-center justify-between px-5">
+      <div className="h-14 flex items-center pl-6 pr-7">
         <button
           onClick={onToggleSidebar}
           className="flex items-center justify-center w-9 h-9 rounded-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
@@ -81,16 +78,6 @@ export function TopHeader({
         >
           <Menu className="w-5 h-5" />
         </button>
-
-        <nav className="flex items-center gap-5">
-          <button
-            onClick={() => window.open(USER_MANUAL_URL, "_blank", "noopener,noreferrer")}
-            className="flex items-center gap-1.5 text-sm text-foreground/80 hover:text-foreground transition-colors"
-          >
-            <BookOpen className="w-4 h-4" />
-            사용자 매뉴얼
-          </button>
-        </nav>
       </div>
     </header>
   );

@@ -969,9 +969,10 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
     // 정규화: '(상세답변)' 마커·공백 차이를 무시해 사실상 같은 질문을 중복 제거
     const norm = (q: string) => q.replace(/\s*\(상세답변\)\s*/g, "").replace(/\s+/g, " ").trim();
     const trunc = (q: string) => { const n = norm(q); return n.length > 30 ? n.slice(0, 30) + "…" : n; };
+    // 디자인 정합: 제목=카테고리(노동법 일반/퇴직급여 등), 설명=질문 전문
     const toTopic = (q: string) => ({
-      title: trunc(q),
-      desc: `${detectLawCategory(q)} · 이 쟁점을 중심으로 상세 답변을 정리합니다.`,
+      title: detectLawCategory(q),
+      desc: q,
       basis: q,
     });
 

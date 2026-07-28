@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, FileText, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { X, FileText, ChevronDown, ChevronUp } from "lucide-react";
 
 export interface OpinionTopic {
   title: string;
@@ -71,21 +71,18 @@ export function OpinionTopicBottomSheet({
               {desc}
             </p>
 
+            {/* 디자인 정합: 회색 카드 · 제목(카테고리) + 설명(질문) · 번호배지/화살표 없음 */}
             <div className="space-y-2.5">
               {topics.map((t, idx) => (
                 <button
                   key={idx}
                   onClick={() => onSelect(t)}
-                  className="w-full flex items-center gap-3 text-left px-4 py-3.5 rounded-2xl bg-card border border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-colors group"
+                  className="w-full text-left px-4 py-3.5 rounded-2xl bg-muted/60 hover:bg-primary/5 transition-colors"
                 >
-                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
-                    {idx + 1}
+                  <span className="block text-sm font-bold text-foreground">{t.title}</span>
+                  <span className="block text-[13px] text-muted-foreground mt-1" style={{ wordBreak: "keep-all" }}>
+                    {t.desc}
                   </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-sm font-bold text-foreground">{t.title}</span>
-                    <span className="block text-xs text-muted-foreground mt-0.5 truncate">{t.desc}</span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0" />
                 </button>
               ))}
             </div>

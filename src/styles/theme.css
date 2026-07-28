@@ -8,13 +8,13 @@
   --card-foreground: #1A1A1E;
   --popover: #ffffff;
   --popover-foreground: #1A1A1E;
-  --primary: #6366F1;
+  --primary: #5784FF;
   --primary-foreground: #ffffff;
   --secondary: #F3F4F6;
   --secondary-foreground: #1A1A1E;
   --muted: #F3F4F6;
   --muted-foreground: #666673;
-  --accent: #6366F1;
+  --accent: #5784FF;
   --accent-foreground: #ffffff;
   --destructive: #EF4444;
   --destructive-foreground: #ffffff;
@@ -24,7 +24,7 @@
   --switch-background: #cbced4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #6366F1;
+  --ring: #5784FF;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -117,6 +117,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  /* 디자인 시스템 Blue 스케일 (Color.png 2026.04.29) — Primary=Blue 500(#5784FF), 신규 Blue 150 */
+  --color-blue-150: #E5EEFF;
 }
 
 @layer base {

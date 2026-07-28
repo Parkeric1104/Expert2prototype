@@ -177,8 +177,8 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
 
       <div className="absolute bottom-5 left-6 z-30"><CreditStatus /></div>
 
-      {/* 스크롤 영역 */}
-      <div className="flex-1 min-h-0 w-full flex items-start justify-center px-6 overflow-y-auto">
+      {/* 스크롤 영역 — 콘텐츠 좌우 패딩 36px (디자인 정합) */}
+      <div className="flex-1 min-h-0 w-full flex items-start justify-center px-9 overflow-y-auto">
 
       {/* 메인 콘텐츠 */}
       <div className="w-full max-w-[760px] flex flex-col items-center gap-7 relative z-10 pt-12 pb-6">
