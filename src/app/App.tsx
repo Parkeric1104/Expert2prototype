@@ -251,8 +251,8 @@ export default function App() {
         />
       )}
 
-      {/* 체험판 ONE AI 프로모션 배너 (우하단 플로팅) */}
-      {isTrial && !oneAiBannerDismissed && (
+      {/* 체험판 ONE AI 프로모션 배너 — 홈: 카드 / 채팅: 콤팩트 필 (디자인 정합) */}
+      {isTrial && !oneAiBannerDismissed && currentView === "home" && (
         <div className="fixed bottom-5 right-5 z-40 w-[300px] rounded-2xl shadow-xl p-5 text-white"
           style={{ background: "linear-gradient(135deg, #5784FF 0%, #8B5CF6 100%)" }}
         >
@@ -270,6 +270,19 @@ export default function App() {
           <button
             onClick={() => window.open("https://www.douzone.com", "_blank", "noopener,noreferrer")}
             className="mt-4 w-full py-2.5 rounded-xl bg-white text-primary text-sm font-bold hover:bg-white/90 transition-colors"
+          >
+            문의하기
+          </button>
+        </div>
+      )}
+      {isTrial && !oneAiBannerDismissed && currentView !== "home" && (
+        <div className="fixed bottom-5 right-5 z-40 flex items-center gap-3 rounded-full shadow-xl pl-5 pr-2 py-2 text-white"
+          style={{ background: "linear-gradient(135deg, #5784FF 0%, #8B5CF6 100%)" }}
+        >
+          <span className="text-sm font-semibold whitespace-nowrap">ONE AI로 업무 혁신 경험해보기</span>
+          <button
+            onClick={() => window.open("https://www.douzone.com", "_blank", "noopener,noreferrer")}
+            className="px-4 py-1.5 rounded-full bg-white text-primary text-sm font-bold hover:bg-white/90 transition-colors whitespace-nowrap"
           >
             문의하기
           </button>
