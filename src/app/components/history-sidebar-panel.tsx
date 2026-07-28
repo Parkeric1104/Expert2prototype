@@ -11,7 +11,8 @@ import {
   FileStack,
   Eye,
   Trash2,
-  Download
+  Download,
+  Sparkles
 } from "lucide-react";
 
 // 사용자 매뉴얼(Figma 덱) — 햄버거 메뉴 하단에서 새 탭으로 오픈
@@ -54,6 +55,8 @@ interface HistorySidebarPanelProps {
   onOpenPolicyList?: () => void;
   onViewChatHistory?: (chatId: string) => void;
   pendingPoliciesCount?: number;
+  isTrial?: boolean;
+  onToggleTrial?: () => void;
 }
 
 export function HistorySidebarPanel({
@@ -63,7 +66,9 @@ export function HistorySidebarPanel({
   onOpenManual,
   onOpenPolicyList,
   onViewChatHistory,
-  pendingPoliciesCount = 0
+  pendingPoliciesCount = 0,
+  isTrial = false,
+  onToggleTrial,
 }: HistorySidebarPanelProps) {
   const [expandedChat, setExpandedChat] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -172,6 +177,18 @@ export function HistorySidebarPanel({
                 </span>
               )}
             </Button>
+
+            {/* 체험판 전환/종료 */}
+            {onToggleTrial && (
+              <Button
+                onClick={onToggleTrial}
+                variant="outline"
+                className="w-full justify-start gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{isTrial ? "체험판 종료" : "체험판으로 전환"}</span>
+              </Button>
+            )}
           </div>
         </div>
 

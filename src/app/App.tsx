@@ -26,8 +26,12 @@ export default function App() {
   const [isRefiningSearch, setIsRefiningSearch] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isAdmin] = useState<boolean>(true);
-  // 체험판 여부 (체험판에서는 답변 평가 미제공) — 실제로는 사용자 플랜 정보에서 주입
-  const [isTrial] = useState<boolean>(false);
+  // 체험판 여부 (체험판에서는 답변 평가 미제공, 질문 10회 제한) — 실제로는 사용자 플랜 정보에서 주입
+  const [isTrial, setIsTrial] = useState<boolean>(false);
+  const [trialCount, setTrialCount] = useState<number>(0);
+  const [oneAiBannerDismissed, setOneAiBannerDismissed] = useState<boolean>(false);
+  const TRIAL_MAX = 10;
+  const TRIAL_COMPANY = "코나아이(주)";
   const [hasChatMessages, setHasChatMessages] = useState(false);
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [showServiceFeedback, setShowServiceFeedback] = useState(false);
@@ -58,6 +62,7 @@ export default function App() {
     setContextType(promptContextType); // 프로세스 유형: 멀티턴 맥락 수 (single/multi)
     setCurrentView("chat");
     setCurrentStep(1); // 질문 입력 단계
+    if (isTrial) setTrialCount((c) => Math.min(c + 1, TRIAL_MAX)); // 체험판 질문 카운트(10회 제한)
   };
 
   const handleNewChat = () => {
@@ -239,7 +244,36 @@ export default function App() {
           onToggleSidebar={handleToggleSidebar}
           pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
           isSidebarOpen={showSidebar}
+          isTrial={isTrial}
+          companyName={TRIAL_COMPANY}
+          trialCount={trialCount}
+          trialMax={TRIAL_MAX}
         />
+      )}
+
+      {/* 체험판 ONE AI 프로모션 배너 (우하단 플로팅) */}
+      {isTrial && !oneAiBannerDismissed && (
+        <div className="fixed bottom-5 right-5 z-40 w-[300px] rounded-2xl shadow-xl p-5 text-white"
+          style={{ background: "linear-gradient(135deg, #5784FF 0%, #8B5CF6 100%)" }}
+        >
+          <button
+            onClick={() => setOneAiBannerDismissed(true)}
+            aria-label="닫기"
+            className="absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center text-white/80 hover:bg-white/15 transition-colors"
+          >
+            ✕
+          </button>
+          <p className="text-2xl font-extrabold tracking-tight">ONE AI</p>
+          <p className="mt-2 text-sm leading-relaxed text-white/90" style={{ wordBreak: "keep-all" }}>
+            더존의 비즈니스 핵심 솔루션과 융합된 ONE AI로 업무 혁신을 경험해 보세요.
+          </p>
+          <button
+            onClick={() => window.open("https://www.douzone.com", "_blank", "noopener,noreferrer")}
+            className="mt-4 w-full py-2.5 rounded-xl bg-white text-primary text-sm font-bold hover:bg-white/90 transition-colors"
+          >
+            문의하기
+          </button>
+        </div>
       )}
 
       {/* History Sidebar Panel */}
@@ -261,6 +295,14 @@ export default function App() {
         }}
         onViewChatHistory={handleViewChatHistory}
         pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
+        isTrial={isTrial}
+        onToggleTrial={() => {
+          setIsTrial((v) => !v);
+          setTrialCount(0);
+          setOneAiBannerDismissed(false);
+          setShowSidebar(false);
+          handleNewChat();
+        }}
       />
 
       {/* Main Content */}
