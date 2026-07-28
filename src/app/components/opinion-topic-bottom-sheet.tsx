@@ -35,9 +35,9 @@ export function OpinionTopicBottomSheet({
     : "지금까지의 대화에서 도출된 핵심 쟁점입니다. 정리할 주제를 선택해 주세요.";
 
   return (
-    // 딤(스크림) 없음 — 위쪽 대화가 그대로 보이고 스크롤 가능. 닫기는 X, 내리기/올리기는 토글 버튼
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300">
-      <div className="mx-auto w-full max-w-3xl px-8 pt-6 pb-9">
+    // 딤(스크림) 없음 — 위쪽 대화가 그대로 보이고 스크롤 가능. 좌우·하단 여백 두고 플로팅(전체 라운드)
+    <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 pointer-events-none">
+      <div className="pointer-events-auto w-full max-w-3xl bg-background rounded-3xl shadow-2xl px-8 pt-6 pb-8 animate-in slide-in-from-bottom duration-300">
         {/* 우측 컨트롤(접/펼침 + 닫기) — 가운데 드래그 바 제거 */}
         <div className="flex items-center justify-end gap-1 mb-3">
           <button
@@ -74,7 +74,7 @@ export function OpinionTopicBottomSheet({
                 <button
                   key={idx}
                   onClick={() => onSelect(t)}
-                  className="w-full text-left px-5 py-4 rounded-2xl bg-muted/40 border border-border/50 hover:border-primary/40 hover:bg-muted/70 transition-colors"
+                  className="w-full text-left px-5 py-4 rounded-2xl bg-muted/60 border border-border/50 hover:border-primary/40 hover:bg-muted transition-colors"
                 >
                   <span className="block text-[15px] font-bold text-foreground">{t.title}</span>
                   <span className="block text-[13px] text-muted-foreground mt-1" style={{ wordBreak: "keep-all" }}>
