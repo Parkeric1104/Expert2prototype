@@ -68,15 +68,15 @@ export function OpinionTopicBottomSheet({
               {desc}
             </p>
 
-            {/* 디자인 정합: 회색 카드 · 제목(카테고리) + 설명(질문) · 번호배지/화살표 없음 */}
+            {/* 디자인 정합: 옅은 카드(테두리) · 제목(카테고리) + 설명(질문) · 번호배지/화살표 없음 */}
             <div className="space-y-2.5">
               {topics.map((t, idx) => (
                 <button
                   key={idx}
                   onClick={() => onSelect(t)}
-                  className="w-full text-left px-4 py-3.5 rounded-2xl bg-muted/60 hover:bg-primary/5 transition-colors"
+                  className="w-full text-left px-5 py-4 rounded-2xl bg-muted/40 border border-border/50 hover:border-primary/40 hover:bg-muted/70 transition-colors"
                 >
-                  <span className="block text-sm font-bold text-foreground">{t.title}</span>
+                  <span className="block text-[15px] font-bold text-foreground">{t.title}</span>
                   <span className="block text-[13px] text-muted-foreground mt-1" style={{ wordBreak: "keep-all" }}>
                     {t.desc}
                   </span>

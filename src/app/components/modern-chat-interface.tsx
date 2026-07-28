@@ -1650,8 +1650,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                       </p>
                       <button
                         onClick={requestDetailedAnswer}
-                        className="flex-shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-                        style={{ background: "#E5EEFF", color: "#3182F6" }}
+                        className="flex-shrink-0 rounded-full px-4 py-2.5 text-sm font-semibold bg-primary text-primary-foreground transition-all hover:bg-primary/90 active:scale-95"
                       >
                         상세답변받기
                       </button>
