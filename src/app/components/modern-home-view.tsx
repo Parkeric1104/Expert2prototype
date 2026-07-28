@@ -355,24 +355,24 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
 
         {/* 추천 질문 */}
         <div className="w-full flex flex-col gap-4">
-          {/* 라벨 + 탭(연말정산/세법질의/법률/근로계약) — 디자인 정합 */}
-          <div className="flex items-center gap-5 flex-wrap border-b border-border/60">
-            <span className="text-sm font-bold text-foreground whitespace-nowrap flex items-center gap-1 pb-2.5"><Sparkles className="w-4 h-4 text-primary" />이런 질문으로 시작해보세요</span>
-            <div className="flex items-center gap-4">
-              {HOME_TABS.map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => handleSelectTab(tab)}
-                  className={`pb-2.5 -mb-px text-sm border-b-2 transition-colors ${
-                    selectedTab === tab
-                      ? "font-bold text-foreground border-primary"
-                      : "text-muted-foreground border-transparent hover:text-foreground"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+          {/* 라벨(독립 줄) — 디자인 정합 */}
+          <span className="text-sm font-bold text-foreground flex items-center gap-1"><Sparkles className="w-4 h-4 text-primary" />이런 질문으로 시작해보세요</span>
+
+          {/* 탭 행(전체 너비 구분선) */}
+          <div className="flex items-center gap-4 border-b border-border/60 -mt-1">
+            {HOME_TABS.map(tab => (
+              <button
+                key={tab}
+                onClick={() => handleSelectTab(tab)}
+                className={`pb-2.5 -mb-px text-sm border-b-2 transition-colors ${
+                  selectedTab === tab
+                    ? "font-bold text-foreground border-primary"
+                    : "text-muted-foreground border-transparent hover:text-foreground"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
           {/* 하위 카테고리 칩 */}
