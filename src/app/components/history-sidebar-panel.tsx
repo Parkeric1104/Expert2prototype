@@ -3,6 +3,7 @@ import {
   X,
   Calendar,
   MessageSquare,
+  MessageCircle,
   ChevronDown,
   ChevronUp,
   FileText,
@@ -282,9 +283,12 @@ export function HistorySidebarPanel({
               ))}
 
               {chatHistory.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-xs">저장된 히스토리가 없습니다.</p>
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <MessageCircle className="w-7 h-7 text-muted-foreground/60" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">저장된 채팅이 없습니다.</p>
+                  <p className="text-xs text-muted-foreground mt-1">새로운 채팅을 시작해보세요.</p>
                 </div>
               )}
             </div>

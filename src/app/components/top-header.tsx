@@ -21,8 +21,8 @@ function TrialBadge({ companyName, trialCount = 0, trialMax = 10 }: { companyNam
   return (
     <div className="flex items-center gap-2 text-sm">
       <span className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">체험판</span>
-      {companyName && <span className="text-muted-foreground">· {companyName}</span>}
-      <span className="font-semibold text-foreground">{trialCount}/{trialMax}</span>
+      {companyName && <span className="text-muted-foreground">{companyName}</span>}
+      <span className="font-semibold text-foreground">{trialCount}/{trialMax}번</span>
     </div>
   );
 }

@@ -31,7 +31,7 @@ export default function App() {
   const [trialCount, setTrialCount] = useState<number>(0);
   const [oneAiBannerDismissed, setOneAiBannerDismissed] = useState<boolean>(false);
   const TRIAL_MAX = 10;
-  const TRIAL_COMPANY = "코나아이(주)";
+  const TRIAL_COMPANY = "더존비즈온";
   const [hasChatMessages, setHasChatMessages] = useState(false);
   const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [showServiceFeedback, setShowServiceFeedback] = useState(false);
