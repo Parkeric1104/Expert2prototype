@@ -3,7 +3,7 @@ import { CreditStatus } from "@/app/components/credit-status";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
-  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2
+  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles
 } from "lucide-react";
 import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
@@ -181,20 +181,20 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
       <div className="flex-1 min-h-0 w-full flex items-start justify-center px-9 overflow-y-auto">
 
       {/* 메인 콘텐츠 */}
-      <div className="w-full max-w-[760px] flex flex-col items-center gap-7 relative z-10 pt-12 pb-6">
+      <div className="w-full max-w-[760px] flex flex-col items-stretch gap-7 relative z-10 pt-12 pb-6">
 
-        {/* 아바타 + 인삿말 */}
-        <div className="flex flex-col items-center gap-5 text-center">
-          <div className="w-[96px] h-[96px] rounded-full bg-primary/10 flex items-center justify-center shadow-sm overflow-hidden">
-            <img src={characterImg} alt="세법/노무도우미" className="w-full h-full object-cover" />
-          </div>
+        {/* 인삿말(좌) + 캐릭터(우) — 디자인 정합(좌측 정렬, 캐릭터 우측) */}
+        <div className="w-full flex items-start justify-between gap-4">
           <div className="space-y-1.5">
             <p className="text-[22px] leading-snug text-foreground">
               안녕하세요, <span className="font-bold">세법/노무도우미</span> 입니다.
             </p>
             <p className="text-[22px] leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
-              복잡하고 까다로운 세법,노무 문제로 고민이신가요? 저에게 편하게 질문해 주세요.
+              복잡하고 까다로운 세법과 노무 문제, 무엇이든 물어보세요.
             </p>
+          </div>
+          <div className="w-[76px] h-[76px] flex-shrink-0 overflow-hidden">
+            <img src={characterImg} alt="세법/노무도우미" className="w-full h-full object-contain" />
           </div>
         </div>
 
@@ -330,7 +330,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
         {/* 추천 질문 */}
         <div className="w-full flex flex-col gap-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm font-bold text-foreground whitespace-nowrap">이런 질문도 있어요</span>
+            <span className="text-sm font-bold text-foreground whitespace-nowrap flex items-center gap-1"><Sparkles className="w-4 h-4 text-primary" />이런 질문으로 시작해보세요</span>
             <div className="flex gap-1.5 flex-wrap">
               {CATEGORIES.map(cat => (
                 <button
