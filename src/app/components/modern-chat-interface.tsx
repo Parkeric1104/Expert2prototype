@@ -34,7 +34,8 @@ import {
   DollarSign,
   ClipboardCheck,
   UserCheck,
-  Info
+  Info,
+  ChevronUp
 } from "lucide-react";
 import { toast } from "sonner";
 import { getDummyResponse } from "@/app/data/dummy-responses";
@@ -243,6 +244,8 @@ export function ModernChatInterface({
   const [panelSources, setPanelSources] = useState<{ type: "법령" | "해석례" | "사규" | "판례"; title: string; url?: string; content?: string }[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false); // 스크롤 내려간 경우에만 '맨 위로' 노출
   const fileInputRef = useRef<HTMLInputElement>(null);
   // 상세 답변 자동 스트리밍 사이드패널을 이미 띄운 메시지 id 집합 (중복 방지)
   const autoStreamedRef = useRef<Set<string>>(new Set());
@@ -1546,7 +1549,11 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
       <div className="flex-1 relative z-10 px-6 overflow-hidden">
         <div className="max-w-3xl mx-auto h-full flex flex-col">
           {/* 내부에서만 스크롤 가능 */}
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div
+            ref={scrollContainerRef}
+            onScroll={(e) => setShowScrollTop(e.currentTarget.scrollTop > 240)}
+            className="flex-1 overflow-y-auto px-6 py-6"
+          >
             {messages.length === 0 && (
               <div className="text-center text-muted-foreground mt-20">
                 <p className="text-lg">대화를 시작해보세요</p>
@@ -1716,6 +1723,17 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
           </div>
         );
       })()}
+
+      {/* 맨 위로 — 스크롤이 내려간 경우에만 노출 (요청: 바텀 기본 미노출, 스크롤 시 상단 이동) */}
+      {showScrollTop && (
+        <button
+          onClick={() => scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="맨 위로"
+          className="fixed bottom-28 right-6 z-30 w-10 h-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all animate-in fade-in slide-in-from-bottom-2 duration-200"
+        >
+          <ChevronUp className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Input Area - Sticky Bottom (대화 상세에서는 파일 첨부 불가) */}
       <div className="border-t border-border bg-card/80 backdrop-blur-sm">
