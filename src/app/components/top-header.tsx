@@ -1,4 +1,4 @@
-import { Menu, ChevronLeft } from "lucide-react";
+import { Menu, Undo2 } from "lucide-react";
 
 interface TopHeaderProps {
   variant?: "home" | "chat" | "policy";
@@ -51,7 +51,7 @@ export function TopHeader({
             onClick={onLogoClick ?? onNavigateToMain}
             className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <Undo2 className="w-4 h-4" />
             메인으로 돌아가기
           </button>
         </div>
@@ -64,24 +64,26 @@ export function TopHeader({
     return (
       <header className="bg-card border-b border-border">
         <div className="h-14 flex items-center justify-between gap-3 px-5">
+          {/* 좌: 햄버거 */}
+          <button
+            onClick={onToggleSidebar}
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label="채팅 이력 열기"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* 우: (체험판 배지) + 메인으로 돌아가기 (디자인 정합: 우측 정렬 + 곡선 화살표) */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={onToggleSidebar}
-              className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="채팅 이력 열기"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+            {isTrial && <TrialBadge companyName={companyName} trialCount={trialCount} trialMax={trialMax} />}
             <button
               onClick={onNavigateToMain}
-              className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <Undo2 className="w-4 h-4" />
               메인으로 돌아가기
             </button>
           </div>
-
-          {isTrial && <TrialBadge companyName={companyName} trialCount={trialCount} trialMax={trialMax} />}
         </div>
       </header>
     );
