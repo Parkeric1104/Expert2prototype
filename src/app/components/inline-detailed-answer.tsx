@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Scale, FileText, Gavel, Sparkles } from "lucide-react";
+import { Scale, FileText, Gavel, Sparkles, Search, HelpCircle, ListChecks } from "lucide-react";
 import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 interface Source {
@@ -158,8 +158,8 @@ export function InlineDetailedAnswer({
 
   return (
     <div className="flex justify-start mb-6">
-      <div className="w-full max-w-[760px] bg-card rounded-2xl shadow-sm border border-border/60 px-6 py-5">
-        {/* 헤더: 마스코트 + 조사 완료 */}
+      <div className="w-full max-w-[760px]">
+        {/* 헤더: 마스코트 + 조사 완료 (디자인 정합: 박스 없음) */}
         <div className="flex items-center gap-3 pb-4 border-b border-border">
           <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-indigo-100 dark:ring-indigo-900/40">
             <img src={characterImg} alt="도우미" className="w-full h-full object-cover" />
@@ -175,7 +175,7 @@ export function InlineDetailedAnswer({
           {/* 1. 사실관계 */}
           {typingStage >= 1 && (
             <section className="animate-in fade-in duration-300">
-              <h3 className="text-[15px] font-bold text-primary mb-2">1. 사실관계</h3>
+              <h3 className="flex items-center gap-1.5 text-[15px] font-bold text-primary mb-2"><Search className="w-4 h-4" />사실관계</h3>
               <div className="text-sm leading-relaxed text-foreground whitespace-pre-line pl-1">
                 {displayedFactAnalysis}
                 {typingStage === 1 && displayedFactAnalysis.length < factAnalysis.length && (
@@ -188,7 +188,7 @@ export function InlineDetailedAnswer({
           {/* 2. 질의내용 */}
           {typingStage >= 2 && (
             <section className="animate-in fade-in duration-300">
-              <h3 className="text-[15px] font-bold text-primary mb-2">2. 질의내용</h3>
+              <h3 className="flex items-center gap-1.5 text-[15px] font-bold text-primary mb-2"><HelpCircle className="w-4 h-4" />질의내용</h3>
               <div className="text-sm leading-relaxed text-foreground whitespace-pre-line pl-1">
                 {displayedQueryContent}
                 {typingStage === 2 && displayedQueryContent.length < queryContent.length && (
@@ -201,7 +201,7 @@ export function InlineDetailedAnswer({
           {/* 3. 검토 내용 */}
           {typingStage >= 3 && (
             <section className="animate-in fade-in duration-300">
-              <h3 className="text-[15px] font-bold text-primary mb-2">3. 검토 내용</h3>
+              <h3 className="flex items-center gap-1.5 text-[15px] font-bold text-primary mb-2"><ListChecks className="w-4 h-4" />검토 내용</h3>
               <div className="text-sm leading-relaxed text-foreground whitespace-pre-line pl-1">
                 {displayedReviewContent}
                 {typingStage === 3 && displayedReviewContent.length < reviewContent.length && (
@@ -214,7 +214,7 @@ export function InlineDetailedAnswer({
           {/* 4. 결론 */}
           {typingStage >= 4 && (
             <section className="animate-in fade-in duration-300">
-              <h3 className="text-[15px] font-bold text-primary mb-2">4. 결론</h3>
+              <h3 className="flex items-center gap-1.5 text-[15px] font-bold text-primary mb-2"><Sparkles className="w-4 h-4" />결론</h3>
               <div className="text-sm leading-relaxed text-foreground whitespace-pre-line pl-1">
                 {displayedConclusion}
                 {typingStage === 4 && displayedConclusion.length < conclusion.length && (
