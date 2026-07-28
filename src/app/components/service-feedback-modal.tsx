@@ -112,7 +112,7 @@ export function ServiceFeedbackModal({ isOpen, onClose }: ServiceFeedbackModalPr
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4">
-      <div className="bg-card rounded-3xl shadow-2xl w-full max-w-[480px] min-h-[520px] flex flex-col overflow-hidden">
+      <div className="bg-card rounded-3xl shadow-2xl w-full max-w-[480px] flex flex-col overflow-hidden">
 
         {/* ── 1단계: 만족도 선택 (디자인 정합: 상단 아이콘 없음, 가로 리스트 2행 + 셰브론) ── */}
         {step === "rating" && (
