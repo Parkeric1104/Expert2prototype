@@ -223,7 +223,7 @@ export default function App() {
     <div
       className="flex flex-col h-screen overflow-hidden"
       style={{
-        background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #E9EAFB 75%, #C9CCF4 100%)",
+        background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #EBF1FF 100%)",
       }}
     >
       {/* Top Header – embedding 상세 화면에서는 미노출 */}

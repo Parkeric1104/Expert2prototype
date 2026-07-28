@@ -261,7 +261,7 @@ export function AIOpinionDebatePanel({
       {/* 전체화면 화면 전환 (사이드패널 아님) */}
       <div
         className="fixed inset-0 z-50 flex flex-col animate-in fade-in duration-300"
-        style={{ background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #E9EAFB 75%, #C9CCF4 100%)" }}
+        style={{ background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #EBF1FF 100%)" }}
       >
         {/* Header */}
         <div className="flex-shrink-0 border-b border-border/60 bg-card/70 backdrop-blur">
