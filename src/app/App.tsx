@@ -343,6 +343,7 @@ export default function App() {
           contextType={contextType}
           requestDraftDocument={requestDraftDocument}
           onDraftDocumentHandled={() => setRequestDraftDocument(false)}
+          isTrial={isTrial}
         />
       )}
 

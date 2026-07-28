@@ -114,6 +114,7 @@ interface ModernChatInterfaceProps {
   requestDraftDocument?: boolean; // 외부에서 의견서 작성 트리거
   onDraftDocumentHandled?: () => void; // 트리거 처리 완료 콜백
   historySession?: ChatHistorySession; // 채팅 이력 보기(전체화면 복원, 읽기 전용)
+  isTrial?: boolean; // 체험판 (의견서 요약 카드 등 분기)
 }
 
 // 미등록 순간 유도 넛지 대상 추천질문 (파일럿: 이 질문 세션 발생 시 메인 배너 트리거)
@@ -161,6 +162,7 @@ export function ModernChatInterface({
   requestDraftDocument,
   onDraftDocumentHandled,
   historySession,
+  isTrial = false,
 }: ModernChatInterfaceProps) {
   const isHistoryView = !!historySession; // 읽기 전용 이력 보기
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1504,6 +1506,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
         onComplete={handleCompleteDocument}
         showCompleteButton={true}
         data={documentData}
+        isTrial={isTrial}
       />
     );
   }

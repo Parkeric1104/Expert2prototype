@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Printer } from "lucide-react";
+import { ArrowLeft, Download, Printer, Sparkles, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DocumentSection {
   title: string;
@@ -36,6 +36,7 @@ interface DocumentViewProps {
     disclaimer?: string;
     author?: string;
   };
+  isTrial?: boolean;
 }
 
 export function DocumentView({
@@ -43,6 +44,7 @@ export function DocumentView({
   onComplete,
   showCompleteButton = false,
   data,
+  isTrial = false,
 }: DocumentViewProps) {
   const handlePrint = () => {
     window.print();
@@ -131,7 +133,45 @@ export function DocumentView({
 
       {/* Document Content - Scrollable */}
       <div className="flex-1 overflow-y-auto bg-gray-100">
-        <div className="min-h-full p-6 flex justify-center">
+        <div className="min-h-full p-6 flex flex-col items-center gap-4">
+          {/* 요약 카드 (체험판/ONEFFICE) — ONE AI 전용 안내 + 액션 버튼 */}
+          {isTrial && (
+            <div className="w-full max-w-[840px] rounded-2xl bg-white border border-primary/25 shadow-sm p-6 print:hidden">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-primary font-bold text-[15px]">
+                  <Sparkles className="w-4 h-4" /> 요약
+                </div>
+                <button className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors" aria-label="새로고침">
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="mt-3 text-sm text-gray-500" style={{ wordBreak: "keep-all" }}>
+                요약 데이터는 ONE AI 서비스 사용자만 제공되는 기능입니다.
+              </p>
+              <div className="mt-4 flex items-center gap-2">
+                <button className="p-1 text-gray-300" aria-label="이전"><ChevronLeft className="w-4 h-4" /></button>
+                <div className="flex-1 flex items-center gap-2 overflow-hidden">
+                  {["관련 세법 검색", "AI DocuTune", "고객용 문서 만들기", "블로그 포스트 만들기", "뉴스레터 만들기"].map((label) => {
+                    const disabled = label === "AI DocuTune";
+                    return (
+                      <button
+                        key={label}
+                        disabled={disabled}
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                          disabled
+                            ? "border-gray-200 text-gray-300 cursor-not-allowed"
+                            : "border-gray-200 text-gray-700 hover:border-primary/40 hover:text-primary"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button className="p-1 text-gray-500 hover:text-gray-900" aria-label="다음"><ChevronRight className="w-4 h-4" /></button>
+              </div>
+            </div>
+          )}
           {/* A4 Paper */}
           <div className="bg-white shadow-2xl w-full max-w-[840px] rounded-2xl mb-6 print:shadow-none print:rounded-none print:max-w-full print:mb-0">
             {/* HEADER */}
