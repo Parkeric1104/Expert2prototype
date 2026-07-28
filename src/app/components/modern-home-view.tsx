@@ -39,15 +39,31 @@ const FLOATING_ICONS = [
   { Icon: UserCheck,    delay: 4,   duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
-const CATEGORIES = ["근로계약", "취업규칙", "인사관리", "모성보호", "임금", "휴일·휴가", "근로시간"];
+// 홈 추천질문 — 디자인 정합: 상위 탭(연말정산/세법질의/법률/근로계약) → 하위 칩 → 질문
+const LABOR_CHIPS = ["근로계약", "취업규칙", "인사관리", "모성보호", "임금", "휴일·휴가", "근로시간"];
+const HOME_TABS = ["연말정산", "세법질의", "법률", "근로계약"];
+const TAB_CHIPS: Record<string, string[]> = {
+  "연말정산": ["기본공제소득", "근태수당", "해외근로", "복리·현물", "부양보험", "이자공제", "기부공제", "월세카드"],
+  "세법질의": ["부가가치세", "소득세", "법인세", "양도세"],
+  "법률": ["계약·약정", "분쟁·소송", "손해배상"],
+  "근로계약": LABOR_CHIPS,
+};
 const ITEMS_PER_PAGE = 4;
 
 export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onOpenPolicyManagement }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("근로계약");
+  const [selectedTab, setSelectedTab]   = useState("연말정산");
+  const [selectedCategory, setSelectedCategory] = useState("기본공제소득");
   const [currentPage, setCurrentPage]   = useState(1);
+
+  // 탭 전환 시 해당 탭의 첫 칩으로 리셋
+  const handleSelectTab = (tab: string) => {
+    setSelectedTab(tab);
+    setSelectedCategory(TAB_CHIPS[tab][0]);
+    setCurrentPage(1);
+  };
 
   // 미등록 순간 유도 넛지 (이력 기반): 사규 관련 노무 세션 발생 + '다시 안 보기' 안 함 → 노출
   const [showPolicyNudge, setShowPolicyNudge] = useState<boolean>(
@@ -104,6 +120,16 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
     { text: "포괄임금제라 야근해도 별도의 추가수당이 없나요? (상세답변)",                          questionType: "detailed", category: "근로시간",  laws: ["근로기준법 제56조"] },
     { text: "연장근로는 1주 12시간을 초과할 수 없다는데 어떻게 판단하나요?",                       questionType: "normal",   category: "근로시간",  laws: ["근로기준법 제53조"] },
     { text: "단시간근로자가 약정시간을 초과해 근무하면 가산수당을 받나요?",                        questionType: "normal",   category: "근로시간",  laws: ["기간제 및 단시간근로자 보호법 제6조", "근로기준법 제56조"] },
+    // ── 연말정산 (세법) — 디자인 정합 ──
+    { text: "부가가치세는 언제 신고하나요?",                                                     questionType: "normal",   category: "기본공제소득", laws: ["부가가치세법 제49조"] },
+    { text: "사업자 등록 후 첫 세금 신고는 어떻게 하나요?",                                        questionType: "normal",   category: "기본공제소득", laws: ["소득세법 제168조"] },
+    { text: "간이과세자와 일반 과세자의 차이는 무엇인가요?",                                       questionType: "normal",   category: "기본공제소득", laws: ["부가가치세법 제61조"] },
+    // ── 세법질의 (대표 샘플) ──
+    { text: "부가가치세 매입세액 공제는 어떤 경우에 받을 수 있나요?",                              questionType: "normal",   category: "부가가치세", laws: ["부가가치세법 제38조"] },
+    { text: "종합소득세와 근로소득세는 어떻게 다른가요?",                                          questionType: "normal",   category: "소득세",     laws: ["소득세법 제14조"] },
+    // ── 법률 (대표 샘플) ──
+    { text: "계약서에 없는 구두 약정도 법적 효력이 있나요?",                                       questionType: "normal",   category: "계약·약정",  laws: ["민법 제105조"] },
+    { text: "손해배상 청구는 어떤 요건을 갖춰야 하나요?",                                          questionType: "normal",   category: "손해배상",   laws: ["민법 제750조"] },
   ];
 
   const filteredPrompts  = prompts.filter(p => p.category === selectedCategory);
@@ -329,23 +355,41 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
 
         {/* 추천 질문 */}
         <div className="w-full flex flex-col gap-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm font-bold text-foreground whitespace-nowrap flex items-center gap-1"><Sparkles className="w-4 h-4 text-primary" />이런 질문으로 시작해보세요</span>
-            <div className="flex gap-1.5 flex-wrap">
-              {CATEGORIES.map(cat => (
+          {/* 라벨 + 탭(연말정산/세법질의/법률/근로계약) — 디자인 정합 */}
+          <div className="flex items-center gap-5 flex-wrap border-b border-border/60">
+            <span className="text-sm font-bold text-foreground whitespace-nowrap flex items-center gap-1 pb-2.5"><Sparkles className="w-4 h-4 text-primary" />이런 질문으로 시작해보세요</span>
+            <div className="flex items-center gap-4">
+              {HOME_TABS.map(tab => (
                 <button
-                  key={cat}
-                  onClick={() => handleCategoryChange(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    selectedCategory === cat
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-foreground border border-border/60 hover:border-primary/40"
+                  key={tab}
+                  onClick={() => handleSelectTab(tab)}
+                  className={`pb-2.5 -mb-px text-sm border-b-2 transition-colors ${
+                    selectedTab === tab
+                      ? "font-bold text-foreground border-primary"
+                      : "text-muted-foreground border-transparent hover:text-foreground"
                   }`}
                 >
-                  {cat}
+                  {tab}
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* 하위 카테고리 칩 */}
+          <div className="flex gap-1.5 flex-wrap">
+            {TAB_CHIPS[selectedTab].map(cat => (
+              <button
+                key={cat}
+                onClick={() => handleCategoryChange(cat)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  selectedCategory === cat
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-foreground border border-border/60 hover:border-primary/40"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
 
           {totalPages > 1 && (
