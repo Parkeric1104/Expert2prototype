@@ -43,7 +43,7 @@ export function ProgressiveLoadingBubble({
     (l) => `'${l}' 검색 성공`
   );
 
-  // 단계: pending/active/done 3-상태 라벨 + 활성 단계 세부 트레이스 (디자인 정합)
+  // 단계: pending/active/done 3-상태 라벨 + 활성 단계 세부 트레이스 (디자인 문구 정합, 4단계)
   const STEPS = [
     {
       pending: "질문 분석",
@@ -52,10 +52,16 @@ export function ProgressiveLoadingBubble({
       detail: ["DOUZONE law agent THINK", "First tool: always using 1hop", "특정 노드 정보 제공됨 : 10개", "ACT (시도1)"],
     },
     {
-      pending: "법령 데이터 탐색",
-      active: `관련 법령을 꼼꼼히 찾아보고 있어요. ${total}건 중 ${total}건 확인중`,
-      done: `법령 ${total}건 데이터 탐색 완료`,
+      pending: "법령 탐색",
+      active: "법령 탐색 에이전트가 질문과 관련된 핵심 법령을 찾고 있어요.",
+      done: "법령 탐색 완료",
       detail: searchLines,
+    },
+    {
+      pending: "핵심 법령 정리",
+      active: "핵심 법령을 정리하고 있어요.",
+      done: `법령 데이터 ${law}건 정리 완료. 판례/규정 ${interp}건 탐색 완료`,
+      detail: [],
     },
     {
       pending: "내용 정리",
@@ -64,8 +70,8 @@ export function ProgressiveLoadingBubble({
       detail: [],
     },
   ];
-  // 활성 단계(현재 진행 중): step이 2에 도달하면 '최종 답변 정리'가 활성
-  const activeIndex = Math.min(step, 2);
+  // 활성 단계는 마지막 '내용 정리'(index 3, active 라벨='최종 답변을 정리하고 있어요.')까지 진행
+  const activeIndex = Math.min(step, 3);
 
   // 팝업 열릴 때 일시 중지
   useEffect(() => {
@@ -74,16 +80,17 @@ export function ProgressiveLoadingBubble({
 
   useEffect(() => {
     if (isPaused) return;
-    // 답변 지연(약 2.5~3.5초) 안에 '최종 답변 정리' 활성 상태까지 진행
-    const t1 = window.setTimeout(() => setStep(1), 700);
-    const t2 = window.setTimeout(() => setStep(2), 1800);
-    const t3 = window.setTimeout(() => {
+    // 답변 지연 안에 '내용 정리(최종 답변 정리)' 활성까지 4단계 진행
+    const t1 = window.setTimeout(() => setStep(1), 600);
+    const t2 = window.setTimeout(() => setStep(2), 1200);
+    const t3 = window.setTimeout(() => setStep(3), 1800);
+    const t4 = window.setTimeout(() => {
       if (!preparedRef.current && onAnswerPreparationStart) {
         onAnswerPreparationStart();
         preparedRef.current = true;
       }
-    }, 2200);
-    timersRef.current = [t1, t2, t3];
+    }, 2400);
+    timersRef.current = [t1, t2, t3, t4];
     return () => {
       timersRef.current.forEach((t) => clearTimeout(t));
       timersRef.current = [];
@@ -172,10 +179,9 @@ export function ProgressiveLoadingBubble({
         <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
           <button
             onClick={() => setShowStopDialog(true)}
-            className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold shadow-xl transition-all hover:opacity-80 active:scale-95"
-            style={{ background: "#1C1C1E", color: "#FFFFFF" }}
+            className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 rounded-full bg-card border border-border text-sm font-semibold text-foreground shadow-xl hover:bg-muted transition-all active:scale-95"
           >
-            <span className="w-2 h-2 rounded-sm bg-white inline-block" />
+            <span className="w-2.5 h-2.5 rounded-[3px] bg-red-500 inline-block" />
             답변 중단하기
           </button>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Square, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 import {
   generateMultiTurnAnswer,
@@ -116,13 +116,15 @@ export function MultiTurnResponse({
           </p>
 
           {streaming && (
-            <button
-              onClick={handleStop}
-              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <Square className="w-3 h-3 fill-current" />
-              답변 중단하기
-            </button>
+            <div className="fixed bottom-28 left-0 right-0 z-30 flex justify-center pointer-events-none">
+              <button
+                onClick={handleStop}
+                className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 rounded-full bg-card border border-border text-sm font-semibold text-foreground shadow-xl hover:bg-muted transition-all active:scale-95"
+              >
+                <span className="w-2.5 h-2.5 rounded-[3px] bg-red-500 inline-block" />
+                답변 중단하기
+              </button>
+            </div>
           )}
 
           {/* 하단 출처 (사규 제외) */}
