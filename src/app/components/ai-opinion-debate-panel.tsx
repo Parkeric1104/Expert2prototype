@@ -24,7 +24,7 @@ interface AIOpinionDebatePanelProps {
 }
 
 const PERSONAS = {
-  host: { name: "사회자(도비)", ring: "ring-indigo-300", color: "text-indigo-600 dark:text-indigo-400", tags: ["중립형", "조정형", "객관형"], desc: "토론자들의 성향을 이해하고 균형있게 대화를 조율하는 중립적·조정형 가이드" },
+  host: { name: "세법도우미", ring: "ring-indigo-300", color: "text-indigo-600 dark:text-indigo-400", tags: ["중립형", "조정형", "객관형"], desc: "토론자들의 성향을 이해하고 균형있게 대화를 조율하는 중립적·조정형 가이드" },
   pro: { name: "AI 엄격한 법률학자", ring: "ring-blue-300", color: "text-blue-600 dark:text-blue-400", tags: ["보수형", "위험회피형", "분석형"], desc: "법리에 철저한 보수적·엄격형 분석. 신중하고 원칙주의적 성격으로, 위험 감지에 예민하다." },
   con: { name: "AI 실무형 분석가", ring: "ring-purple-300", color: "text-purple-600 dark:text-purple-400", tags: ["현실형", "합리형", "공감형"], desc: "납세자의 권리를 중시하는 합리적·실무형 분석. 현실감각과 유연한 사고로, 실질적인 해법을 제시한다." },
 };
