@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Square, ExternalLink } from "lucide-react";
+import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 import {
   generateMultiTurnAnswer,
   type MultiTurnAnswer,
@@ -98,8 +99,14 @@ export function MultiTurnResponse({
 
   return (
     <div className="flex justify-start mb-6">
-      <div className="max-w-[720px] flex flex-col gap-3">
-        <div className="rounded-2xl px-6 py-5 bg-card border border-border/60 shadow-sm">
+      {/* 상세·간단답변과 동일: 박스 없음 + 마스코트 (디자인 정합) */}
+      <div className="w-full max-w-[760px] flex items-start gap-3">
+        {/* 마스코트 아바타 */}
+        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-indigo-100 dark:ring-indigo-900/40 mt-0.5">
+          <img src={characterImg} alt="도우미" className="w-full h-full object-cover" />
+        </div>
+
+        <div className="flex-1 min-w-0">
           {/* 대화형 본문 (서식 없음) — 한국어 줄바꿈 keep-all 필수 (디자인 가이드 §2) */}
           <p className="text-[15px] leading-relaxed text-foreground font-normal whitespace-pre-line" style={{ wordBreak: "keep-all" }}>
             {displayed}
@@ -133,7 +140,6 @@ export function MultiTurnResponse({
               ))}
             </div>
           )}
-
         </div>
       </div>
     </div>

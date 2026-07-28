@@ -1,5 +1,6 @@
 import { Scale, Copy, CornerDownRight } from "lucide-react";
 import { toast } from "sonner";
+import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
 
 type SourceType = "법령" | "해석례" | "사규" | "판례";
 
@@ -106,10 +107,21 @@ export function SimpleResponseCard({
 
   return (
     <div className="flex justify-start mb-6">
-      {/* 다른 답변 유형(상세·멀티턴)과 동일한 흰색 카드 컨테이너로 통일 */}
-      <div className="w-full max-w-[760px] bg-card rounded-2xl shadow-sm border border-border/60 px-6 py-5 flex flex-col">
+      {/* 상세답변과 동일: 박스 없음 + 마스코트 헤더 (디자인 정합) */}
+      <div className="w-full max-w-[760px] flex flex-col">
+        {/* 헤더: 마스코트 + 조사 완료 */}
+        <div className="flex items-center gap-3 pb-4 border-b border-border">
+          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-indigo-100 dark:ring-indigo-900/40">
+            <img src={characterImg} alt="도우미" className="w-full h-full object-cover" />
+          </div>
+          <span className="inline-flex items-center gap-1 text-sm font-bold text-foreground">
+            <Scale className="w-3.5 h-3.5 text-primary" />
+            조사 완료
+          </span>
+        </div>
+
         {/* ── 제목 + 복사 ── */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 pt-5">
           <h2 className="text-lg font-bold text-foreground leading-snug" style={{ wordBreak: "keep-all" }}>
             {body.title}
           </h2>
