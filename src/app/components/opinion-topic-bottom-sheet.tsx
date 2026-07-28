@@ -37,7 +37,7 @@ export function OpinionTopicBottomSheet({
   return (
     // 딤(스크림) 없음 — 위쪽 대화가 그대로 보이고 스크롤 가능. 닫기는 X, 내리기/올리기는 토글 버튼
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-2xl animate-in slide-in-from-bottom duration-300">
-      <div className="mx-auto w-full max-w-3xl px-6 pt-4 pb-7">
+      <div className="mx-auto w-full max-w-3xl px-8 pt-6 pb-9">
         {/* 우측 컨트롤(접/펼침 + 닫기) — 가운데 드래그 바 제거 */}
         <div className="flex items-center justify-end gap-1 mb-3">
           <button
@@ -69,7 +69,7 @@ export function OpinionTopicBottomSheet({
             </p>
 
             {/* 디자인 정합: 옅은 카드(테두리) · 제목(카테고리) + 설명(질문) · 번호배지/화살표 없음 */}
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 max-h-[52vh] overflow-y-auto pb-1 -mr-2 pr-2">
               {topics.map((t, idx) => (
                 <button
                   key={idx}
