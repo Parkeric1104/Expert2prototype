@@ -7,7 +7,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
-import { MessageCircle, FileText, LogOut, X } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 
 interface SessionLimitModalProps {
   isOpen: boolean;
@@ -38,64 +38,50 @@ export function SessionLimitModal({
           <X className="w-4 h-4" />
         </button>
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl font-bold text-foreground flex items-center gap-2 pr-8">
-            <MessageCircle className="w-5 h-5 text-indigo-600" />
-            입력하신 질문으로 새 채팅을 시작합니다.
+          <AlertDialogTitle className="text-lg font-bold text-foreground pr-8">
+            새 채팅에서 이어서 질문할까요?
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
-            <div className="space-y-3 text-sm">
-              <div className="p-4 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-lg">
-                <div className="text-foreground font-medium mb-3">
-                  더 정확하고 심층적인 검토를 위해 새로운 채팅으로 전환합니다.
-                </div>
-                <div className="text-indigo-700 dark:text-indigo-300 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 px-3 py-2 rounded">
-                  💬 방금 입력하신 질문으로 새로운 채팅창에서 즉시 대화가 시작됩니다.
-                </div>
-              </div>
+            <div className="space-y-3.5 text-sm">
+              <p className="text-muted-foreground" style={{ wordBreak: "keep-all" }}>
+                방금 입력하신 질문으로 새 채팅에서 바로 대화가 시작됩니다.
+              </p>
 
-              <div className="text-muted-foreground text-xs space-y-1">
-                <div className="flex items-start gap-1.5">
-                  <span className="text-indigo-600 mt-0.5">✓</span>
-                  <span>현재 채팅의 답변은 히스토리에 안전하게 저장됩니다.</span>
+              <div className="space-y-2 pt-0.5">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground/80" style={{ wordBreak: "keep-all" }}>현재 대화의 답변은 히스토리에 안전하게 저장됩니다.</span>
                 </div>
-                <div className="flex items-start gap-1.5">
-                  <span className="text-indigo-600 mt-0.5">✓</span>
-                  <span>선택하신 법령 설정은 그대로 적용됩니다.</span>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-foreground/80" style={{ wordBreak: "keep-all" }}>선택하신 법령 설정은 그대로 적용됩니다.</span>
                 </div>
               </div>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <AlertDialogFooter className="flex-col sm:flex-col gap-2">
-          {/* Primary: Start a new chat session */}
+        {/* 하단: 채팅 종료(좌, 텍스트) · 채팅 내용 보기 / 새 채팅에서 시작하기(우) — 디자인 정합 */}
+        <AlertDialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
           <Button
-            onClick={onContinueNewSession}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+            onClick={onEndConsultation}
+            variant="ghost"
+            className="text-muted-foreground hover:text-foreground px-2"
           >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            새 채팅에서 시작하기
+            채팅 종료
           </Button>
 
-          <div className="flex gap-2 w-full">
-            {/* Secondary: 채팅 내용 보기 — 팝업만 닫고 현재 채팅 확인 (2026-07-06 시안) */}
-            <Button
-              onClick={onClose}
-              variant="outline"
-              className="flex-1"
-            >
-              <FileText className="w-4 h-4 mr-2" />
+          <div className="flex gap-2">
+            {/* 채팅 내용 보기 — 팝업만 닫고 현재 채팅 확인 */}
+            <Button onClick={onClose} variant="outline">
               채팅 내용 보기
             </Button>
-
-            {/* Secondary: End consultation */}
+            {/* Primary: 새 채팅에서 시작하기 (Blue 500) */}
             <Button
-              onClick={onEndConsultation}
-              variant="outline"
-              className="flex-1"
+              onClick={onContinueNewSession}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              채팅 종료
+              새 채팅에서 시작하기
             </Button>
           </div>
         </AlertDialogFooter>
