@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, FileText } from "lucide-react";
+
+// 파일 유형별 아이콘 색상 (PDF 빨강 / HWP·DOCX 파랑)
+const fileIconColor = (name: string) =>
+  name.endsWith(".pdf") ? "text-red-500" : name.endsWith(".hwp") || name.endsWith(".docx") ? "text-blue-600" : "text-muted-foreground";
 import {
   Dialog,
   DialogContent,
@@ -190,57 +194,37 @@ export function AutoPolicyReviewNotification({
             <CheckCircle2 className="w-8 h-8 text-emerald-500" />
           </div>
           <h2 className="text-2xl font-bold text-foreground">
-            정책 분석이 완료되었습니다
+            정책 등록이 완료되었습니다
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            업로드하신 문서의 분석이 완료되었습니다.{"\n"}
-            최종 확인을 완료해야 사내 정책으로 등록됩니다.
+          <p className="text-sm text-muted-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>
+            등록된 문서의 내용을 참조하여 노무도우미 답변을 제공합니다.
           </p>
         </div>
 
-        {/* 분석 완료 문서 목록 */}
+        {/* 등록 완료 문서 목록 — 유형별 색상 아이콘 (디자인 정합) */}
         <div
-          className={`mb-6 space-y-2 ${hasScroll ? "max-h-[204px] overflow-y-auto pr-1" : ""}`}
+          className={`mb-6 rounded-xl bg-muted/50 p-3 space-y-1 ${hasScroll ? "max-h-[204px] overflow-y-auto pr-1" : ""}`}
           style={
             hasScroll
               ? { scrollbarWidth: "thin", scrollbarColor: "rgba(102,102,115,0.3) transparent" }
               : undefined
           }
         >
-          {pendingPolicies.map((policy) => {
-            const isNew = newlyAdded.has(policy);
-            return (
-              <div
-                key={policy}
-                title={policy}
-                className={[
-                  "flex items-center gap-3 rounded-lg px-4 py-3 border transition-colors duration-300",
-                  isNew
-                    ? "bg-primary/10 border-primary/40"
-                    : "bg-muted/50 border-border",
-                ].join(" ")}
-              >
-                <div
-                  className={[
-                    "w-2 h-2 rounded-full flex-shrink-0",
-                    isNew ? "bg-primary animate-pulse" : "bg-primary",
-                  ].join(" ")}
-                />
-                <span className="text-sm font-medium text-foreground truncate">
-                  {policy}
-                </span>
-              </div>
-            );
-          })}
+          {pendingPolicies.map((policy) => (
+            <div key={policy} title={policy} className="flex items-center gap-2.5 px-2 py-1.5">
+              <FileText className={`w-4 h-4 flex-shrink-0 ${fileIconColor(policy)}`} />
+              <span className="text-sm text-foreground truncate">{policy}</span>
+            </div>
+          ))}
         </div>
 
-        {/* 확인하기 버튼 */}
+        {/* 확인 버튼 */}
         <Button
-          onClick={handleConfirm}
+          onClick={handleClose}
           className="w-full h-12 text-base font-semibold"
           size="lg"
         >
-          확인하기
+          확인
         </Button>
       </DialogContent>
     </Dialog>

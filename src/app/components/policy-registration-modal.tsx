@@ -179,8 +179,7 @@ export function PolicyRegistrationModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center gap-2">
-            <Upload className="w-5 h-5 text-primary" />
+          <DialogTitle className="text-xl font-bold">
             새 정책 등록
           </DialogTitle>
           <DialogDescription>
@@ -189,19 +188,14 @@ export function PolicyRegistrationModal({
         </DialogHeader>
 
         <div className="space-y-4 pt-4">
-          {/* 보안 안내 */}
-          <div className="p-3 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-foreground">보안 안내</p>
-                <ul className="text-xs text-muted-foreground space-y-0.5">
-                  <li>• 업로드된 문서는 암호화되어 안전하게 저장됩니다</li>
-                  <li>• 관리자만 접근 및 수정이 가능합니다</li>
-                  <li>• 지원 형식: PDF, DOCX, HWP</li>
-                </ul>
-              </div>
-            </div>
+          {/* 보안 안내 — 디자인 정합: 회색 박스, 아이콘 없음 */}
+          <div className="p-4 bg-muted/60 rounded-lg">
+            <p className="text-xs font-semibold text-foreground mb-1.5">보안안내</p>
+            <ul className="text-xs text-muted-foreground space-y-0.5">
+              <li>· 업로드된 문서는 암호화되어 안전하게 저장됩니다</li>
+              <li>· 등록자만 접근 및 수정이 가능합니다</li>
+              <li>· 지원 형식: PDF, Docx</li>
+            </ul>
           </div>
 
           {/* 카테고리 선택 */}
@@ -221,23 +215,21 @@ export function PolicyRegistrationModal({
             </Select>
           </div>
 
-          {/* 직접 입력 필드 */}
-          {selectedCategory === "직접입력" && (
-            <div className="space-y-2">
-              <Label htmlFor="customCategory" className="text-sm">카테고리명 입력 *</Label>
-              <Input
-                id="customCategory"
-                type="text"
-                placeholder="예: 보안규정, 윤리강령 등"
-                value={customCategory}
-                onChange={(e) => handleCustomCategoryChange(e.target.value)}
-                className={customCategoryError ? "border-red-500" : ""}
-              />
-              {customCategoryError && (
-                <p className="text-xs text-red-500 mt-1">{customCategoryError}</p>
-              )}
-            </div>
-          )}
+          {/* 카테고리명 입력 — 디자인 정합: 항상 노출 */}
+          <div className="space-y-2">
+            <Label htmlFor="customCategory" className="text-sm">카테고리명 입력 *</Label>
+            <Input
+              id="customCategory"
+              type="text"
+              placeholder="예: 보안규정"
+              value={customCategory}
+              onChange={(e) => handleCustomCategoryChange(e.target.value)}
+              className={customCategoryError ? "border-red-500" : ""}
+            />
+            {customCategoryError && (
+              <p className="text-xs text-red-500 mt-1">{customCategoryError}</p>
+            )}
+          </div>
 
           {/* 카테고리 중복 안내문구 */}
           {hasExistingPolicy && (
@@ -251,78 +243,45 @@ export function PolicyRegistrationModal({
             </div>
           )}
 
-          {/* 파일 업로드 */}
+          {/* 파일 업로드 — 디자인 정합: 한 줄 입력 표시 + [파일업로드] 버튼 */}
           <div className="space-y-2">
-            <Label className="text-sm">문서 파일 업로드 (파일 또는 AI Box 중 1개 필수)</Label>
-            
-            {!uploadedFile ? (
-              <div className="border-2 border-dashed border-border rounded-lg p-6 hover:border-primary/50 transition-colors">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={handleFileUpload}
-                  accept=".pdf,.docx,.hwp"
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex flex-col items-center gap-2 text-center"
-                >
-                  <Upload className="w-8 h-8 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      클릭하여 파일 업로드
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      PDF, DOCX, HWP 파일 지원
-                    </p>
-                  </div>
-                </button>
+            <Label className="text-sm">문서 파일 업로드</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileUpload}
+              accept=".pdf,.docx,.hwp"
+              className="hidden"
+            />
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 h-11 px-3 rounded-lg border border-border bg-card flex items-center gap-2">
+                {uploadedFile ? (
+                  <>
+                    <FileText className={`w-4 h-4 flex-shrink-0 ${uploadedFile.name.endsWith(".pdf") ? "text-red-500" : "text-blue-600"}`} />
+                    <span className="text-sm text-foreground truncate">{uploadedFile.name}</span>
+                    <span className="text-xs text-muted-foreground flex-shrink-0">{(uploadedFile.size / 1024).toFixed(2)} KB</span>
+                    <button type="button" onClick={handleRemoveFile} aria-label="파일 제거" className="ml-auto text-muted-foreground hover:text-foreground flex-shrink-0">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-sm text-muted-foreground truncate">파일 업로드(PDF, Docx 파일 지원)</span>
+                )}
               </div>
-            ) : (
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {uploadedFile.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {(uploadedFile.size / 1024).toFixed(2)} KB
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRemoveFile}
-                    className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors flex-shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
+              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-shrink-0 h-11">
+                파일업로드
+              </Button>
+            </div>
           </div>
 
-          {/* AI Box 선택 */}
+          {/* AI Box 선택 — 디자인에 없음(주석 보존). 복원 시 주석 해제.
           <div className="space-y-2">
             <Label className="text-sm">AI Box 선택</Label>
-            
             {selectedAIBoxes.length === 0 ? (
               <div className="border-2 border-dashed border-border rounded-lg p-6 hover:border-primary/50 transition-colors">
-                <button
-                  type="button"
-                  onClick={() => setShowAIBoxModal(true)}
-                  className="w-full flex flex-col items-center gap-2 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button type="button" onClick={() => setShowAIBoxModal(true)} className="w-full flex flex-col items-center gap-2 text-center">
                   <Box className="w-8 h-8 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      AI Box 선택
-                    </p>
-                  </div>
+                  <div><p className="text-sm font-medium text-foreground">AI Box 선택</p></div>
                 </button>
               </div>
             ) : (
@@ -330,68 +289,32 @@ export function PolicyRegistrationModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <Box className="w-5 h-5 text-primary flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        선택된 AI Box: {selectedAIBoxes.map(box => box.name).join(', ')}
-                      </p>
-                    </div>
+                    <div className="flex-1 min-w-0"><p className="text-sm font-medium text-foreground truncate">선택된 AI Box: {selectedAIBoxes.map(box => box.name).join(', ')}</p></div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedAIBoxes([])}
-                    className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors flex-shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  <button type="button" onClick={() => setSelectedAIBoxes([])} className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 flex-shrink-0"><X className="w-4 h-4" /></button>
                 </div>
               </div>
             )}
           </div>
+          */}
 
-          {/* 넛지 안내 — 파일 또는 AI Box 업로드 시 노출 */}
+          {/* 넛지 안내 — 디자인에 없음(주석 보존)
           {(uploadedFile || selectedAIBoxes.length > 0) && (
-            <div
-              className="flex items-start gap-2.5"
-              style={{
-                backgroundColor: "#EEF2FF",
-                borderRadius: "8px",
-                padding: "12px 16px",
-              }}
-            >
-              <Info
-                style={{
-                  width: "14px",
-                  height: "14px",
-                  color: "#6B7280",
-                  flexShrink: 0,
-                  marginTop: "1px",
-                }}
-              />
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "#4B5563",
-                  lineHeight: 1.6,
-                  margin: 0,
-                }}
-              >
+            <div className="flex items-start gap-2.5" style={{ backgroundColor: "#EEF2FF", borderRadius: "8px", padding: "12px 16px" }}>
+              <Info style={{ width: "14px", height: "14px", color: "#6B7280", flexShrink: 0, marginTop: "1px" }} />
+              <p style={{ fontSize: "13px", color: "#4B5563", lineHeight: 1.6, margin: 0 }}>
                 업로드된 문서 데이터는 <strong style={{ fontWeight: 600, color: "#3730A3" }}>'노무도우미'</strong> 질의응답 시에만 맞춤 참조 데이터로 활용됩니다.
               </p>
             </div>
           )}
+          */}
 
-          {/* 액션 버튼 */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-            >
+          {/* 액션 버튼 — 디자인 정합: 전체 너비 취소/등록하기 */}
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" onClick={handleClose} className="flex-1 h-11">
               취소
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={!selectedCategory}
-            >
+            <Button onClick={handleSubmit} disabled={!selectedCategory} className="flex-1 h-11">
               등록하기
             </Button>
           </div>
