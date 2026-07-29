@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { ExternalLink } from "lucide-react";
+import { Scale } from "lucide-react";
 import { AnswerHeader } from "@/app/components/answer-header";
+import { SourceChip } from "@/app/components/source-chip";
 import {
   generateMultiTurnAnswer,
   type MultiTurnAnswer,
   type MultiTurnAnswerRequest,
-  type MultiTurnSource,
 } from "@/app/services/multi-turn-answer";
 
 interface MultiTurnResponseProps {
@@ -18,16 +18,6 @@ interface MultiTurnResponseProps {
   onError?: () => void;
   /** 상단 검토 제목 */
   title?: string;
-}
-
-// 해석례는 # 접두사로 표시
-function displayTitle(s: MultiTurnSource): string {
-  if (s.type === "해석례") {
-    if (s.title.startsWith("#")) return s.title;
-    const bare = s.title.split(" ")[0].split("(")[0].trim();
-    return `#${bare}`;
-  }
-  return s.title;
 }
 
 export function MultiTurnResponse({
@@ -127,19 +117,18 @@ export function MultiTurnResponse({
             </div>
           )}
 
-          {/* 하단 출처 (사규 제외) */}
+          {/* 하단 근거 법령 (사규 제외) — 상세·간단답변과 동일한 칩 형태 */}
           {!streaming && visibleSources.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-border space-y-1">
-              {visibleSources.map((s, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => onLawClick?.(s.title)}
-                  className="flex items-center gap-1.5 text-[13px] text-primary hover:underline hover:text-primary/80 transition-colors text-left"
-                >
-                  <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-70" />
-                  {displayTitle(s)}
-                </button>
-              ))}
+            <div className="mt-5 pt-4 border-t border-border">
+              <div className="flex items-center gap-1.5 mb-3">
+                <Scale className="w-4 h-4 text-foreground" />
+                <h3 className="text-base font-bold text-foreground">근거 법령</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {visibleSources.map((s, idx) => (
+                  <SourceChip key={idx} title={s.title} type={s.type} onClick={() => onLawClick?.(s.title)} />
+                ))}
+              </div>
             </div>
           )}
         </div>

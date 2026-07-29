@@ -1,6 +1,7 @@
 import { Scale, Copy, CornerDownRight } from "lucide-react";
 import { toast } from "sonner";
 import { AnswerHeader } from "@/app/components/answer-header";
+import { SourceChip } from "@/app/components/source-chip";
 
 type SourceType = "법령" | "해석례" | "사규" | "판례";
 
@@ -63,18 +64,6 @@ function LinkifiedText({
       )}
     </>
   );
-}
-
-// 출처 제목에서 조항 배지/법령명 분리 (예: "근로기준법 제17조 (근로조건의 명시)" → 제17조 / 근로기준법)
-function parseSourceChip(title: string, type?: SourceType): { badge: string; name: string } {
-  const m = title.match(/^([가-힣·\s]+?)\s*(제\d+조(?:의\d+)?)/);
-  if (m) return { badge: m[2], name: m[1].trim() };
-  if (type === "해석례") {
-    const bare = title.startsWith("#") ? title : `#${title.split(" ")[0].split("(")[0].trim()}`;
-    return { badge: "해석례", name: bare };
-  }
-  if (type === "판례") return { badge: "판례", name: title };
-  return { badge: type ?? "법령", name: title };
 }
 
 export function SimpleResponseCard({
@@ -168,22 +157,10 @@ export function SimpleResponseCard({
               </button>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2.5">
-              {visibleSources.map((src, idx) => {
-                const { badge, name } = parseSourceChip(src.id, src.type);
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => onLawClick?.(src.name)}
-                    className="flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-xl bg-card border border-border/60 shadow-sm hover:border-primary/40 transition-colors"
-                  >
-                    <span className="px-2 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-primary text-xs font-bold whitespace-nowrap">
-                      {badge}
-                    </span>
-                    <span className="text-sm text-foreground whitespace-nowrap">{name}</span>
-                  </button>
-                );
-              })}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {visibleSources.map((src, idx) => (
+                <SourceChip key={idx} title={src.id} type={src.type} onClick={() => onLawClick?.(src.name)} />
+              ))}
             </div>
           </div>
         )}

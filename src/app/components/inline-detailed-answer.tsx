@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Scale, FileText, Gavel, Sparkles, Search, HelpCircle, ListChecks } from "lucide-react";
 import characterImg from "@/assets/dobi-chat.png";
 import { AnswerHeader } from "@/app/components/answer-header";
+import { SourceChip } from "@/app/components/source-chip";
 
 interface Source {
   type: "법령" | "해석례" | "판례";
@@ -37,13 +38,6 @@ interface InlineDetailedAnswerProps {
   onOpenDebate?: () => void;
   /** 답변별 의견서 작성 — 해당 상세답변을 기준으로 의견서 작성 (정책 리뷰 2026-07-03) */
   onWriteOpinion?: () => void;
-}
-
-// 법령 제목에서 조항 배지/법령명 분리 (예: "근로기준법 제17조 (근로조건의 명시)" → 제17조 / 근로기준법)
-function parseLawChip(title: string): { badge: string; name: string } {
-  const m = title.match(/^([가-힣·\s]+?)\s*(제\d+조(?:의\d+)?)/);
-  if (m) return { badge: m[2], name: m[1].trim() };
-  return { badge: "법령", name: title };
 }
 
 function caseDisplayTitle(s: Source): string {
@@ -246,19 +240,9 @@ export function InlineDetailedAnswer({
                     <h3 className="text-base font-bold text-foreground">근거 법령</h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {lawSources.map((s, idx) => {
-                      const { badge, name } = parseLawChip(s.title);
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => onSourceClick?.(s.title)}
-                          className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-lg bg-card border border-border/60 shadow-sm hover:border-primary/40 transition-colors"
-                        >
-                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-primary text-xs font-bold whitespace-nowrap">{badge}</span>
-                          <span className="text-sm text-foreground whitespace-nowrap">{name}</span>
-                        </button>
-                      );
-                    })}
+                    {lawSources.map((s, idx) => (
+                      <SourceChip key={idx} title={s.title} type={s.type} onClick={() => onSourceClick?.(s.title)} />
+                    ))}
                   </div>
                 </section>
               )}
