@@ -1,6 +1,6 @@
 import { Scale, Copy, CornerDownRight } from "lucide-react";
 import { toast } from "sonner";
-import characterImg from "@/assets/dobi-chat.png";
+import { AnswerHeader } from "@/app/components/answer-header";
 
 type SourceType = "법령" | "해석례" | "사규" | "판례";
 
@@ -25,6 +25,8 @@ interface SimpleResponseCardProps {
     content?: string;
   }>;
   onLawClick?: (lawName: string) => void;
+  /** 상단 검토 제목 (없으면 body.title 사용) */
+  title?: string;
   /** 구조화 본문 (제목 + 불릿 + 안내) — 없으면 결론 텍스트로 대체 */
   structured?: SimpleAnswer;
   /** 호환용 (간단 답변은 일괄 표시) */
@@ -80,6 +82,7 @@ export function SimpleResponseCard({
   answer,
   relatedLaws,
   onLawClick,
+  title,
   structured,
 }: SimpleResponseCardProps) {
   // 구조화 본문이 없으면 결론 텍스트를 단일 불릿으로 변환
@@ -107,35 +110,12 @@ export function SimpleResponseCard({
 
   return (
     <div className="flex justify-start mb-6">
-      {/* 상세답변과 동일: 박스 없음 + 마스코트 헤더 (디자인 정합) */}
+      {/* 상세답변과 동일: 박스 없음 + 공용 상단 헤더(마스코트 + 조사 완료 카드 + 제목) */}
       <div className="w-full max-w-[760px] flex flex-col">
-        {/* 헤더: 마스코트 + 조사 완료 */}
-        <div className="flex items-center gap-3 pb-4 border-b border-border">
-          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-indigo-100 dark:ring-indigo-900/40">
-            <img src={characterImg} alt="도우미" className="w-full h-full object-cover" />
-          </div>
-          <span className="inline-flex items-center gap-1 text-sm font-bold text-foreground">
-            <Scale className="w-3.5 h-3.5 text-primary" />
-            조사 완료
-          </span>
-        </div>
-
-        {/* ── 제목 + 복사 ── */}
-        <div className="flex items-start justify-between gap-3 pt-5">
-          <h2 className="text-lg font-bold text-foreground leading-snug" style={{ wordBreak: "keep-all" }}>
-            {body.title}
-          </h2>
-          <button
-            onClick={handleCopyBody}
-            aria-label="답변 복사"
-            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-          >
-            <Copy className="w-4 h-4" />
-          </button>
-        </div>
+        <AnswerHeader title={title ?? body.title} sourceCount={visibleSources.length} onCopyTitle={handleCopyBody} />
 
         {/* ── 불릿 본문 ── */}
-        <ul className="mt-4 space-y-4">
+        <ul className="mt-5 space-y-4">
           {body.bullets.map((b, i) => (
             <li key={i} className="space-y-2">
               <div className="flex items-start gap-2.5">

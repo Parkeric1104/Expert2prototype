@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ExternalLink } from "lucide-react";
-import characterImg from "@/assets/dobi-chat.png";
+import { AnswerHeader } from "@/app/components/answer-header";
 import {
   generateMultiTurnAnswer,
   type MultiTurnAnswer,
@@ -16,6 +16,8 @@ interface MultiTurnResponseProps {
   onStreamingChange?: (active: boolean) => void;
   /** 답변 생성 실패 시 호출 — 부모가 이 턴을 채팅 횟수에서 제외(잔여 횟수 보존) */
   onError?: () => void;
+  /** 상단 검토 제목 */
+  title?: string;
 }
 
 // 해석례는 # 접두사로 표시
@@ -34,6 +36,7 @@ export function MultiTurnResponse({
   stream = false,
   onStreamingChange,
   onError,
+  title,
 }: MultiTurnResponseProps) {
   const [answer, setAnswer] = useState<MultiTurnAnswer | null>(null);
   const [displayed, setDisplayed] = useState("");
@@ -99,14 +102,11 @@ export function MultiTurnResponse({
 
   return (
     <div className="flex justify-start mb-6">
-      {/* 상세·간단답변과 동일: 박스 없음 + 마스코트 (디자인 정합) */}
-      <div className="w-full max-w-[760px] flex items-start gap-3">
-        {/* 마스코트 아바타 */}
-        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-indigo-100 dark:ring-indigo-900/40 mt-0.5">
-          <img src={characterImg} alt="도우미" className="w-full h-full object-cover" />
-        </div>
+      {/* 상세·간단답변과 동일: 공용 상단 헤더(마스코트 + 조사 완료 카드 + 제목) */}
+      <div className="w-full max-w-[760px]">
+        <AnswerHeader title={title} sourceCount={visibleSources.length} />
 
-        <div className="flex-1 min-w-0">
+        <div className="mt-5">
           {/* 대화형 본문 (서식 없음) — 한국어 줄바꿈 keep-all 필수 (디자인 가이드 §2) */}
           <p className="text-[15px] leading-relaxed text-foreground font-normal whitespace-pre-line" style={{ wordBreak: "keep-all" }}>
             {displayed}

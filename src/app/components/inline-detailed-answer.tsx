@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Scale, FileText, Gavel, Sparkles, Search, HelpCircle, ListChecks } from "lucide-react";
 import characterImg from "@/assets/dobi-chat.png";
+import { AnswerHeader } from "@/app/components/answer-header";
 
 interface Source {
   type: "법령" | "해석례" | "판례";
@@ -17,6 +18,8 @@ interface AIOpinionSummary {
 }
 
 interface InlineDetailedAnswerProps {
+  /** 상단 검토 제목 (예: "퇴직금 중간정산 요청에 대한 법적 검토") */
+  title?: string;
   conclusion: string;
   factAnalysis: string;
   queryContent: string;
@@ -61,6 +64,7 @@ function sourceSubtitle(s: Source): string {
 }
 
 export function InlineDetailedAnswer({
+  title,
   conclusion,
   factAnalysis,
   queryContent,
@@ -159,19 +163,11 @@ export function InlineDetailedAnswer({
   return (
     <div className="flex justify-start mb-6">
       <div className="w-full max-w-[760px]">
-        {/* 헤더: 마스코트 + 조사 완료 (디자인 정합: 박스 없음) */}
-        <div className="flex items-center gap-3 pb-4 border-b border-border">
-          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-indigo-100 dark:ring-indigo-900/40">
-            <img src={characterImg} alt="도우미" className="w-full h-full object-cover" />
-          </div>
-          <span className="inline-flex items-center gap-1 text-sm font-bold text-foreground">
-            <Scale className="w-3.5 h-3.5 text-primary" />
-            조사 완료
-          </span>
-        </div>
+        {/* 상단 헤더: 마스코트 + '조사 완료' 카드(출처 N·시각) + 검토 제목 (공용) */}
+        <AnswerHeader title={title} sourceCount={sources.length} />
 
         {/* 문서형 본문 */}
-        <div className="pt-5 space-y-7">
+        <div className="pt-6 space-y-7">
           {/* 1. 사실관계 */}
           {typingStage >= 1 && (
             <section className="animate-in fade-in duration-300">

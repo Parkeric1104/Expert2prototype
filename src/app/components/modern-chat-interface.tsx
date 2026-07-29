@@ -150,6 +150,23 @@ const GUARDRAIL_REFUSAL =
 const isSystemUserText = (t: string): boolean =>
   t === "의견서 작성" || t === "상세 답변 받기" || t === "상세 답변 생성" || t.includes("AI 의견");
 
+// 답변 상단 검토 제목 도출 — 질문 키워드 기반 (상세·간단·멀티턴 답변 공통, 디자인 정합)
+const deriveReviewTitle = (q: string): string => {
+  const s = (q || "").toLowerCase();
+  if (s.includes("퇴직금") || s.includes("중간정산")) return "퇴직금 중간정산 요청에 대한 법적 검토";
+  if (s.includes("연차") || s.includes("휴가")) return "연차휴가 적용에 대한 법적 검토";
+  if (s.includes("임금") || s.includes("급여") || s.includes("체불")) return "임금 지급에 대한 법적 검토";
+  if (s.includes("해고") || s.includes("징계")) return "해고·징계의 정당성에 대한 법적 검토";
+  if (s.includes("산재") || s.includes("재해") || s.includes("사고")) return "업무상 재해 인정에 대한 법적 검토";
+  if (s.includes("전직") || s.includes("경업")) return "전직금지약정의 효력에 대한 법적 검토";
+  if (s.includes("기간제") || s.includes("무기계약")) return "기간제 근로계약 갱신에 대한 법적 검토";
+  if (s.includes("취업규칙")) return "취업규칙 적용에 대한 법적 검토";
+  if (s.includes("부가가치세") || s.includes("부가세")) return "부가가치세 신고에 대한 세무 검토";
+  if (s.includes("소득세") || s.includes("종합소득")) return "소득세 신고에 대한 세무 검토";
+  if (s.includes("법인세")) return "법인세 신고에 대한 세무 검토";
+  return "질문 내용에 대한 검토";
+};
+
 export function ModernChatInterface({
   initialMessage,
   selectedLaws,
@@ -1543,6 +1560,11 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
     return "추가 질문을 입력하세요...";
   };
 
+  // 답변 상단 검토 제목 — 세션의 첫 실제 질문 기반(상세·간단·멀티턴 공통)
+  const sessionReviewTitle = deriveReviewTitle(
+    messages.find((m) => m.isUser && !isSystemUserText(m.text))?.text || initialMessage || ""
+  );
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative">
       {/* Chat Messages Area — 배경은 App 루트 그라데이션을 그대로 노출 (메인 화면과 동일) */}
@@ -1616,6 +1638,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                       content: source.content
                     }))}
                     onLawClick={handleLawClick}
+                    title={sessionReviewTitle}
                     structured={(message.enhancedData as any).simpleAnswer}
                   />
                 )}
@@ -1633,6 +1656,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                       onStreamingChange={setIsStreaming}
                       onError={() => markMessageError(message.id)}
                       stream={!isHistoryView}
+                      title={sessionReviewTitle}
                     />
                   );
                 })()}
@@ -1664,6 +1688,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                   const topicTitle = message.draftTopicTitle || detectLawCategory(basisQ);
                   return (
                   <InlineDetailedAnswer
+                    title={deriveReviewTitle(basisQ)}
                     conclusion={message.enhancedData.conclusion}
                     factAnalysis={message.enhancedData.factAnalysis}
                     queryContent={message.enhancedData.queryRedefinition}
