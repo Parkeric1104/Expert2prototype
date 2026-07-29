@@ -1,4 +1,4 @@
-import { Menu, Undo2 } from "lucide-react";
+import { Menu, Undo2, ArrowLeft } from "lucide-react";
 
 interface TopHeaderProps {
   variant?: "home" | "chat" | "policy";
@@ -51,7 +51,7 @@ export function TopHeader({
             onClick={onLogoClick ?? onNavigateToMain}
             className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Undo2 className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4" />
             메인으로 돌아가기
           </button>
         </div>

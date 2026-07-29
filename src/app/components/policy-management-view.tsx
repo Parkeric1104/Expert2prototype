@@ -527,8 +527,8 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
 
                       {/* 액션 버튼 */}
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* 대기중 상태일 때만 분석 결과보기 버튼 표시 */}
-                        {displayInfo.status === "pending" && onOpenEmbedding && (
+                        {/* 분석 결과보기 버튼 — 사용자 요청으로 비활성화(2026-07-29). 복원 시 아래 false 제거 */}
+                        {false && displayInfo.status === "pending" && onOpenEmbedding && (
                           <Button
                             id={policy.id === firstPendingId ? "coach-analysis-btn" : undefined}
                             size="sm"
