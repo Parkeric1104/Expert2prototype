@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Printer, Sparkles, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Download, Printer, Sparkles, RefreshCw, ChevronLeft, ChevronRight, FileSearch, FileEdit, FileText, PenSquare, Newspaper } from "lucide-react";
 
 interface DocumentSection {
   title: string;
@@ -149,26 +149,33 @@ export function DocumentView({
                 요약 데이터는 ONE AI 서비스 사용자만 제공되는 기능입니다.
               </p>
               <div className="mt-4 flex items-center gap-2">
-                <button className="p-1 text-gray-300" aria-label="이전"><ChevronLeft className="w-4 h-4" /></button>
                 <div className="flex-1 flex items-center gap-2 overflow-hidden">
-                  {["관련 세법 검색", "AI DocuTune", "고객용 문서 만들기", "블로그 포스트 만들기", "뉴스레터 만들기"].map((label) => {
-                    const disabled = label === "AI DocuTune";
-                    return (
-                      <button
-                        key={label}
-                        disabled={disabled}
-                        className={`whitespace-nowrap px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                          disabled
-                            ? "border-gray-200 text-gray-300 cursor-not-allowed"
-                            : "border-gray-200 text-gray-700 hover:border-primary/40 hover:text-primary"
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
+                  {[
+                    { label: "관련 세법 검색", Icon: FileSearch },
+                    { label: "AI DocuTune", Icon: FileEdit, disabled: true },
+                    { label: "고객용 문서 만들기", Icon: FileText },
+                    { label: "블로그 포스트 만들기", Icon: PenSquare },
+                    { label: "뉴스레터 만들기", Icon: Newspaper },
+                  ].map(({ label, Icon, disabled }) => (
+                    <button
+                      key={label}
+                      disabled={disabled}
+                      className={`whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                        disabled
+                          ? "border-gray-200 text-gray-300 cursor-not-allowed"
+                          : "border-gray-200 text-gray-700 hover:border-primary/40 hover:text-primary"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </button>
+                  ))}
                 </div>
-                <button className="p-1 text-gray-500 hover:text-gray-900" aria-label="다음"><ChevronRight className="w-4 h-4" /></button>
+                {/* 캐러셀 화살표 — 우측 묶음 (디자인 정합) */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button className="p-1 text-gray-400 hover:text-gray-900 transition-colors" aria-label="이전"><ChevronLeft className="w-4 h-4" /></button>
+                  <button className="p-1 text-gray-400 hover:text-gray-900 transition-colors" aria-label="다음"><ChevronRight className="w-4 h-4" /></button>
+                </div>
               </div>
             </div>
           )}
