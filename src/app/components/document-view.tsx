@@ -93,7 +93,7 @@ export function DocumentView({
       {isTrial ? (
         <div
           className="h-14 px-6 flex items-center justify-between print:hidden flex-shrink-0"
-          style={{ background: "#4E6AF0" }}
+          style={{ background: "#487AF7" }}
         >
           {/* 좌: 뒤로가기 + ONEFFICE 로고 */}
           <div className="flex items-center gap-3">
