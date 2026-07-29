@@ -1,4 +1,5 @@
-import { ArrowLeft, Download, Printer, Sparkles, RefreshCw, ChevronLeft, ChevronRight, FileSearch, FileEdit, FileText, PenSquare, Newspaper } from "lucide-react";
+import { ArrowLeft, Download, Printer, Sparkles, RefreshCw, ChevronLeft, ChevronRight, FileSearch, FileEdit, FileText, PenSquare, Newspaper, Bookmark, MessageSquare, HelpCircle } from "lucide-react";
+import characterImg from "@/assets/dobi-chat.png";
 
 interface DocumentSection {
   title: string;
@@ -88,48 +89,84 @@ export function DocumentView({
 
   return (
     <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between print:hidden flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onBack}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            title="뒤로 가기"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">AI 노무의견서</h1>
-            <p className="text-sm text-gray-500">
-              공통의견서(전 분야 공통 템플릿)
-            </p>
+      {/* Header — 체험판: ONEFFICE 파란 바(좌측 뒤로가기) / 일반: 흰색 바 */}
+      {isTrial ? (
+        <div
+          className="h-14 px-6 flex items-center justify-between print:hidden flex-shrink-0"
+          style={{ background: "#4E6AF0" }}
+        >
+          {/* 좌: 뒤로가기 + ONEFFICE 로고 */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              aria-label="뒤로 가기"
+              title="뒤로 가기"
+              className="p-1.5 rounded-lg text-white/90 hover:text-white hover:bg-white/15 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="text-white font-extrabold text-xl tracking-tight">ONEFFICE</span>
+          </div>
+          {/* 우: 세법도우미 + 읽기/편집 + 아이콘 */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-white/40">
+                <img src={characterImg} alt="" className="w-full h-full object-cover" />
+              </div>
+              <span className="text-white text-sm font-medium">세법도우미</span>
+            </div>
+            <div className="flex items-center rounded-md overflow-hidden text-xs font-medium border border-white/30">
+              <span className="px-2.5 py-1 bg-white/25 text-white">읽기</span>
+              <span className="px-2.5 py-1 text-white/75">편집</span>
+            </div>
+            <button className="text-white/85 hover:text-white transition-colors" aria-label="북마크"><Bookmark className="w-[18px] h-[18px]" /></button>
+            <button className="text-white/85 hover:text-white transition-colors" aria-label="채팅"><MessageSquare className="w-[18px] h-[18px]" /></button>
+            <button className="text-white/85 hover:text-white transition-colors" aria-label="도움말"><HelpCircle className="w-[18px] h-[18px]" /></button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {showCompleteButton && (
+      ) : (
+        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between print:hidden flex-shrink-0">
+          <div className="flex items-center gap-4">
             <button
-              onClick={onComplete}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
+              onClick={onBack}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              title="뒤로 가기"
             >
-              의견서 작성완료하기
+              <ArrowLeft className="w-5 h-5" />
             </button>
-          )}
-          <button
-            onClick={handlePrint}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            title="인쇄"
-          >
-            <Printer className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleDownload}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            title="다운로드"
-          >
-            <Download className="w-5 h-5" />
-          </button>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">AI 노무의견서</h1>
+              <p className="text-sm text-gray-500">
+                공통의견서(전 분야 공통 템플릿)
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {showCompleteButton && (
+              <button
+                onClick={onComplete}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
+              >
+                의견서 작성완료하기
+              </button>
+            )}
+            <button
+              onClick={handlePrint}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              title="인쇄"
+            >
+              <Printer className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleDownload}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              title="다운로드"
+            >
+              <Download className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Document Content - Scrollable */}
       <div className="flex-1 overflow-y-auto bg-gray-100">
