@@ -58,6 +58,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   const [selectedTab, setSelectedTab]   = useState("연말정산");
   const [selectedCategory, setSelectedCategory] = useState("기본공제소득");
   const [currentPage, setCurrentPage]   = useState(1);
+  const [showAttachList, setShowAttachList] = useState(false); // 첨부 '더보기' 팝오버
 
   // 탭 전환 시 해당 탭의 첫 칩으로 리셋
   const handleSelectTab = (tab: string) => {
@@ -301,37 +302,65 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
               className="hidden"
               multiple
             />
-            {uploadedFiles.length > 0 && (
-              <div className="flex items-center gap-1.5 min-w-0">
-                {uploadedFiles.slice(0, 3).map((file, idx) => (
-                  <div
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 h-8 pl-2 pr-1.5 bg-card border border-border rounded-lg flex-shrink-0"
+            {/* 파일 칩 영역 — flex-1 폭 제한(min-w-0) + overflow-hidden 으로 우측 버튼과 절대 겹치지 않음.
+                파일 없으면 빈 flex-1 = 스페이서. 최대 2개 노출, 초과분은 '더보기(⋯)' 팝오버 */}
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-hidden">
+              {uploadedFiles.slice(0, 2).map((file, idx) => (
+                <div
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 h-8 pl-2 pr-1.5 bg-card border border-border rounded-lg flex-shrink-0"
+                >
+                  <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${getFileIconColor(file.name)}`} />
+                  <span className="text-xs font-medium text-foreground truncate max-w-[110px]">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(idx)}
+                    aria-label="첨부 제거"
+                    className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                   >
-                    <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${getFileIconColor(file.name)}`} />
-                    <span className="text-xs font-medium text-foreground truncate max-w-[90px]">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFile(idx)}
-                      aria-label="첨부 제거"
-                      className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-                {uploadedFiles.length > 3 && (
-                  <div
-                    className="inline-flex items-center h-8 px-2 bg-card border border-border rounded-lg text-muted-foreground flex-shrink-0"
-                    title={`외 ${uploadedFiles.length - 3}개 첨부`}
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                  </div>
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* 더보기(⋯) — 파일첨부 버튼 앞. 3개 이상일 때 전체 첨부 목록 팝오버 */}
+            {uploadedFiles.length > 2 && (
+              <div className="relative flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowAttachList((v) => !v)}
+                  aria-label="첨부 더보기"
+                  className="h-9 w-9 rounded-full border border-border bg-card text-foreground/70 hover:text-foreground hover:bg-muted/60 transition-colors flex items-center justify-center"
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+                {showAttachList && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowAttachList(false)} />
+                    <div className="absolute bottom-full right-0 mb-2 w-64 bg-card border border-border rounded-xl shadow-xl p-2 z-50">
+                      <p className="text-xs font-semibold text-foreground px-2 py-1.5">첨부자료 {uploadedFiles.length}</p>
+                      <div className="max-h-56 overflow-y-auto">
+                        {uploadedFiles.map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50">
+                            <FileText className={`w-4 h-4 flex-shrink-0 ${getFileIconColor(file.name)}`} />
+                            <span className="text-xs text-foreground truncate flex-1" title={file.name}>{file.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFile(idx)}
+                              aria-label="첨부 제거"
+                              className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             )}
-
-            <div className="flex-1" />
 
             {/* 우: 파일 첨부 (아이콘) */}
             <button
