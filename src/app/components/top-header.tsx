@@ -64,38 +64,38 @@ export function TopHeader({
     return (
       <header className="bg-card border-b border-border">
         <div className="h-14 flex items-center justify-between gap-3 px-5">
-          {/* 좌: 햄버거 */}
-          <button
-            onClick={onToggleSidebar}
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label="채팅 이력 열기"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          {/* 우: (체험판 배지) + 메인으로 돌아가기 (디자인 정합: 우측 정렬 + 곡선 화살표) */}
-          <div className="flex items-center gap-3">
-            {isTrial && <TrialBadge companyName={companyName} trialCount={trialCount} trialMax={trialMax} />}
+          {/* 좌: 햄버거 + (체험판 배지) */}
+          <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={onNavigateToMain}
-              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              onClick={onToggleSidebar}
+              className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
+              aria-label="채팅 이력 열기"
             >
-              <Undo2 className="w-4 h-4" />
-              메인으로 돌아가기
+              <Menu className="w-5 h-5" />
             </button>
+            {isTrial && <TrialBadge companyName={companyName} trialCount={trialCount} trialMax={trialMax} />}
           </div>
+
+          {/* 우: 메인으로 돌아가기 (곡선 화살표) */}
+          <button
+            onClick={onNavigateToMain}
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+          >
+            <Undo2 className="w-4 h-4" />
+            메인으로 돌아가기
+          </button>
         </div>
       </header>
     );
   }
 
-  // [1-1] 메인/홈 화면 GNB: ☰ (좌측)만. 사용자 매뉴얼은 햄버거 메뉴 하단으로 이동(디자인 정합)
+  // [1-1] 메인/홈 화면 GNB: ☰ (좌측). 체험판 배지는 햄버거 옆(좌측)에 배치.
   return (
     <header className="bg-white">
-      <div className="h-14 flex items-center justify-between pl-6 pr-7">
+      <div className="h-14 flex items-center gap-3 pl-6 pr-7">
         <button
           onClick={onToggleSidebar}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
           aria-label="메뉴 열기"
         >
           <Menu className="w-5 h-5" />
