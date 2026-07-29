@@ -527,8 +527,8 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
 
                       {/* 액션 버튼 */}
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* 분석 결과보기 버튼 — 사용자 요청으로 비활성화(2026-07-29). 복원 시 아래 false 제거 */}
-                        {false && displayInfo.status === "pending" && onOpenEmbedding && (
+                        {/* 분석 결과보기 버튼 — 사용자 요청으로 주석 처리(2026-07-29). 프로세스는 삭제하지 않고 보존. 복원 시 아래 주석 해제.
+                        {displayInfo.status === "pending" && onOpenEmbedding && (
                           <Button
                             id={policy.id === firstPendingId ? "coach-analysis-btn" : undefined}
                             size="sm"
@@ -540,6 +540,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
                             분석 결과보기
                           </Button>
                         )}
+                        */}
                         <Button
                           size="sm"
                           variant="ghost"
@@ -667,9 +668,11 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
             })()}
 
             {filteredPolicies.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>등록된 정책 문서가 없습니다.</p>
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                  <FileText className="w-8 h-8 text-primary/70" />
+                </div>
+                <p className="text-sm text-muted-foreground">등록된 정책 문서가 없습니다.</p>
               </div>
             )}
           </div>
@@ -712,29 +715,45 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
       )}
 
       {/* 삭제 확인 모달 */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>정책 문서 삭제</AlertDialogTitle>
-            <AlertDialogDescription>
-              이 정책 문서를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+      {/* 정책 문서 삭제 — 디자인 정합(중앙 ⚠ + '대상' 박스 + 삭제 Primary) */}
+      {showDeleteDialog && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowDeleteDialog(false)}
+        >
+          <div
+            className="bg-card rounded-2xl shadow-2xl w-full max-w-[380px] px-8 py-8 flex flex-col items-center text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
+            </div>
+            <h3 className="text-base font-bold text-foreground">정책 문서 삭제</h3>
+            <p className="text-sm text-muted-foreground mt-2 leading-relaxed" style={{ wordBreak: "keep-all" }}>
+              이 정책 문서를 삭제하시겠습니까?
               <br />
-              <br />
-              <strong>삭제될 문서:</strong>{" "}
-              {policies.find(p => p.id === deletingPolicy)?.name}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeletePolicy}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              삭제
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              이 작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="mt-4 w-full rounded-lg bg-muted/60 px-4 py-3 text-sm text-foreground">
+              대상: {policies.find((p) => p.id === deletingPolicy)?.name}
+            </div>
+            <div className="mt-6 flex items-center gap-2 w-full justify-center">
+              <button
+                onClick={() => setShowDeleteDialog(false)}
+                className="px-6 py-2.5 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeletePolicy}
+                className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 테스트용: 정책 관리 화면 접속 시 무조건 표시 */}
       <AutoPolicyReviewNotification

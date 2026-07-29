@@ -35,8 +35,8 @@ export function AutoPolicyReviewModal({
 
         {/* 상단 아이콘 + 제목 */}
         <div className="flex flex-col items-center text-center space-y-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <CheckCircle2 className="w-8 h-8 text-primary" />
+          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
           </div>
           <h2 className="text-2xl font-bold text-foreground">
             사내 정책 등록이 완료되었습니다
@@ -186,8 +186,8 @@ export function AutoPolicyReviewNotification({
 
         {/* 상단 아이콘 + 제목 */}
         <div className="flex flex-col items-center text-center space-y-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <CheckCircle2 className="w-8 h-8 text-primary" />
+          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
           </div>
           <h2 className="text-2xl font-bold text-foreground">
             정책 분석이 완료되었습니다
