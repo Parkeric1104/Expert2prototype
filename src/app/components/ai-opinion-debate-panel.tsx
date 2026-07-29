@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft } from "lucide-react";
 import characterImg from "@/assets/dobi-chat.png";
+import { TopHeader } from "@/app/components/top-header";
 
 type Speaker = "host" | "pro" | "con";
 
@@ -21,6 +21,8 @@ interface AIOpinionDebatePanelProps {
   onDelete: () => void; // AI 의견 반영 삭제
   /** 상세 답변 사이드패널 안에 임베드되어 동작 (오버레이/헤더 없이 컨텐츠만) */
   embedded?: boolean;
+  /** 채팅 GNB '메인으로 돌아가기' 핸들러 (전체화면 헤더용) */
+  onNavigateToMain?: () => void;
 }
 
 const PERSONAS = {
@@ -40,6 +42,7 @@ export function AIOpinionDebatePanel({
   onReflect,
   onDelete,
   embedded = false,
+  onNavigateToMain,
 }: AIOpinionDebatePanelProps) {
   // 토론 스크립트: 사회자 → 법률학자(1) → 분석가(1) → 법률학자(2) → 분석가(2) → 사회자 마무리
   const script: ScriptLine[] = [
@@ -263,14 +266,9 @@ export function AIOpinionDebatePanel({
         className="fixed inset-0 z-50 flex flex-col animate-in fade-in duration-300"
         style={{ background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #EBF1FF 100%)" }}
       >
-        {/* Header */}
-        <div className="flex-shrink-0 border-b border-border/60 bg-card/70 backdrop-blur">
-          <div className="w-full max-w-3xl mx-auto flex items-center gap-3 px-6 h-16">
-            <button onClick={onClose} aria-label="뒤로" className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h2 className="text-lg font-bold text-foreground">AI 상세의견 · 토론</h2>
-          </div>
+        {/* Header — 채팅 GNB 통일(햄버거=답변으로 복귀 / ↩ 메인으로 돌아가기) */}
+        <div className="flex-shrink-0">
+          <TopHeader variant="chat" onToggleSidebar={onClose} onNavigateToMain={onNavigateToMain ?? onClose} />
         </div>
         {/* Body (중앙 정렬) */}
         <div className="flex-1 w-full max-w-3xl mx-auto flex flex-col overflow-hidden">

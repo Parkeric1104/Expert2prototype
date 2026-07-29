@@ -156,7 +156,8 @@ export default function App() {
   };
 
   const handleNavigation = (action: () => void) => {
-    if (hasChatMessages && currentView === "chat") {
+    // 채팅이력 보기(읽기 전용)는 잃을 대화가 없어 확인 알럿 미노출 → 바로 이동
+    if (hasChatMessages && currentView === "chat" && !historySession) {
       setShowLeaveConfirmModal(true);
       setPendingNavigationAction(() => action);
     } else {

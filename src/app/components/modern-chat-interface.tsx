@@ -1878,6 +1878,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
             reflected={!!target?.hasAIOpinion}
             onReflect={handleReflectAIOpinion}
             onDelete={handleDeleteAIOpinion}
+            onNavigateToMain={handleNavigateToMain}
           />
         );
       })()}
