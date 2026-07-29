@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { ArrowLeft, Download, Printer, Sparkles, RefreshCw, ChevronLeft, ChevronRight, FileSearch, FileEdit, FileText, PenSquare, Newspaper, Bookmark, MessageSquare, HelpCircle } from "lucide-react";
 import characterImg from "@/assets/dobi-chat.png";
+import { TrialBlockModal } from "@/app/components/trial-block-modal";
 
 interface DocumentSection {
   title: string;
@@ -47,6 +49,8 @@ export function DocumentView({
   data,
   isTrial = false,
 }: DocumentViewProps) {
+  const [showTrialBlock, setShowTrialBlock] = useState(false); // 체험판: 요약/헤더 버튼 미제공
+
   const handlePrint = () => {
     window.print();
   };
@@ -117,11 +121,11 @@ export function DocumentView({
             </div>
             <div className="flex items-center rounded-md overflow-hidden text-xs font-medium border border-white/30">
               <span className="px-2.5 py-1 bg-white/25 text-white">읽기</span>
-              <span className="px-2.5 py-1 text-white/75">편집</span>
+              <button className="px-2.5 py-1 text-white/75 hover:text-white transition-colors" onClick={() => setShowTrialBlock(true)}>편집</button>
             </div>
-            <button className="text-white/85 hover:text-white transition-colors" aria-label="북마크"><Bookmark className="w-[18px] h-[18px]" /></button>
-            <button className="text-white/85 hover:text-white transition-colors" aria-label="채팅"><MessageSquare className="w-[18px] h-[18px]" /></button>
-            <button className="text-white/85 hover:text-white transition-colors" aria-label="도움말"><HelpCircle className="w-[18px] h-[18px]" /></button>
+            <button className="text-white/85 hover:text-white transition-colors" aria-label="북마크" onClick={() => setShowTrialBlock(true)}><Bookmark className="w-[18px] h-[18px]" /></button>
+            <button className="text-white/85 hover:text-white transition-colors" aria-label="채팅" onClick={() => setShowTrialBlock(true)}><MessageSquare className="w-[18px] h-[18px]" /></button>
+            <button className="text-white/85 hover:text-white transition-colors" aria-label="도움말" onClick={() => setShowTrialBlock(true)}><HelpCircle className="w-[18px] h-[18px]" /></button>
           </div>
         </div>
       ) : (
@@ -197,6 +201,7 @@ export function DocumentView({
                     <button
                       key={label}
                       disabled={disabled}
+                      onClick={() => setShowTrialBlock(true)}
                       className={`whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
                         disabled
                           ? "border-gray-200 text-gray-300 cursor-not-allowed"
@@ -389,6 +394,9 @@ export function DocumentView({
           }
         }
       `}</style>
+
+      {/* 체험판: 요약 카드/헤더 버튼 미제공 */}
+      <TrialBlockModal isOpen={showTrialBlock} onClose={() => setShowTrialBlock(false)} />
     </div>
   );
 }

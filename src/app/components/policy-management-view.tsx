@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { PolicyRegistrationModal } from "@/app/components/policy-registration-modal";
+import { TrialBlockModal } from "@/app/components/trial-block-modal";
 import { AutoPolicyReviewNotification } from "@/app/components/auto-policy-review-modal";
 import { PolicyCoachMark, useCoachMark } from "@/app/components/policy-coach-mark";
 import { toast } from "sonner";
@@ -328,6 +329,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
   };
 
   const handleDownloadPolicy = (policy: PolicyFile) => {
+    if (isTrial) { setShowTrialBlock(true); return; } // 체험판: 다운로드 미제공
     toast.success(`${policy.name} 다운로드를 시작합니다.`);
   };
 
@@ -564,6 +566,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
                           size="sm"
                           variant="ghost"
                           onClick={() => {
+                            if (isTrial) { setShowTrialBlock(true); return; } // 체험판: 삭제 미제공
                             setDeletingPolicy(policy.id);
                             setShowDeleteDialog(true);
                           }}
@@ -687,33 +690,8 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
         onSubmit={handleSubmitPolicy}
       />
 
-      {/* 체험판 사용 불가 팝업 (등록 시도 시) */}
-      {showTrialBlock && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4" onClick={() => setShowTrialBlock(false)}>
-          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-[360px] px-8 py-9 flex flex-col items-center text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-5">
-              <AlertTriangle className="w-8 h-8 text-amber-500" />
-            </div>
-            <p className="text-base font-bold text-foreground" style={{ wordBreak: "keep-all" }}>
-              체험판에서는 사용하실 수 없습니다.
-            </p>
-            <div className="mt-7 flex items-center gap-2 w-full justify-center">
-              <button
-                onClick={() => setShowTrialBlock(false)}
-                className="px-5 py-2.5 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={() => window.open("https://www.douzone.com", "_blank", "noopener,noreferrer")}
-                className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors"
-              >
-                ONE AI 문의
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 체험판 사용 불가 팝업 (등록·다운로드·삭제 시도 시) */}
+      <TrialBlockModal isOpen={showTrialBlock} onClose={() => setShowTrialBlock(false)} />
 
       {/* 삭제 확인 모달 */}
       {/* 정책 문서 삭제 — 디자인 정합(중앙 ⚠ + '대상' 박스 + 삭제 Primary) */}

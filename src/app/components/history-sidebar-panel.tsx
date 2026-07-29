@@ -21,6 +21,7 @@ const USER_MANUAL_URL = "https://www.figma.com/deck/1ZXPBZL2hOhbLcfZiKLBH6";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
+import { TrialBlockModal } from "@/app/components/trial-block-modal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,6 +88,7 @@ export function HistorySidebarPanel({
   }));
 
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>(initialChatHistory);
+  const [showTrialBlock, setShowTrialBlock] = useState(false); // 체험판: ONEFFICE 목록보기 차단
 
   // ESC 키로 패널 닫기 (REQ-06)
   useEffect(() => {
@@ -157,7 +159,7 @@ export function HistorySidebarPanel({
             </Button>
 
             <Button
-              onClick={onOpenManual}
+              onClick={() => (isTrial ? setShowTrialBlock(true) : onOpenManual?.())}
               variant="outline"
               className="w-full justify-start gap-2"
             >
@@ -338,6 +340,9 @@ export function HistorySidebarPanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 체험판: ONEFFICE 목록보기 미제공 */}
+      <TrialBlockModal isOpen={showTrialBlock} onClose={() => setShowTrialBlock(false)} />
     </>
   );
 }
