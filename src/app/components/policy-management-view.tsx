@@ -59,7 +59,7 @@ interface PolicyManagementViewProps {
 }
 
 export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial = false }: PolicyManagementViewProps) {
-  const { showCoach, startCoach, stopCoach } = useCoachMark();
+  const { showCoach, startCoach, stopCoach } = useCoachMark(!isTrial);
   const [showTrialBlock, setShowTrialBlock] = useState(false); // 체험판 사용 불가 팝업
 
   // Mock data for existing policies

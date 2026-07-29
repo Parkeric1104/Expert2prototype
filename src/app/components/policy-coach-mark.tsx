@@ -258,16 +258,17 @@ export function PolicyCoachMark({ show, onClose }: PolicyCoachMarkProps) {
 }
 
 /** 페이지 진입 시 자동 표시 + 수동 재시작 훅 */
-export function useCoachMark() {
+export function useCoachMark(autoStart: boolean = true) {
   const [showCoach, setShowCoach] = useState(false);
 
   useEffect(() => {
+    if (!autoStart) return; // 체험판 등 자동 노출 비활성
     const done = localStorage.getItem(STORAGE_KEY);
     if (!done) {
       const t = setTimeout(() => setShowCoach(true), 500);
       return () => clearTimeout(t);
     }
-  }, []);
+  }, [autoStart]);
 
   const startCoach = () => {
     localStorage.removeItem(STORAGE_KEY);
