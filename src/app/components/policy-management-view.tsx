@@ -417,37 +417,38 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
       <div className="border-b border-border bg-card px-6 py-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                <Shield className="w-6 h-6 text-primary" />
-                사내 정책 문서 관리
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                등록된 정책 문서를 관리하고 새로운 문서를 추가할 수 있습니다.
-              </p>
-            </div>
+            {/* 디자인 정합: 보라 문서 아이콘 + '노무 정책 문서 관리' + 제목 옆 '?' 툴팁 */}
             <div className="flex items-center gap-3">
-              <Button
-                onClick={startCoach}
-                variant="outline"
-                size="lg"
-                className="gap-2"
-                title="가이드 투어 다시 보기"
-              >
-                <HelpCircle className="w-5 h-5" />
-                도움말
-              </Button>
-              <Button
-                id="coach-register-btn"
-                onClick={() => (isTrial ? setShowTrialBlock(true) : setShowRegistrationModal(true))}
-                className="gap-2"
-                size="lg"
-                data-coachmark="register-button"
-              >
-                <Plus className="w-5 h-5" />
-                등록하기
-              </Button>
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground flex items-center gap-1.5">
+                  노무 정책 문서 관리
+                  <button
+                    onClick={startCoach}
+                    title="도움말 · 가이드 투어"
+                    aria-label="도움말"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                  </button>
+                </h1>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  노무 등록된 정책 문서를 관리하고 새로운 문서를 추가할 수 있습니다.
+                </p>
+              </div>
             </div>
+            <Button
+              id="coach-register-btn"
+              onClick={() => (isTrial ? setShowTrialBlock(true) : setShowRegistrationModal(true))}
+              className="gap-2"
+              size="lg"
+              data-coachmark="register-button"
+            >
+              <Plus className="w-5 h-5" />
+              등록하기
+            </Button>
           </div>
         </div>
       </div>
