@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   Shield, FileText, Search, Filter, Download, ChevronDown, ChevronUp,
-  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle, Database, HelpCircle
+  Edit, Trash2, History as HistoryIcon, Plus, Lock, Clock, CheckCircle2, AlertCircle, Database, HelpCircle, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -54,10 +54,13 @@ interface PolicyHistory {
 interface PolicyManagementViewProps {
   isAdmin?: boolean;
   onOpenEmbedding?: (policy: { id: string; name: string; category: string }) => void;
+  /** 체험판 — 등록 등 쓰기 액션 차단(ONE AI 문의 유도) */
+  isTrial?: boolean;
 }
 
-export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: PolicyManagementViewProps) {
+export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial = false }: PolicyManagementViewProps) {
   const { showCoach, startCoach, stopCoach } = useCoachMark();
+  const [showTrialBlock, setShowTrialBlock] = useState(false); // 체험판 사용 불가 팝업
 
   // Mock data for existing policies
   const [policies, setPolicies] = useState<PolicyFile[]>(([
@@ -436,7 +439,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
               </Button>
               <Button
                 id="coach-register-btn"
-                onClick={() => setShowRegistrationModal(true)}
+                onClick={() => (isTrial ? setShowTrialBlock(true) : setShowRegistrationModal(true))}
                 className="gap-2"
                 size="lg"
                 data-coachmark="register-button"
@@ -679,6 +682,34 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding }: Policy
         onClose={() => setShowRegistrationModal(false)}
         onSubmit={handleSubmitPolicy}
       />
+
+      {/* 체험판 사용 불가 팝업 (등록 시도 시) */}
+      {showTrialBlock && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4" onClick={() => setShowTrialBlock(false)}>
+          <div className="bg-card rounded-2xl shadow-2xl w-full max-w-[360px] px-8 py-9 flex flex-col items-center text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-5">
+              <AlertTriangle className="w-8 h-8 text-amber-500" />
+            </div>
+            <p className="text-base font-bold text-foreground" style={{ wordBreak: "keep-all" }}>
+              체험판에서는 사용하실 수 없습니다.
+            </p>
+            <div className="mt-7 flex items-center gap-2 w-full justify-center">
+              <button
+                onClick={() => setShowTrialBlock(false)}
+                className="px-5 py-2.5 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => window.open("https://www.douzone.com", "_blank", "noopener,noreferrer")}
+                className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors"
+              >
+                ONE AI 문의
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 삭제 확인 모달 */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

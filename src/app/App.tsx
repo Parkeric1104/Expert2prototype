@@ -352,6 +352,7 @@ export default function App() {
         <PolicyManagementView
           isAdmin={isAdmin}
           onOpenEmbedding={handleOpenEmbedding}
+          isTrial={isTrial}
         />
       )}
 

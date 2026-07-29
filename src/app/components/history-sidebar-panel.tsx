@@ -203,6 +203,17 @@ export function HistorySidebarPanel({
           </div>
 
           <ScrollArea className="flex-1">
+            {/* 체험판: 채팅 내역 저장 안 됨 — 문구만 노출 */}
+            {isTrial ? (
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <MessageCircle className="w-7 h-7 text-muted-foreground/60" />
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>
+                  체험판에서는 채팅 내역이 저장되지 않습니다.
+                </p>
+              </div>
+            ) : (
             <div className="p-3 space-y-2">
               {chatHistory.map((chat) => (
                 <div
@@ -292,6 +303,7 @@ export function HistorySidebarPanel({
                 </div>
               )}
             </div>
+            )}
           </ScrollArea>
         </div>
 
