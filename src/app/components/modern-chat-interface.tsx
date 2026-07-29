@@ -140,7 +140,7 @@ const FLOATING_ICONS = [
 ];
 
 // 멀티턴 제한 상수
-const MAX_QUESTIONS = 4; // 최초 답변 1 + 멀티턴(후속질문) 3회 (최초 질문은 멀티턴 횟수에 미포함)
+const MAX_QUESTIONS = 6; // 최초 답변 1 + 멀티턴(후속질문) 5회 (최초 질문은 멀티턴 횟수에 미포함)
 
 // 가드레일 거부 문구 (PRD RIS-001) — 세션은 유지하고 재시도를 유도
 const GUARDRAIL_REFUSAL =
