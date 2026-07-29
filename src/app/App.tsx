@@ -324,6 +324,7 @@ export default function App() {
           onStartChat={handleStartChat}
           onOpenLawSelector={handleOpenLawSelector}
           selectedLaws={selectedLaws}
+          onClearLaws={() => setSelectedLaws([])}
           onOpenPolicyManagement={handleOpenPolicyUpload}
         />
       )}

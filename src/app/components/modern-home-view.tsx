@@ -3,7 +3,7 @@ import { CreditStatus } from "@/app/components/credit-status";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
-  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search
+  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search, MoreHorizontal
 } from "lucide-react";
 import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
@@ -21,6 +21,7 @@ interface ModernHomeViewProps {
   onStartChat: (query: string, selectedLaws: string[], relatedLaws?: string[], questionType?: string, contextType?: string) => void;
   onOpenLawSelector: () => void;
   selectedLaws: string[];
+  onClearLaws?: () => void; // 'N개 법령' 칩 X → 전체(선택 해제)
   onOpenPolicyManagement?: () => void; // 미등록 넛지 배너 → 정책 문서 관리 진입
 }
 
@@ -50,7 +51,7 @@ const TAB_CHIPS: Record<string, string[]> = {
 };
 const ITEMS_PER_PAGE = 4;
 
-export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onOpenPolicyManagement }: ModernHomeViewProps) {
+export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
@@ -79,11 +80,12 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
 
   const fileInputRef    = useRef<HTMLInputElement>(null);
 
-  const getFileIcon = (fileName: string) => {
-    if (fileName.endsWith(".pdf"))  return "📄";
-    if (fileName.endsWith(".docx")) return "📝";
-    if (fileName.endsWith(".hwp"))  return "📋";
-    return "📎";
+  // 파일 유형별 아이콘 색상 (디자인: PDF 빨강 / Word 파랑 / HWP 스카이)
+  const getFileIconColor = (fileName: string) => {
+    if (fileName.endsWith(".pdf"))  return "text-red-500";
+    if (fileName.endsWith(".docx")) return "text-blue-600";
+    if (fileName.endsWith(".hwp"))  return "text-sky-500";
+    return "text-muted-foreground";
   };
 
   const prompts: Array<{ text: string; questionType: string; category: string; laws: string[]; contextType?: "single" | "multi" }> = [
@@ -261,16 +263,36 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
           {/* ── 툴바 ── */}
           <div className="flex items-center gap-1.5 px-3 pb-3 pt-1 min-h-[44px]">
 
-            {/* 좌: 법령 선택 */}
-            <button
-              onClick={onOpenLawSelector}
-              className="h-8 flex items-center gap-1.5 px-3 rounded-full text-sm text-foreground/80 hover:text-foreground hover:bg-muted/70 transition-colors whitespace-nowrap flex-shrink-0"
-            >
-              <Settings2 className="w-4 h-4" />
-              <span>{selectedLaws.length === 0 || selectedLaws.length === AVAILABLE_LAWS.length ? "전체" : `${selectedLaws.length}개 법령`}</span>
-            </button>
+            {/* 좌: 법령 선택 — 전체(pill) / N개 법령(제거 칩) */}
+            {selectedLaws.length === 0 || selectedLaws.length === AVAILABLE_LAWS.length ? (
+              <button
+                onClick={onOpenLawSelector}
+                className="h-8 flex items-center gap-1.5 px-3 rounded-full text-sm text-foreground/80 hover:text-foreground hover:bg-muted/70 transition-colors whitespace-nowrap flex-shrink-0"
+              >
+                <Settings2 className="w-4 h-4" />
+                <span>전체</span>
+              </button>
+            ) : (
+              <div className="h-8 inline-flex items-center gap-1 pl-2.5 pr-1 rounded-full bg-primary/8 border border-primary/20 flex-shrink-0">
+                <button onClick={onOpenLawSelector} className="inline-flex items-center gap-1.5 text-sm text-primary">
+                  <Scale className="w-3.5 h-3.5" />
+                  <span className="font-medium whitespace-nowrap">{selectedLaws.length}개 법령</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onClearLaws?.()}
+                  aria-label="법령 선택 해제"
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-primary/70 hover:text-primary hover:bg-primary/15 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
 
-            {/* 파일 칩 (첨부 시) */}
+            {/* 구분선 (법령 ↔ 파일칩) */}
+            {uploadedFiles.length > 0 && <span className="w-px h-5 bg-border mx-0.5 flex-shrink-0" />}
+
+            {/* 파일 칩 (첨부 시) — 색상 아이콘 + X, 3개 초과 시 ⋯ */}
             <input
               type="file"
               ref={fileInputRef}
@@ -280,23 +302,32 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
               multiple
             />
             {uploadedFiles.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {uploadedFiles.map((file, idx) => (
+              <div className="flex items-center gap-1.5 min-w-0">
+                {uploadedFiles.slice(0, 3).map((file, idx) => (
                   <div
                     key={idx}
-                    className="inline-flex items-center gap-1.5 h-7 px-2.5 bg-primary/8 border border-primary/20 rounded-lg flex-shrink-0"
+                    className="inline-flex items-center gap-1.5 h-8 pl-2 pr-1.5 bg-card border border-border rounded-lg flex-shrink-0"
                   >
-                    <span className="text-xs">{getFileIcon(file.name)}</span>
-                    <span className="text-xs font-medium text-foreground truncate max-w-[80px]">{file.name}</span>
+                    <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${getFileIconColor(file.name)}`} />
+                    <span className="text-xs font-medium text-foreground truncate max-w-[90px]">{file.name}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveFile(idx)}
-                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="첨부 제거"
+                      className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
+                {uploadedFiles.length > 3 && (
+                  <div
+                    className="inline-flex items-center h-8 px-2 bg-card border border-border rounded-lg text-muted-foreground flex-shrink-0"
+                    title={`외 ${uploadedFiles.length - 3}개 첨부`}
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </div>
+                )}
               </div>
             )}
 
