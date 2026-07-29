@@ -4,7 +4,7 @@ import { Button } from "@/app/components/ui/button";
 import { SourcesContent } from "@/app/components/sources-and-history-panel";
 import type { PanelSource } from "@/app/components/sources-and-history-panel";
 import { AIOpinionDebatePanel } from "@/app/components/ai-opinion-debate-panel";
-import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
+import characterImg from "@/assets/dobi-chat.png";
 
 interface Source {
   type: "법령" | "해석례" | "판례";

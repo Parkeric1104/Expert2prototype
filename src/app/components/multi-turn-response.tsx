@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ExternalLink } from "lucide-react";
-import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
+import characterImg from "@/assets/dobi-chat.png";
 import {
   generateMultiTurnAnswer,
   type MultiTurnAnswer,

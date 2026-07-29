@@ -9,7 +9,7 @@ import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
   BookOpen, Award, DollarSign, ClipboardCheck, UserCheck
 } from "lucide-react";
-import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
+import characterImg from "@/assets/dobi-welcome.png";
 import {
   PolicyRegisterInlineCTA,
   POLICY_NUDGE_PENDING_KEY,

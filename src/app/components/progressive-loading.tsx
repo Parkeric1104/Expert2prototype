@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Check, Search } from "lucide-react";
 import { StopResponseDialog } from "@/app/components/stop-response-dialog";
-import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
+import characterImg from "@/assets/dobi-chat.png";
 
 interface ProgressiveLoadingBubbleProps {
   relatedLaws?: string[];

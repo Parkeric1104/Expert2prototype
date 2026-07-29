@@ -1,6 +1,6 @@
 import { Scale, Copy, CornerDownRight } from "lucide-react";
 import { toast } from "sonner";
-import characterImg from "@/assets/ba68b3d133c0b0eab30536be7e6ef8ec6cdf174e.png";
+import characterImg from "@/assets/dobi-chat.png";
 
 type SourceType = "법령" | "해석례" | "사규" | "판례";
 
