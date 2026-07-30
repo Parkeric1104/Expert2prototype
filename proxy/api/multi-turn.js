@@ -8,8 +8,53 @@
 //    무료 키 발급: https://aistudio.google.com/apikey
 
 import { pickFallbackAnswer } from "./_fallback-answers.js";
+import { GOLDEN_INDEX } from "./_golden-index.js";
 
 const MODEL = "gemini-2.5-flash"; // 무료 티어 지원 모델
+
+// ── 골든셋 RAG grounding ─────────────────────────────────────────
+// 노무사 검증 골든셋(70건)에서 질문과 유사한 항목을 찾아 시스템 프롬프트에 주입한다.
+// (클라이언트가 고신뢰 매칭을 이미 처리하므로, 여기서는 '느슨한' 근거 보강 용도.)
+const normalize = (s) =>
+  (s || "").toLowerCase().replace(/\([^)]*\)/g, " ").replace(/[^0-9a-z가-힣]/g, "");
+const trigrams = (s) => {
+  const n = normalize(s);
+  const set = new Set();
+  if (n.length < 3) return n ? set.add(n) && set : set;
+  for (let i = 0; i <= n.length - 3; i++) set.add(n.slice(i, i + 3));
+  return set;
+};
+const overlap = (a, b) => {
+  if (!a.size || !b.size) return 0;
+  const [s, l] = a.size <= b.size ? [a, b] : [b, a];
+  let inter = 0;
+  for (const g of s) if (l.has(g)) inter++;
+  return inter / s.size;
+};
+function retrieveGolden(question, priorQuestions) {
+  const q = trigrams([question, ...(priorQuestions || [])].join(" "));
+  const scored = GOLDEN_INDEX.map((e) => {
+    const s = Math.max(overlap(q, trigrams(e.q)), overlap(q, trigrams(e.qfull)) * 0.95);
+    return { e, s };
+  })
+    .filter((x) => x.s >= 0.18) // 느슨한 임계값(근거 보강)
+    .sort((a, b) => b.s - a.s)
+    .slice(0, 3);
+  return scored.map((x) => x.e);
+}
+function buildGrounding(matches) {
+  if (!matches.length) return "";
+  const blocks = matches.map((e, i) => {
+    const laws = e.laws.length ? `관련 법령: ${e.laws.join(", ")}` : "";
+    const precs = e.precs.length ? `관련 판례: ${e.precs.join(", ")}` : "";
+    return `【참고 ${i + 1}】(${e.field}) ${e.q}\n${e.gist}\n${laws}\n${precs}`.trim();
+  });
+  return (
+    "\n\n아래는 노무사가 검증한 유사 상담 사례다. 사실관계가 부합하는 범위에서만 근거로 활용하고, " +
+    "특히 sources에는 아래 검증된 법령·판례를 우선 반영하라(부합하지 않으면 무시).\n" +
+    blocks.join("\n\n")
+  );
+}
 
 const SYSTEM =
   "너는 한국 세법·노무 상담 도우미다. 질문 유형을 분석해, 아래 3단 흐름의 '흐르는 줄글'로 " +
@@ -70,6 +115,9 @@ export default async function handler(req, res) {
     (priorQuestions.length ? `이전 질문: ${priorQuestions.join(" / ")}\n\n` : "") +
     `질문: ${question}`;
 
+  // 골든셋에서 유사 사례를 찾아 시스템 프롬프트에 근거로 주입(RAG grounding)
+  const systemText = SYSTEM + buildGrounding(retrieveGolden(question, priorQuestions));
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
   let r;
   try {
@@ -80,7 +128,7 @@ export default async function handler(req, res) {
         "x-goog-api-key": process.env.GEMINI_API_KEY, // ← 서버 환경변수에서만 읽음
       },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
+        systemInstruction: { parts: [{ text: systemText }] },
         contents: [{ role: "user", parts: [{ text: userText }] }],
         generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA },
       }),

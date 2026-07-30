@@ -201,8 +201,8 @@ export function InlineDetailedAnswer({
             </section>
           )}
 
-          {/* 4. 결론 */}
-          {typingStage >= 4 && (
+          {/* 4. 결론 (내용이 있을 때만) */}
+          {typingStage >= 4 && conclusion && (
             <section className="animate-in fade-in duration-300">
               <h3 className="flex items-center gap-1.5 text-[15px] font-bold text-primary mb-2"><Sparkles className="w-4 h-4" />결론</h3>
               <div className="text-sm leading-relaxed text-foreground whitespace-pre-line pl-1">

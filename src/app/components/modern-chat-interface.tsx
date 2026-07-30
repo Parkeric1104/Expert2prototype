@@ -39,6 +39,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getDummyResponse } from "@/app/data/dummy-responses";
+import {
+  findGoldenMatch,
+  goldenToEnhancedData,
+  goldenToDocSections,
+} from "@/app/services/golden-match";
 import { ChatHistorySession } from "@/app/data/chat-history";
 import { validateQuestion, ValidationReason } from "@/app/utils/validate-question";
 import {
@@ -621,6 +626,9 @@ export function ModernChatInterface({
 
   // Generate integrated response data
   const generateIntegratedResponse = (userMessage: string): EnhancedResponseData => {
+    // 골든셋(노무사 검증 70건) 우선 — 유사 질문은 검증 데이터로 상세답변·출처·의견서 공통 구성
+    const g = findGoldenMatch(userMessage);
+    if (g) return goldenToEnhancedData(g);
     return getDummyResponse(userMessage);
   };
 
@@ -1116,6 +1124,10 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
     const allUserMessages = messages.filter(m => m.isUser && !isSystemUserText(m.text));
     const userMessage = basisOverride || allUserMessages.map(m => m.text).join("\n\n[추가 질문]\n");
 
+    // 골든셋(노무사 검증) 매칭 — 매칭되면 검증 초안을 의견서 본문(sections)으로 사용
+    const goldenDoc =
+      findGoldenMatch(userMessage) || findGoldenMatch(allUserMessages[0]?.text || "");
+
     const doc = generateDocument(userMessage);
     const today = new Date();
     const formattedDate = `${today.getFullYear()}. ${String(today.getMonth() + 1).padStart(2, '0')}. ${String(today.getDate()).padStart(2, '0')}.`;
@@ -1178,6 +1190,17 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
       ]
     };
     
+    // 골든셋 매칭 시: 노무사 검증 초안을 의견서 본문(sections)·검토대상·질의로 주입
+    if (goldenDoc) {
+      Object.assign(data, {
+        sections: goldenToDocSections(goldenDoc),
+        reviewTarget: topicTitle || goldenDoc.questionTitle || (data as { reviewTarget?: string }).reviewTarget,
+        queries: [goldenDoc.question],
+        responsePreamble:
+          "본 의견서는 노무사 검증 데이터(골든셋)를 기반으로 작성된 초안입니다. 실제 적용 시 개별 사실관계 확인이 필요합니다.",
+      });
+    }
+
     setDocumentContent(doc);
     setDocumentData(data);
     setShowDocPreview(true);

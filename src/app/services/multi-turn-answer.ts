@@ -30,6 +30,7 @@
 // ⚠️ API 키를 이 프론트엔드 코드/환경변수에 넣지 말 것 — 정적 배포라 유출된다. 반드시 프록시 서버에 둔다.
 
 import { EnhancedResponseData, buildMultiTurnBody } from "@/app/data/dummy-responses";
+import { findGoldenMatch, goldenToMultiTurnAnswer } from "@/app/services/golden-match";
 
 export type MultiTurnSourceType = "법령" | "해석례" | "사규" | "판례";
 
@@ -89,10 +90,16 @@ const llmProvider: MultiTurnProvider = async (req) => {
 };
 
 /**
- * 멀티턴 답변 생성. 프로바이더는 VITE_MULTI_TURN_PROVIDER로 선택('llm'이면 프록시, 아니면 더미).
- * 반환 형태는 두 프로바이더 모두 동일(MultiTurnAnswer)하므로 렌더 코드는 바뀌지 않는다.
+ * 멀티턴 답변 생성.
+ *  1) 골든셋(노무사 검증 70건)에 충분히 유사하면 검증 답변을 그대로 사용(결정적·정확).
+ *  2) 아니면 VITE_MULTI_TURN_PROVIDER로 선택('llm'이면 프록시, 아니면 더미).
+ * 반환 형태는 모두 동일(MultiTurnAnswer)하므로 렌더 코드는 바뀌지 않는다.
  */
 export function generateMultiTurnAnswer(req: MultiTurnAnswerRequest): Promise<MultiTurnAnswer> {
+  // 골든셋 우선 — 검증된 노무 Q&A와 유사한 질문은 curated 답변으로 응답
+  const g = findGoldenMatch(req.question);
+  if (g) return Promise.resolve(goldenToMultiTurnAnswer(g));
+
   const provider: MultiTurnProvider =
     (import.meta.env.VITE_MULTI_TURN_PROVIDER as string) === "llm" ? llmProvider : dummyProvider;
   return provider(req);
