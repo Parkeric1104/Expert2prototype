@@ -92,11 +92,11 @@ export function MultiTurnResponse({
 
   return (
     <div className="flex justify-start mb-6">
-      {/* 상세·간단답변과 동일: 공용 상단 헤더(마스코트 + 조사 완료 카드 + 제목) */}
+      {/* 출처가 있을 때만 헤더(조사완료 카드+제목) 노출 — 출처 없으면 헤더영역 포함 미노출(기획 정합, CHAT_REPLY_CASE) */}
       <div className="w-full max-w-[760px]">
-        <AnswerHeader title={title} sourceCount={visibleSources.length} />
+        {visibleSources.length > 0 && <AnswerHeader title={title} sourceCount={visibleSources.length} />}
 
-        <div className="mt-5">
+        <div className={visibleSources.length > 0 ? "mt-5" : ""}>
           {/* 대화형 본문 (서식 없음) — 한국어 줄바꿈 keep-all 필수 (디자인 가이드 §2) */}
           <p className="text-[15px] leading-relaxed text-foreground font-normal whitespace-pre-line" style={{ wordBreak: "keep-all" }}>
             {displayed}

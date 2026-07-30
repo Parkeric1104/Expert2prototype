@@ -1,10 +1,10 @@
 import { useState } from "react";
 import {
-  X, Scale, FileText, Gavel, Globe,
+  X, Scale, FileText, Gavel, Globe, BookOpen,
   ChevronDown, ChevronUp, RotateCcw, ExternalLink,
 } from "lucide-react";
 
-export type SourceType = "법령" | "해석례" | "사규" | "판례";
+export type SourceType = "법령" | "해석례" | "사규" | "판례" | "행정규칙";
 
 export interface PanelSource {
   type: SourceType;
@@ -158,7 +158,7 @@ const TYPE_BADGE: Record<SourceType, string> = {
 };
 
 type MainTab = "sources" | "history";
-type SourceSubTab = "법령" | "해석례" | "판례";
+type SourceSubTab = "법령" | "해석례" | "판례" | "행정규칙";
 
 // ─── 순수 콘텐츠 (오버레이 없음, 재사용 가능) ───────────────────
 interface SourcesContentProps {
@@ -190,6 +190,7 @@ export function SourcesContent({ sources, initialSelectedTitle }: SourcesContent
     if (subTab === "법령") return s.type === "법령" || s.type === "사규";
     if (subTab === "해석례") return s.type === "해석례";
     if (subTab === "판례") return s.type === "판례";
+    if (subTab === "행정규칙") return s.type === "행정규칙";
     return false;
   });
 
@@ -247,8 +248,8 @@ export function SourcesContent({ sources, initialSelectedTitle }: SourcesContent
         <div className="flex flex-col flex-1 overflow-hidden">
           {/* 서브 탭 */}
           <div className="flex items-end px-5 border-b border-border flex-shrink-0">
-            {(["법령", "해석례", "판례"] as SourceSubTab[]).map((tab) => {
-              const Icon = tab === "법령" ? Scale : tab === "해석례" ? FileText : Gavel;
+            {(["법령", "해석례", "판례", "행정규칙"] as SourceSubTab[]).map((tab) => {
+              const Icon = tab === "법령" ? Scale : tab === "해석례" ? FileText : tab === "판례" ? Gavel : BookOpen;
               return (
                 <button
                   key={tab}
