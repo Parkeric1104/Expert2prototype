@@ -84,6 +84,8 @@ interface Message {
   isEnhancedResponse?: boolean;  // 상세 답변
   isSimpleResponse?: boolean;    // 간단 답변
   isMultiTurnResponse?: boolean; // 멀티턴(대화형) 답변
+  isRouteMismatch?: boolean;     // 멀티턴에서 다른 주제(도메인) 감지 → 답변 대신 안내
+  route?: "세법" | "노무" | "unknown"; // 현재 채팅 주제(안내 문구용)
   enhancedData?: EnhancedResponseData;
   lawCategory?: string;
   isDebate?: boolean;
@@ -165,6 +167,19 @@ const deriveReviewTitle = (q: string): string => {
   if (s.includes("소득세") || s.includes("종합소득")) return "소득세 신고에 대한 세무 검토";
   if (s.includes("법인세")) return "법인세 신고에 대한 세무 검토";
   return "질문 내용에 대한 검토";
+};
+
+// 질문의 주제(도메인) 판정 — 세법 / 노무 / unknown(모호). 멀티턴 다른 주제 감지용.
+// 프로토타입은 키워드 기반(실서비스는 LLM 분류로 대체). 모호할 땐 unknown → 오탐(잘못된 안내) 방지.
+const detectRoute = (q: string): "세법" | "노무" | "unknown" => {
+  const s = (q || "").toLowerCase();
+  const taxKeywords = ["부가가치세", "부가세", "소득세", "법인세", "종합소득", "양도세", "상속세", "증여세", "세금", "세무", "과세", "매입세액", "세액공제", "연말정산", "원천징수", "간이과세", "일반과세", "사업자등록", "세율", "납세", "가산세", "신고·납부"];
+  const laborKeywords = ["근로", "임금", "급여", "퇴직", "연차", "휴가", "해고", "징계", "취업규칙", "근로계약", "산재", "재해", "육아휴직", "최저임금", "노동", "수당", "단체협약", "4대보험", "주휴", "연장근로", "야간근로", "전직금지", "기간제", "무기계약", "위탁계약", "프리랜서"];
+  const tax = taxKeywords.some((k) => s.includes(k));
+  const labor = laborKeywords.some((k) => s.includes(k));
+  if (tax && !labor) return "세법";
+  if (labor && !tax) return "노무";
+  return "unknown";
 };
 
 export function ModernChatInterface({
@@ -348,6 +363,14 @@ export function ModernChatInterface({
         return { msg: { ...base, isEnhancedResponse: true }, delay: DELAY_DETAILED };
       }
       return { msg: { ...base, isSimpleResponse: true }, delay: DELAY_SIMPLE };
+    }
+
+    // 후속(멀티턴): 다른 주제(도메인) 감지 시 답변 대신 안내 (조용한 오답 방지)
+    const firstQ = messages.find((m) => m.isUser && !isSystemUserText(m.text))?.text || initialMessage || "";
+    const sessionRoute = detectRoute(firstQ);
+    const followUpRoute = detectRoute(question);
+    if (sessionRoute !== "unknown" && followUpRoute !== "unknown" && followUpRoute !== sessionRoute) {
+      return { msg: { ...base, isRouteMismatch: true, route: sessionRoute }, delay: 300 };
     }
 
     // 후속(멀티턴): 복잡도/턴수와 무관하게 항상 멀티턴(대화형) 답변
@@ -1643,6 +1666,28 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                   />
                 )}
                 {/* 멀티턴(대화형) 답변 */}
+                {/* 다른 주제(도메인) 감지 — 답변 대신 안내(에러메시지 답변 형태) */}
+                {message.isRouteMismatch && (
+                  <div className="flex justify-start mb-6">
+                    <div className="w-full max-w-[760px] flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <Info className="w-5 h-5 text-amber-500" />
+                      </div>
+                      <div className="flex-1 min-w-0 rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3.5">
+                        <p className="text-sm text-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>
+                          현재 채팅은 <span className="font-bold text-primary">{message.route}</span>에 대한 주제로 진행 중입니다. 정확한 답변을 위해 다른 주제의 질문은{" "}
+                          <button
+                            onClick={handleNavigateToMain}
+                            className="font-bold text-primary hover:underline underline-offset-2"
+                          >
+                            새 채팅
+                          </button>
+                          에서 이어가 주세요.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {message.isMultiTurnResponse && message.enhancedData && (() => {
                   const userQs = messages.filter(m => m.isUser && !isSystemUserText(m.text)).map(m => m.text);
                   return (
