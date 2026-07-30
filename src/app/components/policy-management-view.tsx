@@ -25,7 +25,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { PolicyRegistrationModal } from "@/app/components/policy-registration-modal";
 import { TrialBlockModal } from "@/app/components/trial-block-modal";
-import { AutoPolicyReviewNotification } from "@/app/components/auto-policy-review-modal";
+import { AutoPolicyReviewNotification, PolicyRegistrationFailedNotification } from "@/app/components/auto-policy-review-modal";
 import { PolicyCoachMark, useCoachMark } from "@/app/components/policy-coach-mark";
 import { toast } from "sonner";
 
@@ -744,6 +744,9 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
           }
         } : undefined}
       />
+
+      {/* 정책 등록 실패 팝업 — 'policy-registration-failed' 이벤트 수신 시에만 노출(정상 플로우 비침습) */}
+      <PolicyRegistrationFailedNotification isAdmin={true} />
 
       {/* 코치마크 */}
       <PolicyCoachMark show={showCoach} onClose={stopCoach} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { CheckCircle2, FileText } from "lucide-react";
+import { CheckCircle2, FileText, AlertTriangle } from "lucide-react";
 
 // 파일 유형별 아이콘 색상 (PDF 빨강 / HWP·DOCX 파랑)
 const fileIconColor = (name: string) =>
@@ -56,6 +56,76 @@ export function AutoPolicyReviewModal({
           className="w-full h-12 text-base font-semibold"
           size="lg"
         >
+          확인
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PolicyRegistrationFailedModal
+// 정책 등록 실패 팝업 (완료 팝업의 실패 대응 — 피그마 SCR-010 정합).
+// ⚠ amber 아이콘 + 실패 사유 안내 + 실패 파일 목록 + '확인'
+// ---------------------------------------------------------------------------
+interface PolicyRegistrationFailedModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  /** 등록에 실패한 파일 목록 */
+  files?: string[];
+}
+
+export function PolicyRegistrationFailedModal({
+  isOpen,
+  onClose,
+  files = [],
+}: PolicyRegistrationFailedModalProps) {
+  const hasScroll = files.length > 3;
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent
+        className="sm:max-w-[520px] p-8 flex flex-col bg-card border-border"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="sr-only">
+          <DialogTitle>정책 등록 실패</DialogTitle>
+          <DialogDescription>사내 정책 문서 등록에 실패했습니다.</DialogDescription>
+        </DialogHeader>
+
+        {/* 상단 아이콘 + 제목 */}
+        <div className="flex flex-col items-center text-center space-y-4 mb-6">
+          <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+            <AlertTriangle className="w-8 h-8 text-amber-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground">정책 등록에 실패했습니다.</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>
+            문서 분석 중 오류가 발생했습니다.
+            <br />
+            등록하신 파일을 확인하신 후 다시 등록해 주세요.
+          </p>
+        </div>
+
+        {/* 실패 파일 목록 — 유형별 색상 아이콘 (완료 팝업과 동일 스타일) */}
+        {files.length > 0 && (
+          <div
+            className={`mb-6 rounded-xl bg-muted/50 p-3 space-y-1 ${hasScroll ? "max-h-[204px] overflow-y-auto pr-1" : ""}`}
+            style={
+              hasScroll
+                ? { scrollbarWidth: "thin", scrollbarColor: "rgba(102,102,115,0.3) transparent" }
+                : undefined
+            }
+          >
+            {files.map((f) => (
+              <div key={f} title={f} className="flex items-center gap-2.5 px-2 py-1.5">
+                <FileText className={`w-4 h-4 flex-shrink-0 ${fileIconColor(f)}`} />
+                <span className="text-sm text-foreground truncate">{f}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 확인 버튼 */}
+        <Button onClick={onClose} className="w-full h-12 text-base font-semibold" size="lg">
           확인
         </Button>
       </DialogContent>
@@ -238,5 +308,49 @@ export function AutoPolicyReviewNotification({
 export function dispatchPolicyAnalysisComplete(policyName: string) {
   window.dispatchEvent(
     new CustomEvent("policy-analysis-complete", { detail: { name: policyName } })
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PolicyRegistrationFailedNotification
+// 'policy-registration-failed' 이벤트 수신 시 실패 팝업을 노출(관리자만).
+// 정상 등록 플로우에는 개입하지 않음 — 실패 이벤트가 올 때만 동작.
+// ---------------------------------------------------------------------------
+interface PolicyRegistrationFailedNotificationProps {
+  isAdmin: boolean;
+}
+
+export function PolicyRegistrationFailedNotification({
+  isAdmin,
+}: PolicyRegistrationFailedNotificationProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [failedFiles, setFailedFiles] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const handleFailed = (e: CustomEvent<{ files: string[] }>) => {
+      setFailedFiles(e.detail?.files ?? []);
+      setIsOpen(true);
+    };
+    window.addEventListener("policy-registration-failed", handleFailed as EventListener);
+    return () =>
+      window.removeEventListener("policy-registration-failed", handleFailed as EventListener);
+  }, [isAdmin]);
+
+  if (!isAdmin) return null;
+
+  return (
+    <PolicyRegistrationFailedModal
+      isOpen={isOpen}
+      onClose={() => setIsOpen(false)}
+      files={failedFiles}
+    />
+  );
+}
+
+// 실제 개발에서 등록/분석 실패 시 호출 — 서버 오류 응답 수신 후 이 함수 호출
+export function dispatchPolicyRegistrationFailed(files: string[]) {
+  window.dispatchEvent(
+    new CustomEvent("policy-registration-failed", { detail: { files } })
   );
 }
