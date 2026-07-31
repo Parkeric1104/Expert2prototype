@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { CreditStatus } from "@/app/components/credit-status";
+import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
@@ -204,7 +204,8 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   return (
     <div className="flex-1 flex flex-col relative overflow-hidden">
 
-      <div className="absolute bottom-5 left-6 z-30"><CreditStatus /></div>
+      {/* 우하단 펑션 버튼 — 클릭 시 위로 기능 메뉴, 크레딧은 'AI balance' 호버 시에만 노출 */}
+      <div className="absolute bottom-5 right-6 z-30"><FunctionMenu /></div>
 
       {/* 스크롤 영역 — 기본 PC웹(좌우 36px), 모바일만 16px */}
       <div className="flex-1 min-h-0 w-full flex items-start justify-center px-9 max-sm:px-4 overflow-y-auto">
