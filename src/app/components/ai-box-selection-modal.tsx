@@ -166,7 +166,7 @@ export function AIBoxSelectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl h-[75vh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-5xl max-sm:max-w-[calc(100%-2rem)] h-[75vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
           <DialogTitle className="text-xl font-bold">AI Box 선택</DialogTitle>
           <DialogDescription className="sr-only">

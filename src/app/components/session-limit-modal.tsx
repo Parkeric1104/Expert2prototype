@@ -28,7 +28,7 @@ export function SessionLimitModal({
 }: SessionLimitModalProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="max-w-md">
+      <AlertDialogContent className="max-w-md max-sm:max-w-[calc(100%-2rem)]">
         {/* 우측 상단 닫기 */}
         <button
           onClick={onClose}

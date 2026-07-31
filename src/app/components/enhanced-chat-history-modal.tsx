@@ -198,7 +198,7 @@ export function EnhancedChatHistoryModal({ isOpen, onClose, onSelectChat }: Enha
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+      <DialogContent className="max-w-4xl max-sm:max-w-[calc(100%-2rem)] h-[85vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0">
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-primary" />

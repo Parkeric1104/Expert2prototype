@@ -30,7 +30,7 @@ export function ChatLeaveConfirmModal({
 }: ChatLeaveConfirmModalProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="max-w-md">
+      <AlertDialogContent className="max-w-md max-sm:max-w-[calc(100%-2rem)]">
         <AlertDialogHeader className="items-center text-center">
           {/* 경고 아이콘 */}
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-4 mx-auto">
