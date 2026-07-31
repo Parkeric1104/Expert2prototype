@@ -129,34 +129,34 @@ export function DocumentView({
           </div>
         </div>
       ) : (
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between print:hidden flex-shrink-0">
-          <div className="flex items-center gap-4">
+        <div className="bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 print:hidden flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
             <button
               onClick={onBack}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
               title="뒤로 가기"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">AI 노무의견서</h1>
-              <p className="text-sm text-gray-500">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">AI 노무의견서</h1>
+              <p className="text-sm text-gray-500 truncate hidden sm:block">
                 공통의견서(전 분야 공통 템플릿)
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {showCompleteButton && (
               <button
                 onClick={onComplete}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm"
+                className="px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-xs sm:text-sm whitespace-nowrap"
               >
-                의견서 작성완료하기
+                작성완료<span className="hidden sm:inline">하기</span>
               </button>
             )}
             <button
               onClick={handlePrint}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors hidden sm:inline-flex"
               title="인쇄"
             >
               <Printer className="w-5 h-5" />
@@ -224,31 +224,31 @@ export function DocumentView({
           {/* A4 Paper */}
           <div className="bg-white shadow-2xl w-full max-w-[840px] rounded-2xl mb-6 print:shadow-none print:rounded-none print:max-w-full print:mb-0">
             {/* HEADER */}
-            <header className="p-7 pb-5 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
+            <header className="p-4 sm:p-7 pb-4 sm:pb-5 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
               {/* Title */}
-              <div className="text-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              <div className="text-center mb-5 sm:mb-6">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
                   AI 노무의견서
                 </h1>
               </div>
 
               {/* 문서번호, 검토유형, 작성일 */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-3 bg-white border border-gray-200 rounded-xl">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
+                <div className="text-center p-2 sm:p-3 bg-white border border-gray-200 rounded-xl">
                   <div className="text-xs text-gray-500 mb-1">문서번호</div>
-                  <div className="text-sm font-semibold text-gray-900">
+                  <div className="text-xs sm:text-sm font-semibold text-gray-900 break-words">
                     {data?.referenceNo || "AI-LABOR-20250225-001"}
                   </div>
                 </div>
-                <div className="text-center p-3 bg-white border border-gray-200 rounded-xl">
+                <div className="text-center p-2 sm:p-3 bg-white border border-gray-200 rounded-xl">
                   <div className="text-xs text-gray-500 mb-1">검토유형</div>
-                  <div className="text-sm font-semibold text-gray-900">
+                  <div className="text-xs sm:text-sm font-semibold text-gray-900 break-words" style={{ wordBreak: "keep-all" }}>
                     {data?.reviewType || "사전 리스크 검토"}
                   </div>
                 </div>
-                <div className="text-center p-3 bg-white border border-gray-200 rounded-xl">
+                <div className="text-center p-2 sm:p-3 bg-white border border-gray-200 rounded-xl">
                   <div className="text-xs text-gray-500 mb-1">작성일</div>
-                  <div className="text-sm font-semibold text-gray-900">
+                  <div className="text-xs sm:text-sm font-semibold text-gray-900 break-words">
                     {data?.date || "2025. 02. 25."}
                   </div>
                 </div>
@@ -256,7 +256,7 @@ export function DocumentView({
             </header>
 
             {/* CONTENT */}
-            <section className="p-7 space-y-6">
+            <section className="p-4 sm:p-7 space-y-6">
               {/* ■ 질의 */}
               <section>
                 <h2 className="text-base font-bold text-gray-900 mb-3">
