@@ -206,26 +206,26 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
 
       <div className="absolute bottom-5 left-6 z-30"><CreditStatus /></div>
 
-      {/* 스크롤 영역 — 콘텐츠 좌우 패딩 (모바일 16px / 데스크톱 36px) */}
-      <div className="flex-1 min-h-0 w-full flex items-start justify-center px-4 sm:px-9 overflow-y-auto">
+      {/* 스크롤 영역 — 기본 PC웹(좌우 36px), 모바일만 16px */}
+      <div className="flex-1 min-h-0 w-full flex items-start justify-center px-9 max-sm:px-4 overflow-y-auto">
 
-      {/* 메인 콘텐츠 — 반응형: 모바일 상단여백·섹션간격 축소 */}
-      <div className="w-full max-w-[760px] flex flex-col items-stretch gap-6 sm:gap-7 relative z-10 pt-6 sm:pt-12 pb-6">
+      {/* 메인 콘텐츠 — 기본 PC웹, 모바일만 상단여백·섹션간격 축소 */}
+      <div className="w-full max-w-[760px] flex flex-col items-stretch gap-7 max-sm:gap-6 relative z-10 pt-12 max-sm:pt-6 pb-6">
 
-        {/* 인삿말+입력 그룹 — 인삿말(도비+타이틀)과 입력영역을 한 그룹으로 묶어 간격을 촘촘히 */}
-        <div className="flex flex-col gap-4 sm:gap-5">
+        {/* 인삿말+입력 그룹 — 기본 PC웹(28px=섹션 간격), 모바일만 촘촘히(16px) */}
+        <div className="flex flex-col gap-7 max-sm:gap-4">
 
         {/* 인삿말(좌) + 캐릭터(우) — 디자인 정합(좌측 정렬, 캐릭터 우측) */}
-        <div className="w-full flex items-start justify-between gap-3 sm:gap-4">
+        <div className="w-full flex items-start justify-between gap-4 max-sm:gap-3">
           <div className="space-y-1.5">
-            <p className="text-lg sm:text-[22px] leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
+            <p className="text-[22px] max-sm:text-lg leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
               안녕하세요, <span className="font-bold">세법/노무도우미</span> 입니다.
             </p>
-            <p className="text-lg sm:text-[22px] leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
+            <p className="text-[22px] max-sm:text-lg leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
               복잡하고 까다로운 세법과 노무 문제, 무엇이든 물어보세요.
             </p>
           </div>
-          <div className="w-14 h-14 sm:w-[76px] sm:h-[76px] flex-shrink-0 overflow-hidden">
+          <div className="w-[76px] h-[76px] max-sm:w-14 max-sm:h-14 flex-shrink-0 overflow-hidden">
             <img src={characterImg} alt="세법/노무도우미" className="w-full h-full object-contain" />
           </div>
         </div>
@@ -422,8 +422,8 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
           {/* 라벨(독립 줄) — 디자인 정합 */}
           <span className="text-sm font-bold text-foreground flex items-center gap-1"><Sparkles className="w-4 h-4 text-primary" />이런 질문으로 시작해보세요</span>
 
-          {/* 탭 행(전체 너비 구분선) — 모바일 간격 축소 */}
-          <div className="flex items-center gap-3 sm:gap-4 border-b border-border/60 -mt-1">
+          {/* 탭 행(전체 너비 구분선) — 기본 PC웹, 모바일만 간격 축소 */}
+          <div className="flex items-center gap-4 max-sm:gap-3 border-b border-border/60 -mt-1">
             {HOME_TABS.map(tab => (
               <button
                 key={tab}

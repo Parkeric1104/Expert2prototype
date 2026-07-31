@@ -415,28 +415,28 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-border bg-card px-6 py-4">
+      {/* Header — 기본 PC웹, 모바일만 여백·크기 축소 */}
+      <div className="border-b border-border bg-card px-6 max-sm:px-4 py-4">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             {/* 디자인 정합: 보라 문서 아이콘 + '노무 정책 문서 관리' + 제목 옆 '?' 툴팁 */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-6 h-6 text-primary" />
+            <div className="flex items-center gap-3 max-sm:gap-2 min-w-0 flex-1">
+              <div className="w-12 h-12 max-sm:w-10 max-sm:h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-6 h-6 max-sm:w-5 max-sm:h-5 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground flex items-center gap-1.5">
+              <div className="min-w-0">
+                <h1 className="text-2xl max-sm:text-lg font-bold text-foreground flex items-center gap-1.5" style={{ wordBreak: "keep-all" }}>
                   노무 정책 문서 관리
                   <button
                     onClick={startCoach}
                     title="도움말 · 가이드 투어"
                     aria-label="도움말"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                   >
                     <HelpCircle className="w-5 h-5" />
                   </button>
                 </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-sm text-muted-foreground mt-0.5 max-sm:hidden">
                   노무 등록된 정책 문서를 관리하고 새로운 문서를 추가할 수 있습니다.
                 </p>
               </div>
@@ -444,7 +444,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
             <Button
               id="coach-register-btn"
               onClick={() => (isTrial ? setShowTrialBlock(true) : setShowRegistrationModal(true))}
-              className="gap-2"
+              className="gap-2 flex-shrink-0 whitespace-nowrap"
               size="lg"
               data-coachmark="register-button"
             >
@@ -455,11 +455,11 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      {/* Content — 기본 PC웹, 모바일만 여백 축소 */}
+      <div className="flex-1 overflow-y-auto px-6 max-sm:px-4 py-6">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* 검색 및 필터 */}
-          <div id="coach-search-area" className="flex gap-3">
+          {/* 검색 및 필터 — 기본 PC웹 가로 배치, 모바일만 세로 스택 */}
+          <div id="coach-search-area" className="flex flex-row max-sm:flex-col gap-3">
             <div className="flex-1 relative" data-coachmark="search-input">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -470,7 +470,7 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
               />
             </div>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-[180px]" data-coachmark="filter-select">
+              <SelectTrigger className="w-[180px] max-sm:w-full" data-coachmark="filter-select">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
@@ -520,16 +520,16 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
                               {getStatusBadge(displayInfo.status)}
                             </span>
                           </div>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                            <span>등록일: {displayInfo.date}</span>
-                            <span>•</span>
-                            <span>등록자: {displayInfo.uploadedBy}</span>
+                          <div className="flex items-center gap-x-4 max-sm:gap-x-2 gap-y-0.5 text-xs text-muted-foreground flex-wrap">
+                            <span className="whitespace-nowrap">등록일: {displayInfo.date}</span>
+                            <span className="max-sm:hidden">•</span>
+                            <span className="whitespace-nowrap">등록자: {displayInfo.uploadedBy}</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* 액션 버튼 */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* 액션 버튼 — 기본 PC웹 간격, 모바일만 축소 */}
+                      <div className="flex items-center gap-2 max-sm:gap-0.5 flex-shrink-0">
                         {/* 분석 결과보기 버튼 — 사용자 요청으로 주석 처리(2026-07-29). 프로세스는 삭제하지 않고 보존. 복원 시 아래 주석 해제.
                         {displayInfo.status === "pending" && onOpenEmbedding && (
                           <Button

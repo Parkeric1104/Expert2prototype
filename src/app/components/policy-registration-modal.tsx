@@ -177,7 +177,7 @@ export function PolicyRegistrationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-sm:max-w-[calc(100%-2rem)]">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             새 정책 등록
