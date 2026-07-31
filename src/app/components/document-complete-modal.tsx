@@ -81,12 +81,12 @@ export function DocumentCompleteModal({
               {/* 저장 유형 선택 */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-foreground">저장 유형</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-3 max-sm:gap-2">
                   {([{ value: "oneffice", label: "ONEFFICE" }, { value: "pdf", label: "PDF" }, { value: "word", label: "Word" }] as const).map((format) => (
                     <button
                       key={format.value}
                       onClick={() => setFileFormat(format.value)}
-                      className={`px-4 py-3 rounded-2xl border-2 font-semibold text-base transition-all ${
+                      className={`px-4 max-sm:px-2 py-3 rounded-2xl border-2 font-semibold text-base max-sm:text-sm transition-all ${
                         fileFormat === format.value
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-card text-foreground border-border hover:border-primary/50"

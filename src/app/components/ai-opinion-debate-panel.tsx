@@ -156,11 +156,11 @@ export function AIOpinionDebatePanel({
 
   // ── 공통 컨텐츠 (페르소나 + 입장 안내 + 토론 메시지) ──
   const content = (
-    <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+    <div className="flex-1 overflow-y-auto px-6 max-sm:px-4 py-6 space-y-6">
           {/* 페르소나 소개 카드 */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 max-sm:gap-2">
             {(["host", "pro", "con"] as Speaker[]).map((p) => (
-              <div key={p} className="rounded-2xl bg-muted/50 p-4 flex flex-col items-center text-center">
+              <div key={p} className="rounded-2xl bg-muted/50 p-4 max-sm:p-2.5 flex flex-col items-center text-center">
                 <Avatar p={p} />
                 <p className="text-sm font-bold text-foreground mt-2">{PERSONAS[p].name}</p>
                 <div className="flex flex-wrap justify-center gap-1 mt-2">
