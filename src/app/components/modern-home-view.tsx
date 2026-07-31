@@ -23,6 +23,7 @@ interface ModernHomeViewProps {
   selectedLaws: string[];
   onClearLaws?: () => void; // 'N개 법령' 칩 X → 전체(선택 해제)
   onOpenPolicyManagement?: () => void; // 미등록 넛지 배너 → 정책 문서 관리 진입
+  onOpenCalculator?: () => void; // 펑션 메뉴 → 노무 계산기 진입
 }
 
 const FLOATING_ICONS = [
@@ -51,7 +52,7 @@ const TAB_CHIPS: Record<string, string[]> = {
 };
 const ITEMS_PER_PAGE = 4;
 
-export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement }: ModernHomeViewProps) {
+export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
@@ -205,7 +206,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
     <div className="flex-1 flex flex-col relative overflow-hidden">
 
       {/* 우하단 펑션 버튼 — 클릭 시 위로 기능 메뉴, 크레딧은 'AI balance' 호버 시에만 노출 */}
-      <div className="absolute bottom-5 right-6 z-30"><FunctionMenu /></div>
+      <div className="absolute bottom-5 right-6 z-30"><FunctionMenu onOpenCalculator={onOpenCalculator} /></div>
 
       {/* 스크롤 영역 — 기본 PC웹(좌우 36px), 모바일만 16px */}
       <div className="flex-1 min-h-0 w-full flex items-start justify-center px-9 max-sm:px-4 overflow-y-auto">

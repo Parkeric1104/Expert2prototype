@@ -26,7 +26,11 @@ const FUNCTIONS: FunctionItem[] = [
   { key: "law-alert", label: "법령 개정 알림", desc: "관심 분야 변경 알림", Icon: Bell },
 ];
 
-export function FunctionMenu() {
+interface FunctionMenuProps {
+  onOpenCalculator?: () => void;
+}
+
+export function FunctionMenu({ onOpenCalculator }: FunctionMenuProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -41,7 +45,11 @@ export function FunctionMenu() {
   const handleSelect = (item: FunctionItem) => {
     setOpen(false);
     setQuery("");
-    // TODO: 각 기능 화면으로 연결. 현재는 준비중 안내.
+    if (item.key === "calculator" && onOpenCalculator) {
+      onOpenCalculator();
+      return;
+    }
+    // 그 외 기능은 준비중 안내.
     toast(`${item.label} — 준비 중입니다.`);
   };
 

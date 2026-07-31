@@ -4,6 +4,7 @@ import { ModernHomeView } from "@/app/components/modern-home-view";
 import { ModernChatInterface } from "@/app/components/modern-chat-interface";
 import { PolicyManagementView } from "@/app/components/policy-management-view";
 import { EmbeddingCorrectionView, EmbeddingCorrectionPolicy } from "@/app/components/embedding-correction-view";
+import { LaborCalculatorView } from "@/app/components/labor-calculator-view";
 import { LawSelectionModal } from "@/app/components/law-selection-modal";
 import { EnhancedChatHistoryModal } from "@/app/components/enhanced-chat-history-modal";
 import { HistorySidebarPanel } from "@/app/components/history-sidebar-panel";
@@ -14,7 +15,7 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { getHistorySession, ChatHistorySession } from "@/app/data/chat-history";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding">("home");
+  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding" | "calculator">("home");
   const [chatQuery, setChatQuery] = useState<string>("");
   const [selectedLaws, setSelectedLaws] = useState<string[]>([]);
   const [relatedLaws, setRelatedLaws] = useState<string[]>([]);
@@ -227,8 +228,8 @@ export default function App() {
         background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #EBF1FF 100%)",
       }}
     >
-      {/* Top Header – embedding 상세 화면에서는 미노출 */}
-      {currentView !== "embedding" && (
+      {/* Top Header – embedding·calculator 전용 화면에서는 미노출(자체 헤더 사용) */}
+      {currentView !== "embedding" && currentView !== "calculator" && (
         <TopHeader
           variant={currentView === "chat" ? "chat" : currentView === "policy" ? "policy" : "home"}
           onNavigateToMain={() => handleNavigation(handleNewChat)}
@@ -327,6 +328,7 @@ export default function App() {
           selectedLaws={selectedLaws}
           onClearLaws={() => setSelectedLaws([])}
           onOpenPolicyManagement={handleOpenPolicyUpload}
+          onOpenCalculator={() => setCurrentView("calculator")}
         />
       )}
 
@@ -362,6 +364,10 @@ export default function App() {
           policy={selectedPolicy}
           onBack={handleBackFromEmbedding}
         />
+      )}
+
+      {currentView === "calculator" && (
+        <LaborCalculatorView onBack={() => setCurrentView("home")} />
       )}
 
       {/* Law Selection Modal */}
