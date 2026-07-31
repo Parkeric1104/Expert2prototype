@@ -7,6 +7,19 @@
       "runtimeArgs": ["/Users/dupark26/Documents/Expert2prototype/node_modules/.bin/vite"],
       "port": 5273,
       "autoPort": true
+    },
+    {
+      "name": "policy-bot-verify",
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": [
+        "/Users/dupark26/Documents/policy-bot/node_modules/.bin/vite",
+        "--config",
+        "/Users/dupark26/Documents/policy-bot/vite.config.ts",
+        "--port",
+        "5281",
+        "/Users/dupark26/Documents/policy-bot"
+      ],
+      "port": 5281
     }
   ]
 }

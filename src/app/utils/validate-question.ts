@@ -31,8 +31,8 @@ export function validateQuestion(message: string): ValidationResult {
     return { isValid: false, reason: "meaningless" };
   }
   
-  // Repeated characters (e.g., "aaaaa", "ㅋㅋㅋㅋㅋ")
-  const repeatedChars = /(.)\1{4,}/;
+  // Repeated characters (e.g., "aaaaa", "ㅋㅋㅋㅋㅋ") — 숫자는 제외(금액 1천만·1억 등 오탐 방지)
+  const repeatedChars = /([^\d\s])\1{4,}/;
   if (repeatedChars.test(trimmed)) {
     return { isValid: false, reason: "meaningless" };
   }
@@ -47,9 +47,9 @@ export function validateQuestion(message: string): ValidationResult {
   // - 노동청/법원 제출용 문서 작성
   // - 위법 운영 방법 문의
   const unethicalPatterns = [
-    // 개별 해고 정당성 판단
-    /(이|저|제가|우리|직원|근로자|사원).{0,20}(해고|징계).{0,20}(정당|타당|괜찮|가능|문제없|합법)/i,
-    /(해고|징계|권고사직).{0,20}(해도|해야|할 수|시킬|할까|가능)/i,
+    // 개별 해고 정당성 '단정'을 구하는 경우만 (일반 가능성/방법 문의는 정상 질문 → 제외)
+    /(이|저|제가|우리|직원|근로자|사원).{0,20}(해고|징계).{0,20}(정당|타당|괜찮|문제없|합법)/i,
+    /(해고|징계|권고사직).{0,10}(해도\s*되|시켜도\s*되|해버려)/i,
     /해고.{0,20}(사유|이유).{0,20}(충분|정당|괜찮|문제없)/i,
     
     // 노동청/법원 제출용 문서
@@ -105,10 +105,11 @@ export function validateQuestion(message: string): ValidationResult {
   }
   
   // 4. Check for inappropriate content (부적절한 내용)
+  // ⚠ 부분문자열 매칭이라, 정상 노무어와 충돌하는 키워드는 제외했다.
+  //   (백인→수백인, 성적→근무성적평정, 폭력→직장 내 폭력, 자살→자살 산재, 살인→살인적인 업무 등)
+  //   충돌 위험이 낮고 명백히 부적절한 표현만 유지. 정교화 시 형태소/경계 기반으로 재구현 권장.
   const inappropriateKeywords = [
-    "인종차별", "흑인", "백인", "황인종", "혐오", 
-    "성적", "음란", "포르노", "섹스",
-    "폭력", "살인", "테러", "자살"
+    "인종차별", "음란물", "포르노", "섹스"
   ];
   
   for (const keyword of inappropriateKeywords) {

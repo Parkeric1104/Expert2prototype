@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Calculator, RotateCcw, Info } from "lucide-react";
 
 // 노무(임금) 계산기 — 단일 컬럼 입력 → [계산하기] → 결과.
@@ -101,6 +101,13 @@ export function LaborCalculatorView({ onBack }: LaborCalculatorViewProps) {
   const [hourlyWage, setHourlyWage] = useState(0);
   const [weeklyHours, setWeeklyHours] = useState(40);
 
+  // 입력이 바뀌면 이전 계산 결과를 지운다(오래된 금액이 남아 오인하는 것 방지)
+  useEffect(() => { setResult(null); }, [
+    monthlyPay, annualPay, dependents, joinDate, leaveDate, avgMode, pay3m, bonusYear,
+    annualLeavePay, avgManual, avgDailyInput, coverage, over50, ordinaryMonthly,
+    unusedDays, overtimeH, nightH, holidayH, hourlyWage, weeklyHours,
+  ]);
+
   const ordHourly = ordinaryMonthly / MONTHLY_HOURS;
   const ordDaily = ordHourly * 8;
 
@@ -150,7 +157,9 @@ export function LaborCalculatorView({ onBack }: LaborCalculatorViewProps) {
       else { const d3 = last3mDays(leaveDate); avg = d3 > 0 ? (pay3m + (bonusYear * 3) / 12 + (annualLeavePay * 3) / 12) / d3 : 0; }
       setResult({ amount: avg * 30 * (days / 365), lines: [`1일 평균임금 ${won(avg)}원 × 30일 × (재직 ${days.toLocaleString()}일 ÷ 365)`] });
     } else if (tab === "unemploy") {
-      const daily = Math.min(Math.max(avgDailyInput * 0.6, 63_104), 66_000);
+      if (avgDailyInput <= 0) { setResult({ amount: 0, lines: ["1일 평균임금을 입력해 주세요."] }); return; }
+      // 일액 = 평균임금×60%, 상한 66,000 / 하한 63,104. 단 하한이 평균임금을 넘지 못함(저임금자).
+      const daily = Math.min(Math.max(Math.min(avgDailyInput * 0.6, 66_000), Math.min(63_104, avgDailyInput)), 66_000);
       const d = benefitDaysTable(coverage, over50);
       setResult({ amount: daily * d, lines: [`구직급여 일액 ${won(daily)}원 × 소정급여일수 ${d}일`, `일액 = 평균임금×60% (상한 66,000 / 하한 63,104)`, `소정급여일수: 가입 ${coverage}년 · ${over50 ? "50세↑/장애인" : "50세 미만"}`] });
     } else if (tab === "leave") {
@@ -163,6 +172,7 @@ export function LaborCalculatorView({ onBack }: LaborCalculatorViewProps) {
     } else if (tab === "notice") {
       setResult({ amount: ordDaily * 30, lines: [`1일 통상임금 ${won(ordDaily)}원 × 30일`, `통상시급 ${won(ordHourly)}원 = 월 통상임금 ÷ 209`] });
     } else if (tab === "weekly") {
+      if (weeklyHours < 15) { setResult({ amount: 0, lines: ["주 소정근로시간이 15시간 미만이면 주휴수당이 발생하지 않습니다."] }); return; }
       setResult({ amount: (Math.min(weeklyHours, 40) / 40) * 8 * hourlyWage, lines: [`(주 ${weeklyHours}h ÷ 40) × 8h × 시급 ${won(hourlyWage)}원`, `주 15시간 이상 개근 시 발생`] });
     }
   };
