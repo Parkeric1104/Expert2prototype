@@ -6,22 +6,13 @@ import {
   MessageCircle,
   ChevronDown,
   ChevronUp,
-  FileText,
   MessageSquarePlus,
   BookOpen,
   FileStack,
   Eye,
   Trash2,
-  Download,
-  Sparkles,
-  ExternalLink
+  Sparkles
 } from "lucide-react";
-
-// 사용자 매뉴얼(Figma 덱) — 햄버거 메뉴 하단에서 새 탭으로 오픈
-const USER_MANUAL_URL = "https://www.figma.com/deck/1ZXPBZL2hOhbLcfZiKLBH6";
-// 국세청 조직·직원검색(외부 사이트) — 세법 참조용 바로가기. 하단 고정 영역에 배치
-// ⚠ 운영: 세법 도메인 노출 권장 / PE(폐쇄망): 외부 링크 차단 → 숨김·내부 안내 대체
-const NTS_DIRECTORY_URL = "https://nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=6740&cntntsId=8140";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -313,25 +304,6 @@ export function HistorySidebarPanel({
           </ScrollArea>
         </div>
 
-        {/* [비교안 B] 하단 고정 '바로가기' 영역 — 외부 링크(국세청) + 사용자 메뉴얼(PDF) */}
-        <div className="flex-shrink-0 border-t border-border bg-muted/30 px-2.5 py-2 space-y-0.5">
-          {/* 국세청 조직·직원검색 — 외부 사이트(새 탭) */}
-          <button
-            onClick={() => window.open(NTS_DIRECTORY_URL, "_blank", "noopener,noreferrer")}
-            className="group w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm text-foreground/80 hover:text-foreground hover:bg-card hover:shadow-sm transition-all"
-          >
-            <span className="flex-1 min-w-0 text-left font-medium truncate">국세청 전화번호</span>
-            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-muted-foreground flex-shrink-0" />
-          </button>
-          {/* 사용자 메뉴얼(PDF) */}
-          <button
-            onClick={() => window.open(USER_MANUAL_URL, "_blank", "noopener,noreferrer")}
-            className="group w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-sm text-foreground/80 hover:text-foreground hover:bg-card hover:shadow-sm transition-all"
-          >
-            <span className="flex-1 min-w-0 text-left font-medium truncate">사용자 메뉴얼(PDF)</span>
-            <Download className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-muted-foreground flex-shrink-0" />
-          </button>
-        </div>
       </div>
 
       {/* 삭제 확인 다이얼로그 */}

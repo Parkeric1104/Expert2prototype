@@ -251,6 +251,13 @@ export default function App() {
               "noopener,noreferrer"
             )
           }
+          onOpenManual={() =>
+            window.open(
+              "https://www.figma.com/deck/1ZXPBZL2hOhbLcfZiKLBH6",
+              "_blank",
+              "noopener,noreferrer"
+            )
+          }
           pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
           isSidebarOpen={showSidebar}
           isTrial={isTrial}
