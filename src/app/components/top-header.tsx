@@ -50,10 +50,10 @@ export function TopHeader({
     onOpenNtsDirectory ? (
       <button
         onClick={onOpenNtsDirectory}
-        className="ml-auto flex items-center gap-1.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-muted rounded-lg px-2.5 py-1.5 transition-colors flex-shrink-0"
+        className="ml-auto flex items-center gap-1 text-xs font-medium text-foreground/60 hover:text-foreground hover:bg-muted rounded-md px-2 py-1 transition-colors flex-shrink-0"
         title="국세청 조직·직원검색 페이지 열기"
       >
-        <Phone className="w-4 h-4" />
+        <Phone className="w-3.5 h-3.5" />
         <span className="max-sm:hidden">국세청 전화번호</span>
       </button>
     ) : null;
