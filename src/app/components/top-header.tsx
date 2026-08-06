@@ -1,4 +1,4 @@
-import { Menu, Undo2, ArrowLeft } from "lucide-react";
+import { Menu, Undo2, ArrowLeft, ArrowUpRight } from "lucide-react";
 
 interface TopHeaderProps {
   variant?: "home" | "chat" | "policy";
@@ -14,6 +14,7 @@ interface TopHeaderProps {
   companyName?: string;
   trialCount?: number;
   trialMax?: number;
+  onOpenNtsDirectory?: () => void; // [비교안 A] 세법 전용: 국세청 조직·직원검색 바로가기(외부 링크)
 }
 
 // 체험판 배지 (체험판 · 회사명 · N/10)
@@ -41,7 +42,20 @@ export function TopHeader({
   companyName,
   trialCount = 0,
   trialMax = 10,
+  onOpenNtsDirectory,
 }: TopHeaderProps) {
+  // [비교안 A] 헤더 우측 국세청 바로가기 (외부 링크, 최소 스타일)
+  const NtsQuickLink = () =>
+    onOpenNtsDirectory ? (
+      <button
+        onClick={onOpenNtsDirectory}
+        className="ml-auto flex items-center gap-0.5 text-[11px] font-medium text-foreground/55 hover:text-foreground hover:bg-muted rounded-md px-1.5 py-1 transition-colors flex-shrink-0"
+        title="국세청 조직·직원검색 페이지 열기 (외부 사이트)"
+      >
+        <span>국세청 전화번호</span>
+        <ArrowUpRight className="w-2.5 h-2.5 opacity-60" />
+      </button>
+    ) : null;
   // [1] 정책관리 화면 GNB: ← 메인으로 돌아가기
   if (variant === "policy") {
     return (
@@ -101,6 +115,7 @@ export function TopHeader({
           <Menu className="w-5 h-5" />
         </button>
         {isTrial && <TrialBadge companyName={companyName} trialCount={trialCount} trialMax={trialMax} />}
+        <NtsQuickLink />
       </div>
     </header>
   );

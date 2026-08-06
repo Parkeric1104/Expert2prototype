@@ -14,7 +14,8 @@ import {
   Trash2,
   Download,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Landmark
 } from "lucide-react";
 
 // 사용자 매뉴얼(Figma 덱) — 햄버거 메뉴 하단에서 새 탭으로 오픈
@@ -313,24 +314,39 @@ export function HistorySidebarPanel({
           </ScrollArea>
         </div>
 
-        {/* 하단 고정 영역: 외부 바로가기(국세청) + 사용자 메뉴얼(PDF) */}
-        <div className="flex-shrink-0 border-t border-border">
-          {/* 국세청 조직·직원검색 — 외부 사이트(새 탭) */}
-          <button
-            onClick={() => window.open(NTS_DIRECTORY_URL, "_blank", "noopener,noreferrer")}
-            className="w-full flex items-center justify-between px-4 py-3.5 text-sm text-foreground/80 hover:text-foreground hover:bg-muted/60 transition-colors"
-          >
-            <span>국세청 전화번호</span>
-            <ExternalLink className="w-4 h-4 opacity-70" />
-          </button>
-          {/* 사용자 메뉴얼(PDF) — GNB에서 이동(디자인 정합) */}
-          <button
-            onClick={() => window.open(USER_MANUAL_URL, "_blank", "noopener,noreferrer")}
-            className="w-full flex items-center justify-between px-4 py-3.5 border-t border-border text-sm text-foreground/80 hover:text-foreground hover:bg-muted/60 transition-colors"
-          >
-            <span>사용자 메뉴얼(PDF)</span>
-            <Download className="w-4 h-4" />
-          </button>
+        {/* [비교안 B] 하단 고정 '바로가기' 영역 — 외부 링크(국세청) + 사용자 메뉴얼(PDF) */}
+        <div className="flex-shrink-0 border-t border-border bg-muted/30 px-2.5 pt-2 pb-2.5">
+          <p className="px-2 pt-0.5 pb-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground">바로가기</p>
+          <div className="space-y-0.5">
+            {/* 국세청 조직·직원검색 — 외부 사이트(새 탭) */}
+            <button
+              onClick={() => window.open(NTS_DIRECTORY_URL, "_blank", "noopener,noreferrer")}
+              className="group w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-foreground/80 hover:text-foreground hover:bg-card hover:shadow-sm transition-all"
+            >
+              <span className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/8 text-primary flex-shrink-0">
+                <Landmark className="w-4 h-4" />
+              </span>
+              <span className="flex-1 min-w-0 text-left">
+                <span className="block font-medium truncate">국세청 전화번호</span>
+                <span className="block text-[11px] text-muted-foreground truncate">조직·직원검색 (외부)</span>
+              </span>
+              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-muted-foreground flex-shrink-0" />
+            </button>
+            {/* 사용자 메뉴얼(PDF) */}
+            <button
+              onClick={() => window.open(USER_MANUAL_URL, "_blank", "noopener,noreferrer")}
+              className="group w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-foreground/80 hover:text-foreground hover:bg-card hover:shadow-sm transition-all"
+            >
+              <span className="flex items-center justify-center w-7 h-7 rounded-md bg-muted text-muted-foreground flex-shrink-0">
+                <FileText className="w-4 h-4" />
+              </span>
+              <span className="flex-1 min-w-0 text-left">
+                <span className="block font-medium truncate">사용자 메뉴얼(PDF)</span>
+                <span className="block text-[11px] text-muted-foreground truncate">사용법 안내</span>
+              </span>
+              <Download className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-muted-foreground flex-shrink-0" />
+            </button>
+          </div>
         </div>
       </div>
 
