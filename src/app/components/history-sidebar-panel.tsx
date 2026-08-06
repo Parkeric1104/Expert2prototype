@@ -13,11 +13,15 @@ import {
   Eye,
   Trash2,
   Download,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from "lucide-react";
 
 // 사용자 매뉴얼(Figma 덱) — 햄버거 메뉴 하단에서 새 탭으로 오픈
 const USER_MANUAL_URL = "https://www.figma.com/deck/1ZXPBZL2hOhbLcfZiKLBH6";
+// 국세청 조직·직원검색(외부 사이트) — 세법 참조용 바로가기. 하단 고정 영역에 배치
+// ⚠ 운영: 세법 도메인 노출 권장 / PE(폐쇄망): 외부 링크 차단 → 숨김·내부 안내 대체
+const NTS_DIRECTORY_URL = "https://nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=6740&cntntsId=8140";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -309,14 +313,25 @@ export function HistorySidebarPanel({
           </ScrollArea>
         </div>
 
-        {/* 하단: 사용자 메뉴얼(PDF) — GNB에서 이동(디자인 정합) */}
-        <button
-          onClick={() => window.open(USER_MANUAL_URL, "_blank", "noopener,noreferrer")}
-          className="flex-shrink-0 flex items-center justify-between px-4 py-3.5 border-t border-border text-sm text-foreground/80 hover:text-foreground hover:bg-muted/60 transition-colors"
-        >
-          <span>사용자 메뉴얼(PDF)</span>
-          <Download className="w-4 h-4" />
-        </button>
+        {/* 하단 고정 영역: 외부 바로가기(국세청) + 사용자 메뉴얼(PDF) */}
+        <div className="flex-shrink-0 border-t border-border">
+          {/* 국세청 조직·직원검색 — 외부 사이트(새 탭) */}
+          <button
+            onClick={() => window.open(NTS_DIRECTORY_URL, "_blank", "noopener,noreferrer")}
+            className="w-full flex items-center justify-between px-4 py-3.5 text-sm text-foreground/80 hover:text-foreground hover:bg-muted/60 transition-colors"
+          >
+            <span>국세청 전화번호</span>
+            <ExternalLink className="w-4 h-4 opacity-70" />
+          </button>
+          {/* 사용자 메뉴얼(PDF) — GNB에서 이동(디자인 정합) */}
+          <button
+            onClick={() => window.open(USER_MANUAL_URL, "_blank", "noopener,noreferrer")}
+            className="w-full flex items-center justify-between px-4 py-3.5 border-t border-border text-sm text-foreground/80 hover:text-foreground hover:bg-muted/60 transition-colors"
+          >
+            <span>사용자 메뉴얼(PDF)</span>
+            <Download className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* 삭제 확인 다이얼로그 */}
