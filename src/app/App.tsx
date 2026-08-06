@@ -244,6 +244,13 @@ export default function App() {
           }}
           onLogoClick={handleLogoClick}
           onToggleSidebar={handleToggleSidebar}
+          onOpenNtsDirectory={() =>
+            window.open(
+              "https://nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=6740&cntntsId=8140",
+              "_blank",
+              "noopener,noreferrer"
+            )
+          }
           pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
           isSidebarOpen={showSidebar}
           isTrial={isTrial}
