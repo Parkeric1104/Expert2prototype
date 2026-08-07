@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { track } from "@/app/utils/track";
 import { Upload, FileText, X, Shield, Box, AlertCircle, Info } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/app/components/ui/dialog";
 import { Label } from "@/app/components/ui/label";
@@ -42,6 +43,11 @@ export function PolicyRegistrationModal({
   existingCategories = [],
   existingPolicies = []
 }: PolicyRegistrationModalProps) {
+  // 퍼널 S4: 정책 등록 모달 오픈 집계
+  useEffect(() => {
+    if (isOpen) track("S4_modal_open");
+  }, [isOpen]);
+
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number; type: string } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [customCategory, setCustomCategory] = useState<string>("");
@@ -146,6 +152,9 @@ export function PolicyRegistrationModal({
       toast.error("파일을 업로드하거나 AI Box를 선택해주세요.");
       return;
     }
+
+    // 퍼널 S5: 파일 업로드/AI Box → 분석(등록) 제출
+    track("S5_upload_submit", { type: uploadedFile ? "file" : "aibox" });
 
     onSubmit({
       name: uploadedFile?.name || "AI Box 연결",

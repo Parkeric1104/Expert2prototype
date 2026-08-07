@@ -4,6 +4,7 @@ import {
   CheckCircle2, BookOpen, Trash2, Merge, Scissors,
   ChevronLeft, ChevronRight, Check, X,
 } from "lucide-react";
+import { track } from "@/app/utils/track";
 import { Button } from "@/app/components/ui/button";
 import { Textarea } from "@/app/components/ui/textarea";
 import { toast } from "sonner";
@@ -492,6 +493,7 @@ export function EmbeddingCorrectionView({ policy, onBack }: EmbeddingCorrectionV
   // ── 저장 ──────────────────────────────────────────────
   const handleSaveAll = () => {
     setIsSaving(true);
+    track("S6_review_save"); // 퍼널 S6: 조문 검수 저장
     setTimeout(() => {
       setIsSaving(false);
       toast.success("분석 데이터가 저장되었습니다.");

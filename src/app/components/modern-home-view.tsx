@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { track } from "@/app/utils/track";
 import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import {
@@ -79,6 +80,11 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   const [policyNudgeTitle] = useState<string>(
     () => (typeof window !== "undefined" ? localStorage.getItem(POLICY_NUDGE_TITLE_KEY) ?? "" : "")
   );
+
+  // 퍼널 S2: 홈 넛지(정책 등록 유도) 노출 시 1회 집계
+  useEffect(() => {
+    if (showPolicyNudge) track("S2_impression", { source: "home_nudge" });
+  }, [showPolicyNudge]);
 
   const fileInputRef    = useRef<HTMLInputElement>(null);
 

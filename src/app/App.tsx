@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { track } from "@/app/utils/track";
 import { TopHeader } from "@/app/components/top-header";
 import { ModernHomeView } from "@/app/components/modern-home-view";
 import { ModernChatInterface } from "@/app/components/modern-chat-interface";
@@ -107,7 +108,13 @@ export default function App() {
     setShowSidebar(!showSidebar);
   };
 
-  const handleOpenPolicyUpload = () => {
+  // 퍼널 S1: 정책 등록 자격(관리자 여부) — 세션 진입 시 1회
+  useEffect(() => {
+    track("S1_eligibility", { isAdmin });
+  }, [isAdmin]);
+
+  const handleOpenPolicyUpload = (source: string = "unknown") => {
+    track("S3_enter", { source }); // 퍼널 S3: 정책 관리 화면 진입(진입점별)
     setCurrentView("policy");
   };
 
@@ -133,6 +140,7 @@ export default function App() {
   const handleBackFromEmbedding = () => {
     setSelectedPolicy(null);
     setCurrentView("policy");
+    track("S7_register_complete"); // 퍼널 S7: 정책 등록(검수 저장 후 완료)
     // 정책 저장 완료 시 pending 카운트 감소
     setPendingPoliciesCount((prev) => Math.max(0, prev - 1));
   };
@@ -316,9 +324,9 @@ export default function App() {
         onOpenManual={handleOpenManual}
         onOpenPolicyList={() => {
           if (currentView === "chat" && hasChatMessages) {
-            handleNavigation(handleOpenPolicyUpload);
+            handleNavigation(() => handleOpenPolicyUpload("sidebar"));
           } else {
-            handleOpenPolicyUpload();
+            handleOpenPolicyUpload("sidebar");
           }
           setShowSidebar(false);
         }}
@@ -341,7 +349,7 @@ export default function App() {
           onOpenLawSelector={handleOpenLawSelector}
           selectedLaws={selectedLaws}
           onClearLaws={() => setSelectedLaws([])}
-          onOpenPolicyManagement={handleOpenPolicyUpload}
+          onOpenPolicyManagement={() => handleOpenPolicyUpload("home_nudge")}
           onOpenCalculator={() => setCurrentView("calculator")}
         />
       )}

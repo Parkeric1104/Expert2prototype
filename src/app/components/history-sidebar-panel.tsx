@@ -13,6 +13,7 @@ import {
   Trash2,
   Sparkles
 } from "lucide-react";
+import { track } from "@/app/utils/track";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -84,6 +85,11 @@ export function HistorySidebarPanel({
 
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>(initialChatHistory);
   const [showTrialBlock, setShowTrialBlock] = useState(false); // 체험판: ONEFFICE 목록보기 차단
+
+  // 퍼널 S2: 사이드패널 오픈 시 '노무 정책 문서 관리' 진입점 노출 집계
+  useEffect(() => {
+    if (isOpen) track("S2_impression", { source: "sidebar" });
+  }, [isOpen]);
 
   // ESC 키로 패널 닫기 (REQ-06)
   useEffect(() => {
