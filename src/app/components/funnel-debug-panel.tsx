@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, RefreshCw, RotateCcw } from "lucide-react";
 import { getFunnelSummary, resetFunnel } from "@/app/utils/track";
 
@@ -18,6 +18,12 @@ const STAGES: { key: string; label: string }[] = [
 export function FunnelDebugPanel({ onClose }: { onClose: () => void }) {
   const [counts, setCounts] = useState<Record<string, number>>(() => getFunnelSummary());
   const refresh = () => setCounts({ ...getFunnelSummary() });
+
+  // 마운트 직후 1회 재조회 — App의 S1(자격) 이벤트가 패널 초기 스냅샷 이후 기록되는 타이밍 보정
+  useEffect(() => {
+    const t = setTimeout(refresh, 0);
+    return () => clearTimeout(t);
+  }, []);
 
   // 단계별 합산(소스 접미사 :sidebar 등 포함) + 소스 분해
   const sumForStage = (stageKey: string) =>
