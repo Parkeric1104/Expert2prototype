@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { track } from "@/app/utils/track";
+import { FunnelDebugPanel } from "@/app/components/funnel-debug-panel";
 import { TopHeader } from "@/app/components/top-header";
 import { ModernHomeView } from "@/app/components/modern-home-view";
 import { ModernChatInterface } from "@/app/components/modern-chat-interface";
@@ -40,6 +41,10 @@ export default function App() {
   const [pendingNavigationAction, setPendingNavigationAction] = useState<(() => void) | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<EmbeddingCorrectionPolicy | null>(null);
   const [pendingPoliciesCount, setPendingPoliciesCount] = useState<number>(0);
+  // 퍼널 검증 패널 — URL에 ?funnel 있을 때만 노출(비개발자 검증용)
+  const [showFunnelPanel, setShowFunnelPanel] = useState<boolean>(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("funnel")
+  );
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
   const [historySession, setHistorySession] = useState<ChatHistorySession | null>(null); // 채팅 이력 보기(전체화면 복원)
 
@@ -312,6 +317,9 @@ export default function App() {
           </button>
         </div>
       )}
+
+      {/* 퍼널 검증 패널 (?funnel) */}
+      {showFunnelPanel && <FunnelDebugPanel onClose={() => setShowFunnelPanel(false)} />}
 
       {/* History Sidebar Panel */}
       <HistorySidebarPanel
