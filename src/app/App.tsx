@@ -57,8 +57,10 @@ export default function App() {
     if (typeof window === "undefined") return getEmergency().active;
     const params = new URLSearchParams(window.location.search);
     if (params.has("emergency")) return true; // 데모 강제 노출
-    if (localStorage.getItem("notice_popup_hidden") === "1") return false;
-    return getEmergency().active;
+    const e = getEmergency();
+    // '다시 보지 않기'는 팝업(id)+리비전 단위 — BO에서 수정/재활성화 시 리비전 증가로 재노출(POP-003)
+    if (localStorage.getItem("notice_popup_hidden_rev") === `${e.popupId ?? "static"}:${e.revision ?? 0}`) return false;
+    return e.active;
   });
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
   const [historySession, setHistorySession] = useState<ChatHistorySession | null>(null); // 채팅 이력 보기(전체화면 복원)
@@ -342,7 +344,8 @@ export default function App() {
           onClose={() => setShowEmergency(false)}
           onDontShowAgain={() => {
             setShowEmergency(false);
-            try { localStorage.setItem("notice_popup_hidden", "1"); } catch { /* noop */ }
+            const e = getEmergency();
+            try { localStorage.setItem("notice_popup_hidden_rev", `${e.popupId ?? "static"}:${e.revision ?? 0}`); } catch { /* noop */ }
           }}
         />
       )}

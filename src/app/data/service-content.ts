@@ -1,11 +1,11 @@
 /**
  * 서비스 운영 콘텐츠 소스 (공지사항 / 긴급 팝업 / 버전 정보).
  *
- * ⚠️ 현재는 임시 정적 소스(드래프트). 추후 **백오피스 또는 원격 config**가
- *    이 모듈의 getter 반환값만 대체하면 됨(무배포 갱신). FE는 이 getter만 의존.
- *    - 운영 전환: getNotices/getEmergency/getServiceVersion 내부를 fetch로 교체
- *    - PE(폐쇄망): 외부 원격 config 불가 → 내부 소스로 공급
+ * 프로토타입: BO(운영 백오피스, URL ?bo)가 localStorage에 저장한 값을 getter가
+ * 우선 읽고, BO 저장값이 없으면 아래 정적 소스로 폴백(무배포 반영 SYS-003 데모).
+ * 운영 전환 시 getter 내부만 BO API fetch로 교체하면 됨 — FE는 이 getter만 의존.
  */
+import { getBOVisibleNotices, getBOEmergency, getBOVersion } from "@/app/bo/bo-store";
 
 export type NoticeType = "공지" | "릴리즈노트";
 export interface Notice {
@@ -24,6 +24,8 @@ export interface Emergency {
   severity: EmergencySeverity;
   title: string;
   message: string;
+  popupId?: string;  // BO 관리 팝업 id
+  revision?: number; // BO에서 수정/재활성화 시 증가 — '다시 보지 않기' 해제 기준(POP-003)
 }
 
 export interface ServiceVersion {
@@ -77,16 +79,17 @@ const SERVICE_CONTENT: {
 };
 
 export function getServiceVersion(): ServiceVersion {
-  return SERVICE_CONTENT.version;
+  return getBOVersion() ?? SERVICE_CONTENT.version;
 }
 
 export function getEmergency(): Emergency {
-  return SERVICE_CONTENT.emergency;
+  return getBOEmergency() ?? SERVICE_CONTENT.emergency;
 }
 
 export function getNotices(): Notice[] {
-  // 최신순 정렬
-  return [...SERVICE_CONTENT.notices].sort((a, b) => (a.date < b.date ? 1 : -1));
+  // BO 저장값(게시 기간 내 공지만) 우선, 없으면 정적 소스 — 최신순 정렬
+  const list = getBOVisibleNotices() ?? SERVICE_CONTENT.notices;
+  return [...list].sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
 // ── 공지 읽음 처리(localStorage) ─────────────────────────
