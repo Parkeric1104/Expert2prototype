@@ -9,7 +9,7 @@ import type { NoticeType } from "@/app/data/service-content";
 import {
   BONotice, loadNotices, saveNotice, deleteNotice, noticeStatus, NoticeStatus, todayStr, newId,
 } from "@/app/bo/bo-store";
-import { PageHeader, Card, StatusDot, FieldLabel, Segment, ChipButton, ConfirmModal, Pagination, inputCls, fmtDT } from "@/app/bo/bo-ui";
+import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, fmtDT } from "@/app/bo/bo-ui";
 
 const PAGE_SIZE = 5;
 const STATUS_TONE: Record<NoticeStatus, "green" | "blue" | "gray"> = { 게시중: "green", 예약: "blue", 종료: "gray" };
@@ -216,13 +216,15 @@ function NoticeForm({ initial, onCancel, onSaved }: { initial: BONotice | null; 
             <div className="space-y-5">
               <div>
                 <FieldLabel required>유형</FieldLabel>
-                <div>
-                  <Segment
-                    options={[{ value: "공지", label: "공지" }, { value: "릴리즈노트", label: "릴리즈노트" }]}
-                    value={type}
-                    onChange={setType}
-                  />
-                </div>
+                {/* 셀렉트박스 — 카테고리 확장 대비 + 목록 필터와 일관 */}
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value as NoticeType)}
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-white text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors"
+                >
+                  <option value="공지">공지</option>
+                  <option value="릴리즈노트">릴리즈노트</option>
+                </select>
               </div>
 
               <div>
