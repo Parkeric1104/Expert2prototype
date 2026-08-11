@@ -527,7 +527,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
           AI 답변은 참고용이며 법적 효력이 없습니다. 최종 의사결정 시 반드시 전문가의 확인을 거치시기 바랍니다.
         </p>
         <p className="text-center text-[11px] text-muted-foreground/50 mt-1">
-          서비스 {svcVersion.service} · 법령 데이터 기준일 {svcVersion.lawDataUpdatedAt}
+          서비스 {svcVersion.service} · 법령 DB Update {svcVersion.lawDataUpdatedAt.split("-").join(".")}
         </p>
       </div>
 
