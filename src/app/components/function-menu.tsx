@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutGrid, Search, Calculator, FileSearch, Scale, Bell, Zap, ChevronRight } from "lucide-react";
+import { LayoutGrid, Search, Calculator, FileSearch, Scale, Bell, Zap, ChevronRight, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 import {
   Popover,
@@ -24,13 +24,16 @@ const FUNCTIONS: FunctionItem[] = [
   { key: "doc-review", label: "문서 진단", desc: "근로계약서·취업규칙 검토", Icon: FileSearch },
   { key: "law-search", label: "법령·판례 검색", desc: "근거 자료 바로 찾기", Icon: Scale },
   { key: "law-alert", label: "법령 개정 알림", desc: "관심 분야 변경 알림", Icon: Bell },
+  // 프로토타입 확인용 — 실제로는 백오피스가 트리거하는 메인 중앙 공지 팝업
+  { key: "notice-popup", label: "공지 팝업", desc: "메인 중앙 공지 팝업 미리보기", Icon: Megaphone },
 ];
 
 interface FunctionMenuProps {
   onOpenCalculator?: () => void;
+  onOpenNoticePopup?: () => void;
 }
 
-export function FunctionMenu({ onOpenCalculator }: FunctionMenuProps) {
+export function FunctionMenu({ onOpenCalculator, onOpenNoticePopup }: FunctionMenuProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -47,6 +50,10 @@ export function FunctionMenu({ onOpenCalculator }: FunctionMenuProps) {
     setQuery("");
     if (item.key === "calculator" && onOpenCalculator) {
       onOpenCalculator();
+      return;
+    }
+    if (item.key === "notice-popup" && onOpenNoticePopup) {
+      onOpenNoticePopup();
       return;
     }
     // 그 외 기능은 준비중 안내.

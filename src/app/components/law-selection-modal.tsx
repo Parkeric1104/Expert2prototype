@@ -289,14 +289,14 @@ export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: 
               </>
             )
           )}
+          {/* #3 버전정보(SVC-003): 법령 카테고리 하단(스크롤 끝) → 법령 DB 갱신일 */}
+          <p className="text-center text-[11px] text-muted-foreground/60 pt-4 pb-1">
+            법령 DB Update {getServiceVersion().lawDataUpdatedAt.split("-").join(".")}
+          </p>
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-4 border-t border-border flex-shrink-0">
-          {/* #3 버전정보(SVC-003): 법령 카테고리 하단 → 법령 DB 갱신일만 */}
-          <p className="text-center text-[11px] text-muted-foreground/60 mb-2.5">
-            법령 DB Update {getServiceVersion().lawDataUpdatedAt.split("-").join(".")}
-          </p>
+        <div className="px-8 py-4 flex-shrink-0">
           <div className="flex gap-3">
             <button
               onClick={handleCancel}

@@ -40,12 +40,12 @@ const SERVICE_CONTENT: {
     service: "v1.4.0",
     lawDataUpdatedAt: "2026-08-04",
   },
-  // 평시 active:false. 장애 시 백오피스에서 true로 전환(무배포). 데모: URL ?emergency
+  // 메인 중앙 공지 팝업(SVC-002). 평시 active:false, 백오피스에서 노출 제어(무배포). 데모: 기능메뉴 '공지 팝업' 또는 URL ?emergency
   emergency: {
     active: false,
-    severity: "critical",
-    title: "일시적인 서비스 오류 안내",
-    message: "현재 일부 기능에서 지연이 발생하고 있습니다. 빠르게 조치 중이니 잠시 후 다시 시도해 주세요.",
+    severity: "info",
+    title: "서비스 이용 안내",
+    message: "세법/노무도우미의 주요 공지를 이곳에서 안내드립니다. 자세한 내용은 사이드패널의 공지사항에서 확인해 주세요.",
   },
   notices: [
     {

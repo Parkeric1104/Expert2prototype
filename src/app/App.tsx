@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { track } from "@/app/utils/track";
 import { FunnelDebugPanel } from "@/app/components/funnel-debug-panel";
 import { NoticeView } from "@/app/components/notice-view";
-import { NoticePopup } from "@/app/components/notice-popup";
 import { EmergencyPopup } from "@/app/components/emergency-popup";
 import { getEmergency, getUnreadCount } from "@/app/data/service-content";
 import { TopHeader } from "@/app/components/top-header";
@@ -53,10 +52,6 @@ export default function App() {
   const handleOpenNotices = () => {
     setCurrentView("notice");
   };
-  // 메인 우하단 공지 팝업(바로보기) — 세션 내 닫기 유지
-  const [showNoticePopup, setShowNoticePopup] = useState<boolean>(
-    () => typeof window === "undefined" || sessionStorage.getItem("notice_popup_dismissed") !== "1"
-  );
   // 서비스 오류 긴급 팝업 — content.active 또는 데모용 ?emergency
   const [showEmergency, setShowEmergency] = useState<boolean>(
     () =>
@@ -390,6 +385,7 @@ export default function App() {
           onClearLaws={() => setSelectedLaws([])}
           onOpenPolicyManagement={() => handleOpenPolicyUpload("home_nudge")}
           onOpenCalculator={() => setCurrentView("calculator")}
+          onOpenNoticePopup={() => setShowEmergency(true)}
         />
       )}
 
@@ -432,17 +428,6 @@ export default function App() {
       )}
 
       {currentView === "notice" && <NoticeView onBack={() => setCurrentView("home")} />}
-
-      {/* 메인 우하단 공지 팝업(바로보기) */}
-      {currentView === "home" && showNoticePopup && (
-        <NoticePopup
-          onOpen={() => { setShowNoticePopup(false); handleOpenNotices(); }}
-          onClose={() => {
-            setShowNoticePopup(false);
-            try { sessionStorage.setItem("notice_popup_dismissed", "1"); } catch { /* noop */ }
-          }}
-        />
-      )}
 
       {/* Law Selection Modal */}
       <LawSelectionModal
