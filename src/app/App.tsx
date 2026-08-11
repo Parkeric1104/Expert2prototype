@@ -52,12 +52,14 @@ export default function App() {
   const handleOpenNotices = () => {
     setCurrentView("notice");
   };
-  // 서비스 오류 긴급 팝업 — content.active 또는 데모용 ?emergency
-  const [showEmergency, setShowEmergency] = useState<boolean>(
-    () =>
-      getEmergency().active ||
-      (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("emergency"))
-  );
+  // 공지 팝업(중앙) — content.active 자동 노출(단, '다시 보지 않기' 시 억제) / 데모 ?emergency는 강제
+  const [showEmergency, setShowEmergency] = useState<boolean>(() => {
+    if (typeof window === "undefined") return getEmergency().active;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("emergency")) return true; // 데모 강제 노출
+    if (localStorage.getItem("notice_popup_hidden") === "1") return false;
+    return getEmergency().active;
+  });
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
   const [historySession, setHistorySession] = useState<ChatHistorySession | null>(null); // 채팅 이력 보기(전체화면 복원)
 
@@ -335,7 +337,15 @@ export default function App() {
       {showFunnelPanel && <FunnelDebugPanel onClose={() => setShowFunnelPanel(false)} />}
 
       {/* 서비스 오류 긴급 팝업 (전역 최우선) */}
-      {showEmergency && <EmergencyPopup onClose={() => setShowEmergency(false)} />}
+      {showEmergency && (
+        <EmergencyPopup
+          onClose={() => setShowEmergency(false)}
+          onDontShowAgain={() => {
+            setShowEmergency(false);
+            try { localStorage.setItem("notice_popup_hidden", "1"); } catch { /* noop */ }
+          }}
+        />
+      )}
 
 
       {/* History Sidebar Panel */}

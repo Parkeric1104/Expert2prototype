@@ -321,13 +321,13 @@ export function HistorySidebarPanel({
           onClick={onOpenNotices}
           className="flex-shrink-0 w-full flex items-center gap-2 px-4 py-3.5 border-t border-border text-sm text-foreground/80 hover:text-foreground hover:bg-muted/60 transition-colors"
         >
-          <Bell className="w-4 h-4" />
+          <span className="relative flex-shrink-0">
+            <Bell className="w-4 h-4" />
+            {unreadNoticeCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-card" />
+            )}
+          </span>
           <span className="font-medium">공지사항</span>
-          {unreadNoticeCount > 0 && (
-            <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
-              {unreadNoticeCount > 99 ? "99+" : unreadNoticeCount}
-            </span>
-          )}
           <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
         </button>
 
