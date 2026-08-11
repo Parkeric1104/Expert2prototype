@@ -254,10 +254,10 @@ export default function App() {
         background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #EBF1FF 100%)",
       }}
     >
-      {/* Top Header – embedding·calculator 전용 화면에서는 미노출(자체 헤더 사용) */}
-      {currentView !== "embedding" && currentView !== "calculator" && (
+      {/* Top Header – embedding·calculator·notice 화면에서는 미노출(자체 헤더 사용, 공지 상세는 몰입형) */}
+      {currentView !== "embedding" && currentView !== "calculator" && currentView !== "notice" && (
         <TopHeader
-          variant={currentView === "chat" ? "chat" : (currentView === "policy" || currentView === "notice") ? "policy" : "home"}
+          variant={currentView === "chat" ? "chat" : currentView === "policy" ? "policy" : "home"}
           onNavigateToMain={() => handleNavigation(handleNewChat)}
           onNewChat={() => handleNavigation(handleNewChat)}
           onOpenHistory={handleOpenHistory}
@@ -426,7 +426,7 @@ export default function App() {
         <LaborCalculatorView onBack={() => setCurrentView("home")} />
       )}
 
-      {currentView === "notice" && <NoticeView />}
+      {currentView === "notice" && <NoticeView onBack={() => setCurrentView("home")} />}
 
       {/* Law Selection Modal */}
       <LawSelectionModal
