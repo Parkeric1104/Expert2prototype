@@ -4,6 +4,7 @@ import { FunnelDebugPanel } from "@/app/components/funnel-debug-panel";
 import { NoticeView } from "@/app/components/notice-view";
 import { EmergencyPopup } from "@/app/components/emergency-popup";
 import { getEmergency, getUnreadCount } from "@/app/data/service-content";
+import { useContentTick } from "@/app/hooks/use-live-content";
 import { TopHeader } from "@/app/components/top-header";
 import { ModernHomeView } from "@/app/components/modern-home-view";
 import { ModernChatInterface } from "@/app/components/modern-chat-interface";
@@ -21,6 +22,7 @@ import { getHistorySession, ChatHistorySession } from "@/app/data/chat-history";
 
 export default function App() {
   const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding" | "calculator" | "notice">("home");
+  useContentTick(); // BO 콘텐츠 변경(다른 탭)을 새로고침 없이 반영 — App+하위 리렌더로 getter 재조회
   const [chatQuery, setChatQuery] = useState<string>("");
   const [selectedLaws, setSelectedLaws] = useState<string[]>([]);
   const [relatedLaws, setRelatedLaws] = useState<string[]>([]);
