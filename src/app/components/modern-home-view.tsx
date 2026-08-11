@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { track } from "@/app/utils/track";
+import { getServiceVersion } from "@/app/data/service-content";
 import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import {
@@ -80,6 +81,8 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   const [policyNudgeTitle] = useState<string>(
     () => (typeof window !== "undefined" ? localStorage.getItem(POLICY_NUDGE_TITLE_KEY) ?? "" : "")
   );
+
+  const svcVersion = getServiceVersion(); // #3 버전 정보(푸터 표기)
 
   // 퍼널 S2: 홈 넛지(정책 등록 유도) 노출 시 1회 집계
   useEffect(() => {
@@ -522,6 +525,9 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
       <div className="shrink-0 px-6 pb-4 pt-1 relative z-20">
         <p className="text-center text-xs text-muted-foreground/60">
           AI 답변은 참고용이며 법적 효력이 없습니다. 최종 의사결정 시 반드시 전문가의 확인을 거치시기 바랍니다.
+        </p>
+        <p className="text-center text-[11px] text-muted-foreground/50 mt-1">
+          서비스 {svcVersion.service} · 법령 데이터 기준일 {svcVersion.lawDataUpdatedAt}
         </p>
       </div>
 

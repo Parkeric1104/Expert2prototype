@@ -8,6 +8,7 @@ import {
   ChevronUp,
   MessageSquarePlus,
   BookOpen,
+  Bell,
   FileStack,
   Eye,
   Trash2,
@@ -50,6 +51,8 @@ interface HistorySidebarPanelProps {
   onClose: () => void;
   onNewChat?: () => void;
   onOpenManual?: () => void;
+  onOpenNotices?: () => void;
+  unreadNoticeCount?: number;
   onOpenPolicyList?: () => void;
   onViewChatHistory?: (chatId: string) => void;
   pendingPoliciesCount?: number;
@@ -62,6 +65,8 @@ export function HistorySidebarPanel({
   onClose,
   onNewChat,
   onOpenManual,
+  onOpenNotices,
+  unreadNoticeCount = 0,
   onOpenPolicyList,
   onViewChatHistory,
   pendingPoliciesCount = 0,
@@ -178,6 +183,20 @@ export function HistorySidebarPanel({
               {pendingPoliciesCount > 0 && (
                 <span className="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
                   {pendingPoliciesCount > 99 ? '99+' : pendingPoliciesCount}
+                </span>
+              )}
+            </Button>
+
+            <Button
+              onClick={onOpenNotices}
+              variant="outline"
+              className="w-full justify-start gap-2 relative"
+            >
+              <Bell className="w-4 h-4" />
+              <span>공지사항</span>
+              {unreadNoticeCount > 0 && (
+                <span className="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                  {unreadNoticeCount > 99 ? '99+' : unreadNoticeCount}
                 </span>
               )}
             </Button>

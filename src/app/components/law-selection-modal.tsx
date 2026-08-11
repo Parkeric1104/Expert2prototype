@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Search } from "lucide-react";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import { getServiceVersion } from "@/app/data/service-content";
 
 interface LawSelectionModalProps {
   isOpen: boolean;
@@ -292,6 +293,10 @@ export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: 
 
         {/* Footer */}
         <div className="px-8 py-4 border-t border-border flex-shrink-0">
+          {/* #3 법령 데이터 기준일 표기 */}
+          <p className="text-center text-[11px] text-muted-foreground/60 mb-2.5">
+            법령 데이터 기준일 {getServiceVersion().lawDataUpdatedAt}
+          </p>
           <div className="flex gap-3">
             <button
               onClick={handleCancel}

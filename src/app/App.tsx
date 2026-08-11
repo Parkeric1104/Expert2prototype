@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { track } from "@/app/utils/track";
 import { FunnelDebugPanel } from "@/app/components/funnel-debug-panel";
+import { NoticePanel } from "@/app/components/notice-panel";
+import { EmergencyPopup } from "@/app/components/emergency-popup";
+import { getEmergency, getUnreadCount } from "@/app/data/service-content";
 import { TopHeader } from "@/app/components/top-header";
 import { ModernHomeView } from "@/app/components/modern-home-view";
 import { ModernChatInterface } from "@/app/components/modern-chat-interface";
@@ -44,6 +47,14 @@ export default function App() {
   // 퍼널 검증 패널 — URL에 ?funnel 있을 때만 노출(비개발자 검증용)
   const [showFunnelPanel, setShowFunnelPanel] = useState<boolean>(
     () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("funnel")
+  );
+  // 공지사항 패널
+  const [showNotices, setShowNotices] = useState<boolean>(false);
+  // 서비스 오류 긴급 팝업 — content.active 또는 데모용 ?emergency
+  const [showEmergency, setShowEmergency] = useState<boolean>(
+    () =>
+      getEmergency().active ||
+      (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("emergency"))
   );
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
   const [historySession, setHistorySession] = useState<ChatHistorySession | null>(null); // 채팅 이력 보기(전체화면 복원)
@@ -321,6 +332,12 @@ export default function App() {
       {/* 퍼널 검증 패널 (?funnel) */}
       {showFunnelPanel && <FunnelDebugPanel onClose={() => setShowFunnelPanel(false)} />}
 
+      {/* 서비스 오류 긴급 팝업 (전역 최우선) */}
+      {showEmergency && <EmergencyPopup onClose={() => setShowEmergency(false)} />}
+
+      {/* 공지사항 패널 */}
+      {showNotices && <NoticePanel onClose={() => setShowNotices(false)} />}
+
       {/* History Sidebar Panel */}
       <HistorySidebarPanel
         isOpen={showSidebar}
@@ -330,6 +347,11 @@ export default function App() {
           setShowSidebar(false);
         }}
         onOpenManual={handleOpenManual}
+        onOpenNotices={() => {
+          setShowSidebar(false);
+          setShowNotices(true);
+        }}
+        unreadNoticeCount={getUnreadCount()}
         onOpenPolicyList={() => {
           if (currentView === "chat" && hasChatMessages) {
             handleNavigation(() => handleOpenPolicyUpload("sidebar"));
