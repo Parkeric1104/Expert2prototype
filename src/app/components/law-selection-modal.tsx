@@ -293,9 +293,9 @@ export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: 
 
         {/* Footer */}
         <div className="px-8 py-4 border-t border-border flex-shrink-0">
-          {/* #3 버전정보(SVC-003): 서비스 버전 + 법령 DB 갱신일 */}
+          {/* #3 버전정보(SVC-003): 법령 카테고리 하단 → 법령 DB 갱신일만 */}
           <p className="text-center text-[11px] text-muted-foreground/60 mb-2.5">
-            서비스 {getServiceVersion().service} · 법령 DB Update {getServiceVersion().lawDataUpdatedAt.split("-").join(".")}
+            법령 DB Update {getServiceVersion().lawDataUpdatedAt.split("-").join(".")}
           </p>
           <div className="flex gap-3">
             <button
