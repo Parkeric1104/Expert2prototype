@@ -40,10 +40,6 @@ export function NoticeView() {
           </>
         ) : (
           <article>
-            <button onClick={() => setSelected(null)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
-              <ChevronLeft className="w-4 h-4" />
-              목록으로
-            </button>
             <div className="flex items-center gap-2 mb-2">
               <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${badge(selected.type)}`}>{selected.type}</span>
               {selected.important && <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-600">중요</span>}
@@ -51,6 +47,17 @@ export function NoticeView() {
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-4" style={{ wordBreak: "keep-all" }}>{selected.title}</h2>
             <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line" style={{ wordBreak: "keep-all" }}>{selected.body}</p>
+
+            {/* 하단: 목록으로 */}
+            <div className="mt-8 pt-5 border-t border-border">
+              <button
+                onClick={() => setSelected(null)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                목록으로
+              </button>
+            </div>
           </article>
         )}
       </div>
