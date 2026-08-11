@@ -66,12 +66,13 @@ export function NoticeView() {
       {/* 본문(고정 영역, 내부 스크롤) */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         <article className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4 py-8">
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${badge(selected.type)}`}>{selected.type}</span>
-            {selected.important && <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-600">중요</span>}
-            <span className="text-xs text-muted-foreground">{selected.date}</span>
+          <div className="flex items-start justify-between gap-4 mb-4 pb-4 border-b border-border">
+            <h2 className="flex-1 min-w-0 text-2xl font-bold text-foreground" style={{ wordBreak: "keep-all" }}>{selected.title}</h2>
+            <div className="flex-shrink-0 text-right text-xs text-muted-foreground space-y-0.5 pt-1">
+              <div>{selected.date}</div>
+              {selected.views != null && <div>조회 {selected.views.toLocaleString()}</div>}
+            </div>
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-4" style={{ wordBreak: "keep-all" }}>{selected.title}</h2>
           <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line" style={{ wordBreak: "keep-all" }}>{selected.body}</p>
         </article>
       </div>

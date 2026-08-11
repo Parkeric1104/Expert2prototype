@@ -13,8 +13,9 @@ export interface Notice {
   type: NoticeType;
   title: string;
   body: string;
-  date: string;        // YYYY-MM-DD
+  date: string;        // YYYY-MM-DD (작성일)
   important?: boolean;
+  views?: number;      // 조회수 — 실제 서비스는 백오피스/백엔드 집계값
 }
 
 export type EmergencySeverity = "info" | "warning" | "critical";
@@ -54,6 +55,7 @@ const SERVICE_CONTENT: {
       body: "국세청/사용자 매뉴얼 바로가기를 상단으로 이동하고, 정책 등록 사용성 개선을 위한 계측을 추가했습니다.",
       date: "2026-08-04",
       important: true,
+      views: 342,
     },
     {
       id: "n-2026-07-20",
@@ -61,6 +63,7 @@ const SERVICE_CONTENT: {
       title: "법령 데이터 정기 업데이트 안내",
       body: "최신 개정 법령이 반영되었습니다. 답변은 최신 데이터 기준으로 제공됩니다.",
       date: "2026-07-20",
+      views: 517,
     },
     {
       id: "n-2026-07-01",
@@ -68,6 +71,7 @@ const SERVICE_CONTENT: {
       title: "v1.3.0 — 멀티턴 대화·의견서 작성 개선",
       body: "멀티턴 맥락 유지와 의견서 작성 흐름을 개선했습니다.",
       date: "2026-07-01",
+      views: 288,
     },
   ],
 };
