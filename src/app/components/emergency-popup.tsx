@@ -19,8 +19,8 @@ export function EmergencyPopup({ onClose, onDontShowAgain }: { onClose: () => vo
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4">
-      {/* 너비 max 420 / 높이 max 85vh — 내용 길면 본문만 스크롤, 확인 버튼은 하단 고정 */}
-      <div className="w-full max-w-[420px] max-h-[85vh] bg-card rounded-2xl shadow-xl border border-border flex flex-col overflow-hidden">
+      {/* 크기 가변(최소~최대): 너비 360~440(모바일 축소), 높이 160~85vh — 초과 시 본문 스크롤 */}
+      <div className="w-full sm:min-w-[360px] max-w-[440px] min-h-[160px] max-h-[85vh] bg-card rounded-2xl shadow-xl border border-border flex flex-col overflow-hidden">
         <div className="flex items-center gap-2.5 px-6 pt-6 pb-3 flex-shrink-0">
           <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center flex-shrink-0`}>
             <s.Icon className={`w-5 h-5 ${s.ring}`} />
