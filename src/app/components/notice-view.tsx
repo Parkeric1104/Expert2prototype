@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react";
-import { getNotices, markAllNoticesRead, type Notice } from "@/app/data/service-content";
+import { getNotices, markAllNoticesRead, type Notice, type NoticeType } from "@/app/data/service-content";
 
 // 공지사항 페이지(전체화면). 사이드패널 하단 '공지사항' → 페이지 전환으로 진입.
 // 상세는 [스크롤 본문] + [하단 고정 푸터(목록으로)] 구조.
 export function NoticeView() {
   const notices = getNotices();
   const [selected, setSelected] = useState<Notice | null>(null);
+  const [filter, setFilter] = useState<"전체" | NoticeType>("전체");
+  const TABS: ("전체" | NoticeType)[] = ["전체", "공지", "릴리즈노트"];
+  const filtered = filter === "전체" ? notices : notices.filter((n) => n.type === filter);
 
   // 페이지 진입 시 전체 읽음 처리(뱃지 제거)
   markAllNoticesRead();
@@ -19,9 +22,23 @@ export function NoticeView() {
     return (
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4 py-8">
-          <h1 className="text-xl font-bold text-foreground mb-5">공지사항</h1>
+          <h1 className="text-xl font-bold text-foreground mb-4">공지사항</h1>
+          {/* 카테고리 탭 — 콘텐츠 유형(전체/공지/릴리즈노트) */}
+          <div className="flex items-center gap-1 mb-4">
+            {TABS.map((t) => (
+              <button
+                key={t}
+                onClick={() => setFilter(t)}
+                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  filter === t ? "bg-muted font-semibold text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
           <ul className="space-y-2">
-            {notices.map((n) => (
+            {filtered.map((n) => (
               <li key={n.id}>
                 <button
                   onClick={() => setSelected(n)}
@@ -36,7 +53,7 @@ export function NoticeView() {
                 </button>
               </li>
             ))}
-            {notices.length === 0 && <p className="py-16 text-center text-sm text-muted-foreground">등록된 공지가 없습니다.</p>}
+            {filtered.length === 0 && <p className="py-16 text-center text-sm text-muted-foreground">해당 유형의 공지가 없습니다.</p>}
           </ul>
         </div>
       </div>
@@ -59,16 +76,18 @@ export function NoticeView() {
         </article>
       </div>
 
-      {/* 하단 고정 푸터: 목록으로 */}
-      <div className="flex-shrink-0 border-t border-border bg-card">
-        <div className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4 py-3">
-          <button
-            onClick={() => setSelected(null)}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            목록으로
-          </button>
+      {/* 하단 고정: 본문과 동일 배경, 구분선으로만 분리 */}
+      <div className="flex-shrink-0">
+        <div className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4">
+          <div className="border-t border-border py-4">
+            <button
+              onClick={() => setSelected(null)}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              목록으로
+            </button>
+          </div>
         </div>
       </div>
     </div>
