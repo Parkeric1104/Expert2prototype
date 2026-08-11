@@ -15,6 +15,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { track } from "@/app/utils/track";
+import { getNotices } from "@/app/data/service-content";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
@@ -187,20 +188,6 @@ export function HistorySidebarPanel({
               )}
             </Button>
 
-            <Button
-              onClick={onOpenNotices}
-              variant="outline"
-              className="w-full justify-start gap-2 relative"
-            >
-              <Bell className="w-4 h-4" />
-              <span>공지사항</span>
-              {unreadNoticeCount > 0 && (
-                <span className="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
-                  {unreadNoticeCount > 99 ? '99+' : unreadNoticeCount}
-                </span>
-              )}
-            </Button>
-
             {/* 체험판 전환/종료 */}
             {onToggleTrial && (
               <Button
@@ -327,6 +314,36 @@ export function HistorySidebarPanel({
             </div>
             )}
           </ScrollArea>
+        </div>
+
+        {/* 하단 고정: 공지사항(게시판) 영역 */}
+        <div className="flex-shrink-0 border-t border-border bg-muted/30 px-3 pt-2.5 pb-3">
+          <button onClick={onOpenNotices} className="w-full flex items-center gap-1.5 mb-1.5 group">
+            <Bell className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold text-muted-foreground">공지사항</span>
+            {unreadNoticeCount > 0 && (
+              <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full">
+                {unreadNoticeCount > 99 ? "99+" : unreadNoticeCount}
+              </span>
+            )}
+            <span className="ml-auto text-[11px] text-primary group-hover:underline">전체보기</span>
+          </button>
+          <ul className="space-y-0.5">
+            {getNotices().slice(0, 2).map((n) => (
+              <li key={n.id}>
+                <button
+                  onClick={onOpenNotices}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-card transition-colors text-left"
+                >
+                  <span className={`text-[10px] font-semibold px-1 py-0.5 rounded flex-shrink-0 ${n.type === "릴리즈노트" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                    {n.type}
+                  </span>
+                  <span className="flex-1 min-w-0 text-xs text-foreground truncate">{n.title}</span>
+                  <span className="text-[10px] text-muted-foreground flex-shrink-0">{n.date.slice(5)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
 
       </div>
