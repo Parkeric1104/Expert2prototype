@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { track } from "@/app/utils/track";
 import { FunnelDebugPanel } from "@/app/components/funnel-debug-panel";
-import { NoticePanel } from "@/app/components/notice-panel";
+import { NoticeView } from "@/app/components/notice-view";
 import { EmergencyPopup } from "@/app/components/emergency-popup";
 import { getEmergency, getUnreadCount } from "@/app/data/service-content";
 import { TopHeader } from "@/app/components/top-header";
@@ -20,7 +20,7 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { getHistorySession, ChatHistorySession } from "@/app/data/chat-history";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding" | "calculator">("home");
+  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding" | "calculator" | "notice">("home");
   const [chatQuery, setChatQuery] = useState<string>("");
   const [selectedLaws, setSelectedLaws] = useState<string[]>([]);
   const [relatedLaws, setRelatedLaws] = useState<string[]>([]);
@@ -48,8 +48,10 @@ export default function App() {
   const [showFunnelPanel, setShowFunnelPanel] = useState<boolean>(
     () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("funnel")
   );
-  // 공지사항 패널
-  const [showNotices, setShowNotices] = useState<boolean>(false);
+  // 공지사항 — 페이지 전환 방식(전체보기)
+  const handleOpenNotices = () => {
+    setCurrentView("notice");
+  };
   // 서비스 오류 긴급 팝업 — content.active 또는 데모용 ?emergency
   const [showEmergency, setShowEmergency] = useState<boolean>(
     () =>
@@ -255,7 +257,7 @@ export default function App() {
       {/* Top Header – embedding·calculator 전용 화면에서는 미노출(자체 헤더 사용) */}
       {currentView !== "embedding" && currentView !== "calculator" && (
         <TopHeader
-          variant={currentView === "chat" ? "chat" : currentView === "policy" ? "policy" : "home"}
+          variant={currentView === "chat" ? "chat" : (currentView === "policy" || currentView === "notice") ? "policy" : "home"}
           onNavigateToMain={() => handleNavigation(handleNewChat)}
           onNewChat={() => handleNavigation(handleNewChat)}
           onOpenHistory={handleOpenHistory}
@@ -335,8 +337,6 @@ export default function App() {
       {/* 서비스 오류 긴급 팝업 (전역 최우선) */}
       {showEmergency && <EmergencyPopup onClose={() => setShowEmergency(false)} />}
 
-      {/* 공지사항 패널 */}
-      {showNotices && <NoticePanel onClose={() => setShowNotices(false)} />}
 
       {/* History Sidebar Panel */}
       <HistorySidebarPanel
@@ -349,7 +349,11 @@ export default function App() {
         onOpenManual={handleOpenManual}
         onOpenNotices={() => {
           setShowSidebar(false);
-          setShowNotices(true);
+          if (currentView === "chat" && hasChatMessages) {
+            handleNavigation(handleOpenNotices);
+          } else {
+            handleOpenNotices();
+          }
         }}
         unreadNoticeCount={getUnreadCount()}
         onOpenPolicyList={() => {
@@ -421,6 +425,8 @@ export default function App() {
       {currentView === "calculator" && (
         <LaborCalculatorView onBack={() => setCurrentView("home")} />
       )}
+
+      {currentView === "notice" && <NoticeView />}
 
       {/* Law Selection Modal */}
       <LawSelectionModal
