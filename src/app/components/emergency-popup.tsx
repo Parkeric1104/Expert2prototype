@@ -1,25 +1,31 @@
-import { AlertTriangle, X } from "lucide-react";
-import { getEmergency } from "@/app/data/service-content";
+import { AlertTriangle, AlertOctagon, Info, X } from "lucide-react";
+import { getEmergency, type EmergencySeverity } from "@/app/data/service-content";
 
-// 서비스 오류 긴급 팝업 — 전역 최우선 모달.
-// 표시 조건: content.emergency.active === true (또는 데모용 ?emergency).
-// 콘텐츠는 service-content(추후 백오피스/원격 config로 무배포 전환).
+// 메인 중앙 공지 팝업(SVC-002). 심각도 3단계로 아이콘·색·라벨 구분.
+// 콘텐츠·심각도는 service-content(추후 백오피스). 데모: URL ?severity=info|warning|critical
+const SEV: Record<EmergencySeverity, { Icon: typeof Info; ring: string; bg: string }> = {
+  info:     { Icon: Info,          ring: "text-primary",   bg: "bg-primary/10" },
+  warning:  { Icon: AlertTriangle, ring: "text-amber-600", bg: "bg-amber-500/10" },
+  critical: { Icon: AlertOctagon,  ring: "text-red-600",   bg: "bg-red-500/10" },
+};
+
 export function EmergencyPopup({ onClose }: { onClose: () => void }) {
   const e = getEmergency();
-  const tone =
-    e.severity === "critical"
-      ? { ring: "text-red-600", bg: "bg-red-500/10" }
-      : e.severity === "warning"
-      ? { ring: "text-amber-600", bg: "bg-amber-500/10" }
-      : { ring: "text-primary", bg: "bg-primary/10" };
+  // 데모용 심각도 오버라이드(프로토타입에서 단계 확인)
+  const override = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("severity") : null;
+  const severity: EmergencySeverity =
+    override === "info" || override === "warning" || override === "critical" ? override : e.severity;
+  const s = SEV[severity];
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-[420px] bg-card rounded-2xl shadow-xl border border-border p-6 text-center">
-        <div className={`w-12 h-12 rounded-full ${tone.bg} flex items-center justify-center mx-auto mb-3`}>
-          <AlertTriangle className={`w-6 h-6 ${tone.ring}`} />
+      <div className="w-full max-w-[420px] bg-card rounded-2xl shadow-xl border border-border p-6">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center flex-shrink-0`}>
+            <s.Icon className={`w-5 h-5 ${s.ring}`} />
+          </div>
+          <h2 className="text-base font-bold text-foreground" style={{ wordBreak: "keep-all" }}>{e.title}</h2>
         </div>
-        <h2 className="text-base font-bold text-foreground mb-1.5" style={{ wordBreak: "keep-all" }}>{e.title}</h2>
         <p className="text-sm text-muted-foreground leading-relaxed mb-5" style={{ wordBreak: "keep-all" }}>{e.message}</p>
         <button
           onClick={onClose}
