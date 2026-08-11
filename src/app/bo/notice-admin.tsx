@@ -298,8 +298,8 @@ function NoticeForm({ initial, onCancel, onSaved }: { initial: BONotice | null; 
           </div>
         </div>
 
-        {/* 우측: 스티키 라이브 미리보기 (NTC-003) — 서비스 공지 상세 렌더 */}
-        <div className="w-[340px] flex-shrink-0 sticky top-6">
+        {/* 우측: 라이브 미리보기 (NTC-003) — 서비스 공지 상세 렌더, 폼과 함께 스크롤 */}
+        <div className="w-[340px] flex-shrink-0">
           <Card className="p-5">
             <p className="text-xs font-semibold text-muted-foreground mb-3">서비스 미리보기 — 공지 상세</p>
             <div className="rounded-xl border border-border p-4">

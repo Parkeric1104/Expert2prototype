@@ -350,8 +350,8 @@ function PopupForm({ initial, onCancel, onSaved }: { initial: BOPopup | null; on
           </div>
         </div>
 
-        {/* 우측: 스티키 라이브 미리보기 (POP-004) — 서비스 메인 중앙 팝업 렌더 */}
-        <div className="w-[340px] flex-shrink-0 sticky top-6">
+        {/* 우측: 라이브 미리보기 (POP-004) — 서비스 메인 중앙 팝업 렌더, 폼과 함께 스크롤 */}
+        <div className="w-[340px] flex-shrink-0">
           <Card className="p-5">
             <p className="text-xs font-semibold text-muted-foreground mb-3">서비스 미리보기 — 메인 중앙 팝업</p>
             <div className="rounded-xl bg-gray-100 p-4">
