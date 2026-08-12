@@ -185,6 +185,23 @@ export function popupStatus(p: BOPopup, at: number = Date.now()): PopupStatus {
 }
 
 // ── 버전정보 (VER) ────────────────────────────────────────
+/** 변경 이력 항목 — 계정 없음(SYS-002) 전제라 행위자 없이 시각·변경 내용만 기록(LOG-001) */
+export interface BOVersionLog {
+  id: string;
+  changedAt: string; // YYYY-MM-DD HH:mm
+  service: string;
+  lawDataUpdatedAt: string;
+  changed: ("service" | "lawDataUpdatedAt")[]; // 빈 배열 = 최초 등록
+}
+
+const VERSION_LOG_KEY = "bo_version_log";
+
+function nowDT(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 export function loadVersion(): ServiceVersion {
   const stored = read<ServiceVersion>(VERSION_KEY);
   if (stored) return stored;
@@ -192,8 +209,23 @@ export function loadVersion(): ServiceVersion {
   return SEED_VERSION;
 }
 
+export function loadVersionLog(): BOVersionLog[] {
+  const stored = read<BOVersionLog[]>(VERSION_LOG_KEY);
+  if (stored) return stored;
+  const seed: BOVersionLog[] = [
+    { id: "vl-seed", changedAt: `${SEED_VERSION.lawDataUpdatedAt} 09:00`, ...SEED_VERSION, changed: [] },
+  ];
+  write(VERSION_LOG_KEY, seed);
+  return seed;
+}
+
 export function saveVersion(v: ServiceVersion) {
+  const prev = loadVersion();
+  const changed: BOVersionLog["changed"] = [];
+  if (v.service !== prev.service) changed.push("service");
+  if (v.lawDataUpdatedAt !== prev.lawDataUpdatedAt) changed.push("lawDataUpdatedAt");
   write(VERSION_KEY, v);
+  write(VERSION_LOG_KEY, [{ id: newId("vl"), changedAt: nowDT(), ...v, changed }, ...loadVersionLog()]);
 }
 
 // ── 서비스 FE 공급 (service-content getter가 호출) ─────────
