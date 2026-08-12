@@ -57,8 +57,9 @@ export function BOApp() {
 
         {/* 하단: 서비스 화면 열기 */}
         <div className="px-3 pb-4">
+          {/* BO 전용 포트(VITE_BO)에서는 ?service — 같은 origin이라 저장값(무배포 반영)이 공유됨 */}
           <a
-            href={window.location.pathname}
+            href={import.meta.env.VITE_BO === "1" ? `${window.location.pathname}?service` : window.location.pathname}
             target="_blank"
             rel="noreferrer"
             className="w-full flex items-center gap-2.5 px-2.5 h-10 rounded-lg text-sm text-foreground/70 hover:bg-gray-50 hover:text-foreground transition-colors"

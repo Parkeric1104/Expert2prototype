@@ -77,7 +77,8 @@ FE 계약에 더해 BO만 갖는 필드:
 
 | 항목 | 값 |
 |---|---|
-| BO 진입 | URL `?bo` (예: `https://parkeric1104.github.io/Expert2prototype/?bo`) — `main.tsx`에서 분기 |
+| BO 진입 | ① 배포/서비스 서버: URL `?bo` (예: `https://parkeric1104.github.io/Expert2prototype/?bo`) ② **로컬 독립 포트: `npm run dev:bo` → http://localhost:5283** (루트가 바로 BO, `--mode bo`·`.env.bo`의 `VITE_BO=1`) — `main.tsx`에서 분기 |
+| 독립 포트 주의 | localStorage는 포트(origin)별 분리 — **BO(5283)에서의 무배포 반영 확인은 같은 포트의 `http://localhost:5283/?service`**(사이드바 '서비스 화면 열기')로 한다. 서비스 dev(5273)와는 저장소가 공유되지 않음 |
 | 저장소 | `localStorage` — `bo_notices`(BONotice[]) / `bo_popups`(BOPopup[]) / `bo_version`(ServiceVersion) |
 | 시드 | BO 최초 진입 시 정적 소스와 동일한 내용으로 자동 시드 |
 | 폴백 | `bo_*` 키가 없으면 getter는 정적 `SERVICE_CONTENT` 사용 |

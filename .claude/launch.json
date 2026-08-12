@@ -9,6 +9,12 @@
       "autoPort": true
     },
     {
+      "name": "bo",
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["/Users/dupark26/Documents/Expert2prototype/node_modules/.bin/vite", "--mode", "bo", "--port", "5283"],
+      "port": 5283
+    },
+    {
       "name": "policy-bot-verify",
       "runtimeExecutable": "/usr/local/bin/node",
       "runtimeArgs": [
