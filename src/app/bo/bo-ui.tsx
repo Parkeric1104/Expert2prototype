@@ -159,3 +159,14 @@ export function Pagination({ page, totalPages, onChange }: { page: number; total
 export function fmtDT(s?: string): string {
   return s ? s.replace("T", " ") : "—";
 }
+
+/** 게시기간 셀 — 시작·종료를 한 컬럼 2줄로 표기해 표 폭 절약. 미설정 시 '상시' */
+export function PeriodCell({ start, end }: { start?: string; end?: string }) {
+  if (!start && !end) return <span className="text-muted-foreground">상시</span>;
+  return (
+    <div className="text-muted-foreground leading-snug whitespace-nowrap text-xs">
+      <div>{start ? `${start.replace("T", " ")} ~` : "~"}</div>
+      <div>{end ? end.replace("T", " ") : "제한 없음"}</div>
+    </div>
+  );
+}

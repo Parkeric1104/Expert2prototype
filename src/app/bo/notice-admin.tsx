@@ -9,7 +9,7 @@ import type { NoticeType } from "@/app/data/service-content";
 import {
   BONotice, loadNotices, saveNotice, deleteNotice, noticeStatus, NoticeStatus, todayStr, newId,
 } from "@/app/bo/bo-store";
-import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, fmtDT } from "@/app/bo/bo-ui";
+import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, PeriodCell } from "@/app/bo/bo-ui";
 
 const PAGE_SIZE = 5;
 const STATUS_TONE: Record<NoticeStatus, "green" | "blue" | "gray"> = { 게시중: "green", 예약: "blue", 종료: "gray" };
@@ -89,19 +89,19 @@ export function NoticeAdmin() {
           </div>
         </div>
 
-        {/* 좁은 화면에서는 테이블만 가로 스크롤(글자 넘침 방지) */}
+        {/* 좁은 화면: 우선순위 낮은 컬럼(조회수·작성일)을 숨겨 카드 안에 맞추고, 그래도 좁으면 가로 스크롤 */}
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[860px] border-separate border-spacing-y-1">
+        {/* table-fixed: 제목만 유연하게 줄고(말줄임) 나머지 컬럼은 고정 폭 — 카드 끝 잘림 방지 */}
+        <table className="w-full min-w-[560px] table-fixed border-separate border-spacing-y-1">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
-              <th className="font-medium px-3 py-1 whitespace-nowrap">유형</th>
+              <th className="w-[76px] font-medium px-3 py-1 whitespace-nowrap">유형</th>
               <th className="font-medium px-3 py-1 whitespace-nowrap">제목</th>
-              <th className="font-medium px-3 py-1 whitespace-nowrap">조회수</th>
-              <th className="font-medium px-3 py-1 whitespace-nowrap">상태</th>
-              <th className="font-medium px-3 py-1 whitespace-nowrap">작성일</th>
-              <th className="font-medium px-3 py-1 whitespace-nowrap">게시시작일</th>
-              <th className="font-medium px-3 py-1 whitespace-nowrap">게시종료일</th>
-              <th className="font-medium px-3 py-1 whitespace-nowrap text-right">관리</th>
+              <th className="w-[64px] font-medium px-3 py-1 whitespace-nowrap max-lg:hidden">조회수</th>
+              <th className="w-[80px] font-medium px-3 py-1 whitespace-nowrap">상태</th>
+              <th className="w-[96px] font-medium px-3 py-1 whitespace-nowrap max-lg:hidden">작성일</th>
+              <th className="w-[136px] font-medium px-3 py-1 whitespace-nowrap">게시기간</th>
+              <th className="w-[122px] font-medium px-3 py-1 whitespace-nowrap text-right">관리</th>
             </tr>
           </thead>
           <tbody>
@@ -114,17 +114,16 @@ export function NoticeAdmin() {
                       {n.type}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 max-w-[280px]">
+                  <td className="px-3 py-2.5">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {n.important && <span className="flex-shrink-0 text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-600">중요</span>}
                       <span className="truncate font-medium">{n.title}</span>
                     </div>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{n.views.toLocaleString()}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground max-lg:hidden">{n.views.toLocaleString()}</td>
                   <td className="px-3 py-2.5"><StatusDot tone={STATUS_TONE[st]} label={st} /></td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{n.createdAt}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDT(n.publishStart)}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDT(n.publishEnd)}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground max-lg:hidden">{n.createdAt}</td>
+                  <td className="px-3 py-2.5"><PeriodCell start={n.publishStart} end={n.publishEnd} /></td>
                   <td className="px-3 py-2.5 rounded-r-lg">
                     <div className="flex items-center justify-end gap-1.5">
                       <ChipButton onClick={() => setEditing(n)}>수정</ChipButton>

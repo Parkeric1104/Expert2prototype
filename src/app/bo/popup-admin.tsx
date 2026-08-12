@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   BOPopup, loadPopups, savePopup, deletePopup, setPopupActive, popupStatus, PopupStatus, inPeriod, todayStr, newId,
 } from "@/app/bo/bo-store";
-import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, fmtDT } from "@/app/bo/bo-ui";
+import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, PeriodCell } from "@/app/bo/bo-ui";
 
 const PAGE_SIZE = 5;
 const STATUS_TONE: Record<PopupStatus, "green" | "blue" | "gray" | "amber"> = {
@@ -129,15 +129,15 @@ export function PopupAdmin() {
 
         {/* 좁은 화면에서는 테이블만 가로 스크롤(글자 넘침 방지) */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-separate border-spacing-y-1">
+          {/* table-fixed: 제목만 유연하게 줄고(말줄임) 나머지 컬럼은 고정 폭 — 카드 끝 잘림 방지 */}
+          <table className="w-full min-w-[560px] table-fixed border-separate border-spacing-y-1">
             <thead>
               <tr className="text-left text-xs text-muted-foreground">
                 <th className="font-medium px-3 py-1 whitespace-nowrap">제목</th>
-                <th className="font-medium px-3 py-1 whitespace-nowrap">상태</th>
-                <th className="font-medium px-3 py-1 whitespace-nowrap">작성일</th>
-                <th className="font-medium px-3 py-1 whitespace-nowrap">게시시작일</th>
-                <th className="font-medium px-3 py-1 whitespace-nowrap">게시종료일</th>
-                <th className="font-medium px-3 py-1 whitespace-nowrap text-right">관리</th>
+                <th className="w-[80px] font-medium px-3 py-1 whitespace-nowrap">상태</th>
+                <th className="w-[96px] font-medium px-3 py-1 whitespace-nowrap max-lg:hidden">작성일</th>
+                <th className="w-[136px] font-medium px-3 py-1 whitespace-nowrap">게시기간</th>
+                <th className="w-[186px] font-medium px-3 py-1 whitespace-nowrap text-right">관리</th>
               </tr>
             </thead>
             <tbody>
@@ -145,11 +145,10 @@ export function PopupAdmin() {
                 const st = popupStatus(p);
                 return (
                   <tr key={p.id} className="bg-gray-50/80 text-[13px] text-foreground/90">
-                    <td className="px-3 py-2.5 rounded-l-lg max-w-[260px]"><span className="block truncate font-medium">{p.title}</span></td>
+                    <td className="px-3 py-2.5 rounded-l-lg"><span className="block truncate font-medium">{p.title}</span></td>
                     <td className="px-3 py-2.5"><StatusDot tone={STATUS_TONE[st]} label={st} /></td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{p.createdAt}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDT(p.publishStart)}</td>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDT(p.publishEnd)}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground max-lg:hidden">{p.createdAt}</td>
+                    <td className="px-3 py-2.5"><PeriodCell start={p.publishStart} end={p.publishEnd} /></td>
                     <td className="px-3 py-2.5 rounded-r-lg">
                       <div className="flex items-center justify-end gap-1.5">
                         <ChipButton tone={p.active ? "gray" : "blue"} onClick={() => handleToggle(p)}>

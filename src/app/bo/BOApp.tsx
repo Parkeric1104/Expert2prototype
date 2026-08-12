@@ -33,8 +33,8 @@ export function BOApp() {
         {/* 워크스페이스 카드 */}
         <div className="px-3 pb-4">
           <div className="px-3 py-2.5 rounded-xl bg-gray-50 border border-black/[0.04]">
-            <p className="text-sm font-bold text-foreground">세법/노무 AI 도우미</p>
-            <p className="text-xs text-muted-foreground mt-0.5">운영 콘텐츠 관리</p>
+            <p className="text-sm font-bold text-foreground">세법노무도우미</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Admin</p>
           </div>
         </div>
 
