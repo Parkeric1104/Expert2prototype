@@ -1,11 +1,11 @@
 ---
 name: figma-spec-doc
-description: Figma "AI Expert" 기획서 파일에 화면 기획 프레임을 추가·수정할 때 사용. 기획서 프레임 관례(2238×1259, Title 헤더, Description 컴포넌트 표, Num_Tag 주석)와 컴포넌트 ID, 폰트 함정, use_figma 레시피를 담고 있다. "기획서 프레임 추가", "Figma 기획서 작성", "Description 주석" 등의 요청에서 트리거.
+description: Figma "AI Expert" 기획서 파일에 화면 기획 프레임을 추가·수정할 때 사용(FE 서비스·BO 백오피스 공통). 기획서 프레임 관례(2238×1259, Title 헤더, Description 컴포넌트 표, Num_Tag 주석)와 컴포넌트 ID, 폰트 함정, use_figma 레시피를 담고 있다. "기획서 프레임 추가", "Figma 기획서 작성", "Description 주석" 등의 요청에서 트리거.
 ---
 
-# Figma 기획서 작성 규칙 (AI Expert 파일)
+# Figma 기획서 작성 규칙 (AI Expert 파일 — FE·BO 공통)
 
-Expert 2(세법/노무 AI 도우미) 기획서를 Figma에 작성할 때 따르는 규칙. **반드시 figma-use 스킬(skill://figma/figma-use/SKILL.md)을 먼저 로드**하고 use_figma로 작업한다.
+Expert 2(세법/노무 AI 도우미) 기획서를 Figma에 작성할 때 따르는 규칙. FE 서비스 페이지(01. MAIN, 02. CHAT, 03. HR_POLICY_MANAGE 등)와 BO 페이지(05. BO) **모두 동일하게 적용**된다 — 이 관례 자체가 FE 기획서에서 추출된 것이다. **반드시 figma-use 스킬(skill://figma/figma-use/SKILL.md)을 먼저 로드**하고 use_figma로 작업한다.
 
 ## 대상 파일
 
@@ -49,8 +49,15 @@ Frame 650 = VERTICAL auto-layout(hug), 내용:
 ## Description 내용 작성 규칙
 
 - 형식: `제목 [REQ-ID]` + 줄바꿈 + 동작·규칙 나열 (예: `공지 등록 [NTC-002]\n선택 시 등록 화면으로 이동\n…`)
-- REQ ID는 BO_PRD.md(SYS/NTC/POP/VER) 또는 서비스 요구사항 정의서(SVC/CHA/DAT) 기준.
-- BO 화면 내용은 배포 프로토타입(https://parkeric1104.github.io/Expert2prototype/?bo) 최신 상태와 일치시킨다.
+- REQ ID 출처: BO 화면 = BO_PRD.md(SYS/NTC/POP/VER), FE 화면 = 서비스 요구사항 정의서(SYS/DAT/CHA/RIS 등).
+- 화면 내용은 배포 프로토타입 최신 상태와 일치시킨다:
+  - FE 서비스: https://parkeric1104.github.io/Expert2prototype/
+  - BO: https://parkeric1104.github.io/Expert2prototype/?bo
+
+## 화면 목업 디자인 기준 (FE vs BO)
+
+- **FE 서비스 화면**: 저장소 `guidelines/Guidelines.md` 하드룰 준수 — 전체 배경 그라데이션(하단 Blue 100 #EBF1FF), Primary Blue 500 #5784FF, 페르소나 색 고정 등. 기존 FE 프레임(01. MAIN의 목업)과 톤 일치.
+- **BO 화면**: apps in toss 콘솔 룩(BO_DESIGN_REFERENCE.md) — 옅은 회색 배경 #F4F6F8 + 흰 카드 rounded 14, 사이드바 콘솔 셸. FE 하드룰(그라데이션 등) 미적용.
 
 ## 작업 순서 (권장)
 
