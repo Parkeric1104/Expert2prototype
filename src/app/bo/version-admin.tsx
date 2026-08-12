@@ -11,11 +11,6 @@ import { PageHeader, Card, StatusDot, FieldLabel, Pagination, inputCls } from "@
 
 const PAGE_SIZE = 5;
 
-const CHANGED_LABEL: Record<BOVersionLog["changed"][number], string> = {
-  service: "서비스 버전",
-  lawDataUpdatedAt: "법령 DB 갱신일",
-};
-
 export function VersionAdmin() {
   const [current, setCurrent] = useState(() => loadVersion());
   const [log, setLog] = useState<BOVersionLog[]>(() => loadVersionLog());
@@ -59,38 +54,27 @@ export function VersionAdmin() {
       {/* 변경 이력 — 계정 없음 전제라 시각·변경 내용만 기록(읽기 전용) */}
       <Card className="p-5">
         <h2 className="text-base font-bold text-foreground mb-4">변경 이력</h2>
-        <table className="w-full border-separate border-spacing-y-1">
+        {/* 좁은 화면에서는 테이블만 가로 스크롤(글자 넘침 방지) */}
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[520px] border-separate border-spacing-y-1">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
-              <th className="font-medium px-3 py-1">변경일시</th>
-              <th className="font-medium px-3 py-1">변경 항목</th>
-              <th className="font-medium px-3 py-1">서비스 버전</th>
-              <th className="font-medium px-3 py-1">법령 DB 갱신일</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">변경일시</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">서비스 버전</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">법령 DB 갱신일</th>
             </tr>
           </thead>
           <tbody>
             {pageItems.map((l) => (
               <tr key={l.id} className="bg-gray-50/80 text-[13px] text-foreground/90">
                 <td className="px-3 py-2.5 rounded-l-lg whitespace-nowrap text-muted-foreground">{l.changedAt}</td>
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center gap-1">
-                    {l.changed.length === 0 ? (
-                      <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-200/70 text-gray-600">최초 등록</span>
-                    ) : (
-                      l.changed.map((c) => (
-                        <span key={c} className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary whitespace-nowrap">
-                          {CHANGED_LABEL[c]}
-                        </span>
-                      ))
-                    )}
-                  </div>
-                </td>
                 <td className={`px-3 py-2.5 whitespace-nowrap ${l.changed.includes("service") ? "font-semibold" : "text-muted-foreground"}`}>{l.service}</td>
                 <td className={`px-3 py-2.5 rounded-r-lg whitespace-nowrap ${l.changed.includes("lawDataUpdatedAt") ? "font-semibold" : "text-muted-foreground"}`}>{l.lawDataUpdatedAt}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
         {log.length === 0 && <p className="py-14 text-center text-sm text-muted-foreground">변경 이력이 없어요.</p>}
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </Card>

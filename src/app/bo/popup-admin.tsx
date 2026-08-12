@@ -6,18 +6,17 @@
 import { useMemo, useState } from "react";
 import { Plus, Search, Info, AlertTriangle, AlertOctagon } from "lucide-react";
 import { toast } from "sonner";
-import type { EmergencySeverity } from "@/app/data/service-content";
 import {
   BOPopup, loadPopups, savePopup, deletePopup, setPopupActive, popupStatus, PopupStatus, inPeriod, todayStr, newId,
 } from "@/app/bo/bo-store";
-import { PageHeader, Card, StatusDot, FieldLabel, Segment, ChipButton, ConfirmModal, Pagination, inputCls, fmtDT } from "@/app/bo/bo-ui";
+import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, fmtDT } from "@/app/bo/bo-ui";
 
 const PAGE_SIZE = 5;
 const STATUS_TONE: Record<PopupStatus, "green" | "blue" | "gray" | "amber"> = {
   노출중: "green", 예약: "blue", 종료: "amber", 비활성: "gray",
 };
 
-// 심각도 3단계 — 서비스(emergency-popup)와 동일한 아이콘·색 매핑
+// 심각도별 아이콘·색 매핑 — BO 입력값은 아니며(기본 info), 서비스(emergency-popup) 렌더와 동일 규칙
 const SEV = {
   info:     { label: "안내", Icon: Info,          text: "text-primary",   bg: "bg-primary/10" },
   warning:  { label: "주의", Icon: AlertTriangle, text: "text-amber-600", bg: "bg-amber-500/10" },
@@ -103,9 +102,6 @@ export function PopupAdmin() {
               <StatusDot tone="green" label="현재 노출 중인 팝업" />
               <p className="mt-0.5 text-lg font-bold text-foreground truncate">{shown.title}</p>
             </div>
-            <span className={`flex-shrink-0 text-xs font-semibold px-2 py-1 rounded-md ${SEV[shown.severity].bg} ${SEV[shown.severity].text}`}>
-              {SEV[shown.severity].label}
-            </span>
           </div>
         ) : (
           <div className="flex items-center gap-3">
@@ -131,49 +127,44 @@ export function PopupAdmin() {
           </div>
         </div>
 
-        <table className="w-full border-separate border-spacing-y-1">
-          <thead>
-            <tr className="text-left text-xs text-muted-foreground">
-              <th className="font-medium px-3 py-1">심각도</th>
-              <th className="font-medium px-3 py-1">제목</th>
-              <th className="font-medium px-3 py-1">상태</th>
-              <th className="font-medium px-3 py-1">작성일</th>
-              <th className="font-medium px-3 py-1">게시시작일</th>
-              <th className="font-medium px-3 py-1">게시종료일</th>
-              <th className="font-medium px-3 py-1 text-right">관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pageItems.map((p) => {
-              const st = popupStatus(p);
-              const sev = SEV[p.severity];
-              return (
-                <tr key={p.id} className="bg-gray-50/80 text-[13px] text-foreground/90">
-                  <td className="px-3 py-2.5 rounded-l-lg whitespace-nowrap">
-                    <span className={`inline-flex items-center gap-1 text-xs font-semibold ${sev.text}`}>
-                      <sev.Icon className="w-3.5 h-3.5" />
-                      {sev.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 max-w-[260px]"><span className="block truncate font-medium">{p.title}</span></td>
-                  <td className="px-3 py-2.5"><StatusDot tone={STATUS_TONE[st]} label={st} /></td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{p.createdAt}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDT(p.publishStart)}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDT(p.publishEnd)}</td>
-                  <td className="px-3 py-2.5 rounded-r-lg">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <ChipButton tone={p.active ? "gray" : "blue"} onClick={() => handleToggle(p)}>
-                        {p.active ? "비활성화" : "활성화"}
-                      </ChipButton>
-                      <ChipButton onClick={() => setEditing(p)}>수정</ChipButton>
-                      <ChipButton tone="red" onClick={() => setDeleteTarget(p)}>삭제</ChipButton>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        {/* 좁은 화면에서는 테이블만 가로 스크롤(글자 넘침 방지) */}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] border-separate border-spacing-y-1">
+            <thead>
+              <tr className="text-left text-xs text-muted-foreground">
+                <th className="font-medium px-3 py-1 whitespace-nowrap">제목</th>
+                <th className="font-medium px-3 py-1 whitespace-nowrap">상태</th>
+                <th className="font-medium px-3 py-1 whitespace-nowrap">작성일</th>
+                <th className="font-medium px-3 py-1 whitespace-nowrap">게시시작일</th>
+                <th className="font-medium px-3 py-1 whitespace-nowrap">게시종료일</th>
+                <th className="font-medium px-3 py-1 whitespace-nowrap text-right">관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pageItems.map((p) => {
+                const st = popupStatus(p);
+                return (
+                  <tr key={p.id} className="bg-gray-50/80 text-[13px] text-foreground/90">
+                    <td className="px-3 py-2.5 rounded-l-lg max-w-[260px]"><span className="block truncate font-medium">{p.title}</span></td>
+                    <td className="px-3 py-2.5"><StatusDot tone={STATUS_TONE[st]} label={st} /></td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{p.createdAt}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDT(p.publishStart)}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{fmtDT(p.publishEnd)}</td>
+                    <td className="px-3 py-2.5 rounded-r-lg">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <ChipButton tone={p.active ? "gray" : "blue"} onClick={() => handleToggle(p)}>
+                          {p.active ? "비활성화" : "활성화"}
+                        </ChipButton>
+                        <ChipButton onClick={() => setEditing(p)}>수정</ChipButton>
+                        <ChipButton tone="red" onClick={() => setDeleteTarget(p)}>삭제</ChipButton>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
         {filtered.length === 0 && <p className="py-14 text-center text-sm text-muted-foreground">조건에 맞는 팝업이 없어요.</p>}
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </Card>
@@ -212,7 +203,6 @@ export function PopupAdmin() {
 
 // ── 등록/수정 폼 (POP-003) + 우측 스티키 미리보기 (POP-004) ──
 function PopupForm({ initial, onCancel, onSaved }: { initial: BOPopup | null; onCancel: () => void; onSaved: (wasEdit: boolean) => void }) {
-  const [severity, setSeverity] = useState<EmergencySeverity>(initial?.severity ?? "info");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [message, setMessage] = useState(initial?.message ?? "");
   const [publishStart, setPublishStart] = useState(initial?.publishStart ?? "");
@@ -236,7 +226,7 @@ function PopupForm({ initial, onCancel, onSaved }: { initial: BOPopup | null; on
       id: initial?.id ?? newId("p"),
       title: title.trim(),
       message: message.trim(),
-      severity,
+      severity: initial?.severity ?? "info", // BO 입력 항목 아님 — 기본 안내(info)
       active: initial?.active ?? false,
       revision: initial?.revision ?? 0, // 수정 시 증가는 savePopup에서 처리
       createdAt: initial?.createdAt ?? todayStr(),
@@ -246,7 +236,7 @@ function PopupForm({ initial, onCancel, onSaved }: { initial: BOPopup | null; on
     onSaved(initial != null);
   };
 
-  const sev = SEV[severity];
+  const sev = SEV[initial?.severity ?? "info"];
 
   return (
     <div>
@@ -271,31 +261,9 @@ function PopupForm({ initial, onCancel, onSaved }: { initial: BOPopup | null; on
 
           <Card className="p-6">
             <h2 className="text-base font-bold text-foreground mb-1">팝업 내용</h2>
-            <p className="text-sm text-muted-foreground mb-5">심각도에 따라 아이콘과 색이 함께 노출돼요.</p>
+            <p className="text-sm text-muted-foreground mb-5">서비스 메인 중앙 팝업으로 노출될 내용을 입력해 주세요.</p>
 
             <div className="space-y-5">
-              <div>
-                <FieldLabel required>심각도</FieldLabel>
-                <div>
-                  <Segment
-                    options={(Object.keys(SEV) as EmergencySeverity[]).map((k) => ({
-                      value: k,
-                      label: (
-                        <span className={`inline-flex items-center gap-1 ${severity === k ? SEV[k].text : ""}`}>
-                          {(() => { const I = SEV[k].Icon; return <I className="w-3.5 h-3.5" />; })()}
-                          {SEV[k].label}
-                        </span>
-                      ),
-                    }))}
-                    value={severity}
-                    onChange={setSeverity}
-                  />
-                </div>
-                {severity === "critical" && (
-                  <p className="mt-2 text-xs text-red-600 font-medium">긴급 팝업은 활성화 시 모든 사용자에게 즉시 노출돼요.</p>
-                )}
-              </div>
-
               <div>
                 <div className="flex items-center justify-between">
                   <FieldLabel required>제목</FieldLabel>

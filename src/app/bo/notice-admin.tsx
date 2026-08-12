@@ -89,17 +89,19 @@ export function NoticeAdmin() {
           </div>
         </div>
 
-        <table className="w-full border-separate border-spacing-y-1">
+        {/* 좁은 화면에서는 테이블만 가로 스크롤(글자 넘침 방지) */}
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[860px] border-separate border-spacing-y-1">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
-              <th className="font-medium px-3 py-1">유형</th>
-              <th className="font-medium px-3 py-1">제목</th>
-              <th className="font-medium px-3 py-1">조회수</th>
-              <th className="font-medium px-3 py-1">상태</th>
-              <th className="font-medium px-3 py-1">작성일</th>
-              <th className="font-medium px-3 py-1">게시시작일</th>
-              <th className="font-medium px-3 py-1">게시종료일</th>
-              <th className="font-medium px-3 py-1 text-right">관리</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">유형</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">제목</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">조회수</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">상태</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">작성일</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">게시시작일</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">게시종료일</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap text-right">관리</th>
             </tr>
           </thead>
           <tbody>
@@ -134,6 +136,7 @@ export function NoticeAdmin() {
             })}
           </tbody>
         </table>
+        </div>
         {filtered.length === 0 && (
           <p className="py-14 text-center text-sm text-muted-foreground">조건에 맞는 공지가 없어요.</p>
         )}
