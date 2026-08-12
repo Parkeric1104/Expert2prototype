@@ -24,6 +24,13 @@ export function NoticeAdmin() {
 
   const refresh = () => setNotices(loadNotices());
 
+  // 필터 선택지 = 기본 유형 + 등록된 커스텀 유형
+  const filterTypes = useMemo(() => {
+    const base: NoticeType[] = ["공지", "릴리즈노트"];
+    const extra = notices.map((n) => n.type).filter((t) => !base.includes(t));
+    return [...base, ...Array.from(new Set(extra))];
+  }, [notices]);
+
   const filtered = useMemo(() => {
     const sorted = [...notices].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     return sorted
@@ -74,8 +81,9 @@ export function NoticeAdmin() {
               className="h-9 px-2.5 rounded-lg border border-border bg-white text-sm text-foreground outline-none focus:border-primary"
             >
               <option value="전체">유형 전체</option>
-              <option value="공지">공지</option>
-              <option value="릴리즈노트">릴리즈노트</option>
+              {filterTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
             </select>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
@@ -162,7 +170,16 @@ export function NoticeAdmin() {
 
 // ── 등록/수정 폼 (NTC-002) + 우측 스티키 미리보기 (NTC-003) ──
 function NoticeForm({ initial, onCancel, onSaved }: { initial: BONotice | null; onCancel: () => void; onSaved: () => void }) {
+  // 유형 선택지 = 기본 유형 + 이미 등록된 커스텀 유형. '직접 입력' 선택 시 새 유형 생성 가능
+  const typeOptions = useMemo(() => {
+    const base: NoticeType[] = ["공지", "릴리즈노트"];
+    const extra = loadNotices().map((n) => n.type).filter((t) => !base.includes(t));
+    return [...base, ...Array.from(new Set(extra))];
+  }, []);
   const [type, setType] = useState<NoticeType>(initial?.type ?? "공지");
+  const [customMode, setCustomMode] = useState(false);
+  const [customType, setCustomType] = useState("");
+  const effectiveType = customMode ? customType.trim() : type;
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [important, setImportant] = useState(initial?.important ?? false);
@@ -171,6 +188,13 @@ function NoticeForm({ initial, onCancel, onSaved }: { initial: BONotice | null; 
   const [submitted, setSubmitted] = useState(false);
 
   const errors = {
+    type: customMode
+      ? customType.trim()
+        ? customType.trim().length > 10
+          ? "유형 이름은 10자까지 입력할 수 있어요."
+          : ""
+        : "새 유형 이름을 입력해 주세요."
+      : "",
     title: title.trim() ? (title.length > 60 ? "제목은 60자까지 입력할 수 있어요." : "") : "제목을 입력해 주세요.",
     body: body.trim() ? "" : "본문을 입력해 주세요.",
     period:
@@ -185,7 +209,7 @@ function NoticeForm({ initial, onCancel, onSaved }: { initial: BONotice | null; 
     if (hasError) return;
     saveNotice({
       id: initial?.id ?? newId("n"),
-      type,
+      type: effectiveType,
       title: title.trim(),
       body: body.trim(),
       important,
@@ -218,15 +242,35 @@ function NoticeForm({ initial, onCancel, onSaved }: { initial: BONotice | null; 
             <div className="space-y-5">
               <div>
                 <FieldLabel required>유형</FieldLabel>
-                {/* 셀렉트박스 — 카테고리 확장 대비 + 목록 필터와 일관 */}
+                {/* 기본·기존 유형 + '직접 입력'(새 유형 생성 → FE 카테고리 탭 자동 추가) */}
                 <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as NoticeType)}
+                  value={customMode ? "__custom" : type}
+                  onChange={(e) => {
+                    if (e.target.value === "__custom") setCustomMode(true);
+                    else { setCustomMode(false); setType(e.target.value as NoticeType); }
+                  }}
                   className="w-full h-10 px-3 rounded-lg border border-border bg-white text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors"
                 >
-                  <option value="공지">공지</option>
-                  <option value="릴리즈노트">릴리즈노트</option>
+                  {typeOptions.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                  <option value="__custom">직접 입력…</option>
                 </select>
+                {customMode && (
+                  <div className="mt-2">
+                    <input
+                      value={customType}
+                      onChange={(e) => setCustomType(e.target.value)}
+                      placeholder="새 유형 이름 (예: 점검, 이벤트)"
+                      className={inputCls}
+                      autoFocus
+                    />
+                    <p className="mt-1.5 text-xs text-muted-foreground" style={{ wordBreak: "keep-all" }}>
+                      등록하면 서비스 공지사항의 카테고리 탭에 새 유형이 자동으로 추가돼요.
+                    </p>
+                  </div>
+                )}
+                {submitted && errors.type && <p className="mt-1.5 text-xs text-red-500">{errors.type}</p>}
               </div>
 
               <div>
@@ -306,7 +350,7 @@ function NoticeForm({ initial, onCancel, onSaved }: { initial: BONotice | null; 
             <p className="text-xs font-semibold text-muted-foreground mb-3">서비스 미리보기 — 공지 상세</p>
             <div className="rounded-xl border border-border p-4">
               <div className="flex items-center gap-1.5 mb-2">
-                <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${type === "릴리즈노트" ? "bg-primary/10 text-primary" : "bg-gray-200/70 text-gray-600"}`}>{type}</span>
+                <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${effectiveType === "릴리즈노트" ? "bg-primary/10 text-primary" : "bg-gray-200/70 text-gray-600"}`}>{effectiveType || "유형"}</span>
                 {important && <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-600">중요</span>}
               </div>
               <div className="flex items-start justify-between gap-3 pb-3 mb-3 border-b border-border">

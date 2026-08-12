@@ -24,7 +24,7 @@ FE(서비스)는 **`src/app/data/service-content.ts`의 getter 3개에만 의존
 | 필드 | 타입 | 설명 |
 |---|---|---|
 | `id` | string | 고유 id |
-| `type` | `"공지" \| "릴리즈노트"` | 유형(코드 고정, BO는 선택만) |
+| `type` | string | 유형 — 기본(공지·릴리즈노트) + **BO 직접 입력 유형**. FE 카테고리 탭은 `getNoticeTypes()`(기본 + 노출 공지의 커스텀 유형)에서 동적 파생 |
 | `title` | string | ≤60자 |
 | `body` | string | 프리텍스트(제한 없음), 줄바꿈 유지(`whitespace-pre-line`) |
 | `date` | string `YYYY-MM-DD` | 작성일 |

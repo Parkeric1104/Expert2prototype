@@ -7,7 +7,9 @@
  */
 import { getBOVisibleNotices, getBOEmergency, getBOVersion } from "@/app/bo/bo-store";
 
-export type NoticeType = "공지" | "릴리즈노트";
+// 기본 유형(공지·릴리즈노트) 외에 BO에서 직접 입력한 유형도 허용 — FE 탭은 getNoticeTypes()에서 파생
+export type NoticeType = string;
+export const BASE_NOTICE_TYPES = ["공지", "릴리즈노트"] as const;
 export interface Notice {
   id: string;
   type: NoticeType;
@@ -90,6 +92,16 @@ export function getNotices(): Notice[] {
   // BO 저장값(게시 기간 내 공지만) 우선, 없으면 정적 소스 — 최신순 정렬
   const list = getBOVisibleNotices() ?? SERVICE_CONTENT.notices;
   return [...list].sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+/** 공지 유형(카테고리) 목록 — 기본 유형 + 현재 노출 공지에 존재하는 커스텀 유형.
+ *  BO에서 새 유형으로 공지를 등록하면 FE 카테고리 탭에 자동 반영된다. */
+export function getNoticeTypes(): NoticeType[] {
+  const base: NoticeType[] = [...BASE_NOTICE_TYPES];
+  const extra = getNotices()
+    .map((n) => n.type)
+    .filter((t) => !base.includes(t));
+  return [...base, ...Array.from(new Set(extra))];
 }
 
 // ── 공지 읽음 처리(localStorage) ─────────────────────────

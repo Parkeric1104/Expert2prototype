@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronLeft, ArrowLeft } from "lucide-react";
-import { getNotices, markAllNoticesRead, type Notice, type NoticeType } from "@/app/data/service-content";
+import { getNotices, getNoticeTypes, markAllNoticesRead, type Notice, type NoticeType } from "@/app/data/service-content";
 
 // 공지사항 페이지(전체화면). 사이드패널 하단 '공지사항' → 페이지 전환으로 진입.
 // 목록: 상단 '메인으로 돌아가기' 바 노출 / 상세: 상단 GNB 미노출(몰입형) + 하단 고정 '목록으로'.
@@ -8,7 +8,8 @@ export function NoticeView({ onBack }: { onBack: () => void }) {
   const notices = getNotices();
   const [selected, setSelected] = useState<Notice | null>(null);
   const [filter, setFilter] = useState<"전체" | NoticeType>("전체");
-  const TABS: ("전체" | NoticeType)[] = ["전체", "공지", "릴리즈노트"];
+  // 카테고리 탭 = 기본 유형 + BO에서 추가된 커스텀 유형 (데이터에서 파생)
+  const TABS: ("전체" | NoticeType)[] = ["전체", ...getNoticeTypes()];
   const filtered = filter === "전체" ? notices : notices.filter((n) => n.type === filter);
 
   // 페이지 진입 시 전체 읽음 처리(뱃지 제거)
