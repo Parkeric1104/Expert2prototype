@@ -22,7 +22,7 @@ import { getHistorySession, ChatHistorySession } from "@/app/data/chat-history";
 
 export default function App() {
   const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding" | "calculator" | "notice">("home");
-  useContentTick(); // BO 콘텐츠 변경(다른 탭)을 새로고침 없이 반영 — App+하위 리렌더로 getter 재조회
+  const contentTick = useContentTick(); // BO 콘텐츠 변경(다른 탭)을 새로고침 없이 반영 — App+하위 리렌더로 getter 재조회
   const [chatQuery, setChatQuery] = useState<string>("");
   const [selectedLaws, setSelectedLaws] = useState<string[]>([]);
   const [relatedLaws, setRelatedLaws] = useState<string[]>([]);
@@ -64,6 +64,20 @@ export default function App() {
     if (localStorage.getItem("notice_popup_hidden_rev") === `${e.popupId ?? "static"}:${e.revision ?? 0}`) return false;
     return e.active;
   });
+
+  // 공지 팝업 크로스탭 실시간: BO가 다른 탭에서 활성/수정하면 새로고침 없이 노출.
+  // '확인'으로 닫은 리비전은 이 세션 재노출 안 함(popupDismissedKey) / '다시 보지 않기'는 영구(localStorage) / BO 비활성화 시 닫힘.
+  const [popupDismissedKey, setPopupDismissedKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).has("emergency")) return; // 데모 강제 노출 유지
+    const e = getEmergency();
+    const key = `${e.popupId ?? "static"}:${e.revision ?? 0}`;
+    if (!e.active) { setShowEmergency(false); return; }                         // BO 비활성화 → 닫기
+    if (localStorage.getItem("notice_popup_hidden_rev") === key) return;        // 다시 보지 않기(영구)
+    if (popupDismissedKey === key) return;                                      // 이 세션에서 '확인'으로 닫음
+    setShowEmergency(true);
+  }, [contentTick, popupDismissedKey]);
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
   const [historySession, setHistorySession] = useState<ChatHistorySession | null>(null); // 채팅 이력 보기(전체화면 복원)
 
@@ -343,7 +357,11 @@ export default function App() {
       {/* 서비스 오류 긴급 팝업 (전역 최우선) */}
       {showEmergency && (
         <EmergencyPopup
-          onClose={() => setShowEmergency(false)}
+          onClose={() => {
+            setShowEmergency(false);
+            const e = getEmergency();
+            setPopupDismissedKey(`${e.popupId ?? "static"}:${e.revision ?? 0}`); // '확인'=이 세션 재노출 억제
+          }}
           onDontShowAgain={() => {
             setShowEmergency(false);
             const e = getEmergency();
