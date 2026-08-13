@@ -57,9 +57,12 @@ interface PolicyManagementViewProps {
   onOpenEmbedding?: (policy: { id: string; name: string; category: string }) => void;
   /** 체험판 — 등록 등 쓰기 액션 차단(ONE AI 문의 유도) */
   isTrial?: boolean;
+  /** 메인 파일오류 '등록하기'로 전달된 파일 → 진입 시 등록 모달 자동 오픈+첨부 */
+  initialFile?: { name: string; size: number } | null;
+  onConsumeInitialFile?: () => void;
 }
 
-export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial = false }: PolicyManagementViewProps) {
+export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial = false, initialFile = null, onConsumeInitialFile }: PolicyManagementViewProps) {
   const { showCoach, startCoach, stopCoach } = useCoachMark(!isTrial);
   const [showTrialBlock, setShowTrialBlock] = useState(false); // 체험판 사용 불가 팝업
 
@@ -245,6 +248,15 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
   const [deletingPolicy, setDeletingPolicy] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [regInitialFile, setRegInitialFile] = useState<{ name: string; size: number } | null>(null);
+  // 메인 파일오류 '등록하기'로 진입 → 등록 모달 자동 오픈 + 파일 첨부
+  useEffect(() => {
+    if (initialFile && !isTrial) {
+      setRegInitialFile(initialFile);
+      setShowRegistrationModal(true);
+      onConsumeInitialFile?.();
+    }
+  }, [initialFile, isTrial]);
   const categories = [
     "취업규칙",
     "단체협약",
@@ -686,8 +698,9 @@ export function PolicyManagementView({ isAdmin = true, onOpenEmbedding, isTrial 
       {/* 등록 모달 */}
       <PolicyRegistrationModal
         isOpen={showRegistrationModal}
-        onClose={() => setShowRegistrationModal(false)}
+        onClose={() => { setShowRegistrationModal(false); setRegInitialFile(null); }}
         onSubmit={handleSubmitPolicy}
+        initialFile={regInitialFile}
       />
 
       {/* 체험판 사용 불가 팝업 (등록·다운로드·삭제 시도 시) */}

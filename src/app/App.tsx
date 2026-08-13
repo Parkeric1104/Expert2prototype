@@ -156,6 +156,13 @@ export default function App() {
     setCurrentView("policy");
   };
 
+  // 메인 파일오류 팝업 '등록하기' → 정책 관리 진입 + 등록 모달 자동 오픈(파일 첨부)
+  const [pendingPolicyFile, setPendingPolicyFile] = useState<{ name: string; size: number } | null>(null);
+  const handleRegisterFileAsPolicy = (file: { name: string; size: number }) => {
+    setPendingPolicyFile(file);
+    handleOpenPolicyUpload("upload_error");
+  };
+
   const handleViewChatHistory = (chatId: string) => {
     // 채팅 이력 보기 → 채팅 전체 화면으로 전환하여 이전 대화 그대로 복원 (읽기 전용)
     const session = getHistorySession(chatId);
@@ -419,6 +426,7 @@ export default function App() {
           onOpenPolicyManagement={() => handleOpenPolicyUpload("home_nudge")}
           onOpenCalculator={() => setCurrentView("calculator")}
           onOpenNoticePopup={() => setShowEmergency(true)}
+          onRegisterFileAsPolicy={handleRegisterFileAsPolicy}
         />
       )}
 
@@ -446,6 +454,8 @@ export default function App() {
           isAdmin={isAdmin}
           onOpenEmbedding={handleOpenEmbedding}
           isTrial={isTrial}
+          initialFile={pendingPolicyFile}
+          onConsumeInitialFile={() => setPendingPolicyFile(null)}
         />
       )}
 

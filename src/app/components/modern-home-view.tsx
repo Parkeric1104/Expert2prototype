@@ -5,7 +5,7 @@ import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
-  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search, MoreHorizontal
+  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search, MoreHorizontal, AlertTriangle
 } from "lucide-react";
 import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
@@ -27,6 +27,7 @@ interface ModernHomeViewProps {
   onOpenPolicyManagement?: () => void; // 미등록 넛지 배너 → 정책 문서 관리 진입
   onOpenCalculator?: () => void; // 펑션 메뉴 → 노무 계산기 진입
   onOpenNoticePopup?: () => void; // 펑션 메뉴 → 공지 팝업(프로토타입 확인용)
+  onRegisterFileAsPolicy?: (file: { name: string; size: number }) => void; // 파일 오류 팝업 '등록하기' → 노무정책문서관리 등록
 }
 
 const FLOATING_ICONS = [
@@ -55,7 +56,7 @@ const TAB_CHIPS: Record<string, string[]> = {
 };
 const ITEMS_PER_PAGE = 4;
 
-export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator, onOpenNoticePopup }: ModernHomeViewProps) {
+export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator, onOpenNoticePopup, onRegisterFileAsPolicy }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
@@ -91,6 +92,8 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   }, [showPolicyNudge]);
 
   const fileInputRef    = useRef<HTMLInputElement>(null);
+  // 파일 첨부 오류 팝업 (등록하기 → 노무정책문서관리 등록 / 닫기)
+  const [uploadError, setUploadError] = useState<{ message: string; file: { name: string; size: number } | null } | null>(null);
 
   // 파일 유형별 아이콘 색상 (디자인: PDF 빨강 / Word 파랑 / HWP 스카이)
   const getFileIconColor = (fileName: string) => {
@@ -166,19 +169,20 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
     ];
     const validFiles: { name: string; size: number }[] = [];
     for (const file of files) {
+      const cur = { name: file.name, size: file.size };
       if (!allowedTypes.includes(file.type) && !file.name.endsWith(".hwp")) {
-        alert("지원되지 않는 파일 형식입니다. PDF, DOCX, HWP 파일만 업로드 가능합니다.");
+        setUploadError({ message: "지원되지 않는 파일 형식입니다. PDF, DOCX, HWP 파일만 업로드 가능합니다.", file: cur });
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        alert(`파일 크기는 10MB 이하만 가능합니다. (${file.name})`);
+        setUploadError({ message: "파일 크기는 10MB 이하만 첨부할 수 있습니다.", file: cur });
         return;
       }
       if (uploadedFiles.length + validFiles.length >= 5) {
-        alert("최대 5개 파일까지만 첨부 가능합니다.");
+        setUploadError({ message: "질문 첨부는 최대 5개까지 가능합니다.", file: cur });
         return;
       }
-      validFiles.push({ name: file.name, size: file.size });
+      validFiles.push(cur);
     }
     setUploadedFiles([...uploadedFiles, ...validFiles]);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -217,6 +221,40 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
 
       {/* 우하단 펑션 버튼 — 클릭 시 위로 기능 메뉴, 크레딧은 'AI balance' 호버 시에만 노출 */}
       <div className="absolute bottom-5 right-6 z-30"><FunctionMenu onOpenCalculator={onOpenCalculator} onOpenNoticePopup={onOpenNoticePopup} /></div>
+
+      {/* 파일 첨부 오류 팝업 — 등록하기(정책 등록으로 전환) / 닫기 */}
+      {uploadError && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-[400px] bg-card rounded-2xl shadow-xl border border-border p-6">
+            <div className="w-11 h-11 rounded-full bg-amber-500/10 flex items-center justify-center mb-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+            </div>
+            <h2 className="text-base font-bold text-foreground mb-1.5">파일을 첨부할 수 없어요</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>{uploadError.message}</p>
+            <p className="text-xs text-muted-foreground mt-2 mb-5" style={{ wordBreak: "keep-all" }}>
+              이 문서를 <b className="text-foreground/80">노무 정책 문서 관리</b>에 등록하면 답변에 계속 참조됩니다.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setUploadError(null)}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium text-foreground/70 hover:bg-muted transition-colors"
+              >
+                닫기
+              </button>
+              <button
+                onClick={() => {
+                  const f = uploadError.file;
+                  setUploadError(null);
+                  if (f) onRegisterFileAsPolicy?.(f);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
+                등록하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 스크롤 영역 — 기본 PC웹(좌우 36px), 모바일만 16px */}
       <div className="flex-1 min-h-0 w-full flex items-start justify-center px-9 max-sm:px-4 overflow-y-auto">

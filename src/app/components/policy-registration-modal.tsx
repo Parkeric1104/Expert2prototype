@@ -34,14 +34,16 @@ interface PolicyRegistrationModalProps {
   }) => void;
   existingCategories?: string[]; // 기존에 등록된 카테고리 목록
   existingPolicies?: Array<{ category: string; name: string }>; // 기존 정책 목록
+  initialFile?: { name: string; size: number } | null; // 메인 파일오류 '등록하기'로 전달된 파일 자동 첨부
 }
 
-export function PolicyRegistrationModal({ 
-  isOpen, 
+export function PolicyRegistrationModal({
+  isOpen,
   onClose,
   onSubmit,
   existingCategories = [],
-  existingPolicies = []
+  existingPolicies = [],
+  initialFile = null
 }: PolicyRegistrationModalProps) {
   // 퍼널 S4: 정책 등록 모달 오픈 집계
   useEffect(() => {
@@ -49,6 +51,13 @@ export function PolicyRegistrationModal({
   }, [isOpen]);
 
   const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number; type: string } | null>(null);
+
+  // 전달받은 파일 자동 첨부 (파일 오류 → '등록하기' 전환 시)
+  useEffect(() => {
+    if (isOpen && initialFile) {
+      setUploadedFile({ name: initialFile.name, size: initialFile.size, type: "" });
+    }
+  }, [isOpen, initialFile]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [customCategory, setCustomCategory] = useState<string>("");
   const [customCategoryError, setCustomCategoryError] = useState<string>("");
