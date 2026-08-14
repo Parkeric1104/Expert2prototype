@@ -45,14 +45,14 @@ const FLOATING_ICONS = [
   { Icon: UserCheck,    delay: 4,   duration: 20, x: "48%", y: "92%", size: 46, opacity: 0.11 },
 ];
 
-// 홈 추천질문 — 디자인 정합: 상위 탭(연말정산/세법질의/법률/근로계약) → 하위 칩 → 질문
-const LABOR_CHIPS = ["근로계약", "취업규칙", "인사관리", "모성보호", "임금", "휴일·휴가", "근로시간"];
-const HOME_TABS = ["연말정산", "세법질의", "법률", "근로계약"];
+// 홈 추천질문 — 추천질문_260814.xlsx 반영: 상위 탭(1Depth) → 하위 칩(2Depth) → 질문
+// 경로테스트 = 맥락(멀티턴 프로세스) 테스트용 경로질문 모음(유형1~4, questionType·contextType 지정)
+const LABOR_CHIPS = ["근로계약", "취업규칙", "휴일·휴가", "임금", "인사관리", "모성보호", "근로시간"];
+const HOME_TABS = ["인사・노무", "세법", "경로테스트"];
 const TAB_CHIPS: Record<string, string[]> = {
-  "연말정산": ["기본공제소득", "근태수당", "해외근로", "복리·현물", "부양보험", "이자공제", "기부공제", "월세카드"],
-  "세법질의": ["부가가치세", "소득세", "법인세", "양도세"],
-  "법률": ["계약·약정", "분쟁·소송", "손해배상"],
-  "근로계약": LABOR_CHIPS,
+  "인사・노무": LABOR_CHIPS,
+  "세법": ["법인세", "부가가치세", "소득세", "연말정산"],
+  "경로테스트": ["근로계약 경로질문"],
 };
 const ITEMS_PER_PAGE = 4;
 
@@ -60,8 +60,8 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
-  const [selectedTab, setSelectedTab]   = useState("연말정산");
-  const [selectedCategory, setSelectedCategory] = useState("기본공제소득");
+  const [selectedTab, setSelectedTab]   = useState("인사・노무");
+  const [selectedCategory, setSelectedCategory] = useState("근로계약");
   const [currentPage, setCurrentPage]   = useState(1);
   const [showAttachList, setShowAttachList] = useState(false); // 첨부 '더보기' 팝오버
 
@@ -104,15 +104,19 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   };
 
   const prompts: Array<{ text: string; questionType: string; category: string; laws: string[]; contextType?: "single" | "multi" }> = [
-    // ── 근로계약 (프로세스 유형 분류: 유형1~4) ──
+    // ── 경로테스트 (맥락 프로세스 유형1~4 경로질문 — 멀티턴 분기 테스트용) ──
     // 유형1 간단·단일맥락 → 멀티턴 후 즉시 의견서 작성
-    { text: "위탁계약·프리랜서계약도 노동법의 보호를 받나요?",                                    questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제2조", "대법원 2004다29736 판결"], contextType: "single" },
+    { text: "위탁계약·프리랜서계약도 노동법의 보호를 받나요?",                                    questionType: "normal",   category: "근로계약 경로질문",  laws: ["근로기준법 제2조", "대법원 2004다29736 판결"], contextType: "single" },
     // 유형2 간단·다중맥락 → 멀티턴 후 주제 선택 팝업
-    { text: "근로계약서를 작성할 때 꼭 챙겨야 할 내용은 무엇인가요?",                              questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제17조"], contextType: "multi" },
+    { text: "근로계약서를 작성할 때 꼭 챙겨야 할 내용은 무엇인가요?",                              questionType: "normal",   category: "근로계약 경로질문",  laws: ["근로기준법 제17조"], contextType: "multi" },
     // 유형3 상세·단일맥락 → 멀티턴 후 즉시 의견서 작성
-    { text: "퇴직 후 동종업체 취업을 금지하는 전직금지약정도 효력이 있나요? (상세답변)",            questionType: "detailed", category: "근로계약",  laws: ["근로기준법 제15조"], contextType: "single" },
+    { text: "퇴직 후 동종업체 취업을 금지하는 전직금지약정도 효력이 있나요? (상세답변)",            questionType: "detailed", category: "근로계약 경로질문",  laws: ["근로기준법 제15조"], contextType: "single" },
     // 유형4 상세·다중맥락 → 멀티턴 후 주제 선택 팝업
-    { text: "기간제 근로계약을 반복 갱신하면 무기계약직으로 전환되나요? (상세답변)",                questionType: "detailed", category: "근로계약",  laws: ["기간제법 제4조", "대법원 2011두12528 판결"], contextType: "multi" },
+    { text: "기간제 근로계약을 반복 갱신하면 무기계약직으로 전환되나요? (상세답변)",                questionType: "detailed", category: "근로계약 경로질문",  laws: ["기간제법 제4조", "대법원 2011두12528 판결"], contextType: "multi" },
+    // ── 근로계약 (일반 추천질문) ──
+    { text: "위탁계약·프리랜서계약도 노동법의 보호를 받나요?",                                    questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제2조", "대법원 2004다29736 판결"] },
+    { text: "근로계약서를 작성할 때 꼭 챙겨야 할 내용은 무엇인가요?",                              questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제17조"] },
+    { text: "퇴직 후 동종업체 취업을 금지하는 전직금지약정도 효력이 있나요?",                       questionType: "normal",   category: "근로계약",  laws: ["근로기준법 제15조"] },
     // ── 취업규칙 ──
     { text: "취업규칙과 근로계약의 내용이 다르면 어느 것이 우선하나요?",                           questionType: "normal",   category: "취업규칙",  laws: ["근로기준법 제97조"] },
     { text: "3년 전에 발생한 일을 이제 와서 징계할 수 있나요?",                                   questionType: "normal",   category: "취업규칙",  laws: ["근로기준법 제23조"] },
@@ -137,16 +141,22 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
     { text: "포괄임금제라 야근해도 별도의 추가수당이 없나요? (상세답변)",                          questionType: "detailed", category: "근로시간",  laws: ["근로기준법 제56조"] },
     { text: "연장근로는 1주 12시간을 초과할 수 없다는데 어떻게 판단하나요?",                       questionType: "normal",   category: "근로시간",  laws: ["근로기준법 제53조"] },
     { text: "단시간근로자가 약정시간을 초과해 근무하면 가산수당을 받나요?",                        questionType: "normal",   category: "근로시간",  laws: ["기간제 및 단시간근로자 보호법 제6조", "근로기준법 제56조"] },
-    // ── 연말정산 (세법) — 디자인 정합 ──
-    { text: "부가가치세는 언제 신고하나요?",                                                     questionType: "normal",   category: "기본공제소득", laws: ["부가가치세법 제49조"] },
-    { text: "사업자 등록 후 첫 세금 신고는 어떻게 하나요?",                                        questionType: "normal",   category: "기본공제소득", laws: ["소득세법 제168조"] },
-    { text: "간이과세자와 일반 과세자의 차이는 무엇인가요?",                                       questionType: "normal",   category: "기본공제소득", laws: ["부가가치세법 제61조"] },
-    // ── 세법질의 (대표 샘플) ──
-    { text: "부가가치세 매입세액 공제는 어떤 경우에 받을 수 있나요?",                              questionType: "normal",   category: "부가가치세", laws: ["부가가치세법 제38조"] },
-    { text: "종합소득세와 근로소득세는 어떻게 다른가요?",                                          questionType: "normal",   category: "소득세",     laws: ["소득세법 제14조"] },
-    // ── 법률 (대표 샘플) ──
-    { text: "계약서에 없는 구두 약정도 법적 효력이 있나요?",                                       questionType: "normal",   category: "계약·약정",  laws: ["민법 제105조"] },
-    { text: "손해배상 청구는 어떤 요건을 갖춰야 하나요?",                                          questionType: "normal",   category: "손해배상",   laws: ["민법 제750조"] },
+    // ── 세법 > 법인세 ──
+    { text: "법인세 과세표준 구간 및 세율을 알려주세요.",                                          questionType: "normal",   category: "법인세",     laws: ["법인세법 제55조"] },
+    { text: "업무용 승용차 관련 비용의 손금산입 요건과 한도는 어떻게 계산되나요?",                  questionType: "normal",   category: "법인세",     laws: ["법인세법 제27조의2"] },
+    { text: "접대비(기업업무추진비) 한도는 어떻게 계산하나요?",                                    questionType: "normal",   category: "법인세",     laws: ["법인세법 제25조"] },
+    // ── 세법 > 부가가치세 ──
+    { text: "간이과세자가 일반과세 전환 시의 재고품 등 신고서는 언제까지 제출하여야 하나요?",        questionType: "normal",   category: "부가가치세", laws: ["부가가치세법 제61조", "부가가치세법 시행령 제86조"] },
+    { text: "세금계산서 발급 시기를 놓친 경우 가산세는 어떻게 되나요?",                             questionType: "normal",   category: "부가가치세", laws: ["부가가치세법 제60조"] },
+    { text: "영세율과 면세는 어떻게 다른가요?",                                                    questionType: "normal",   category: "부가가치세", laws: ["부가가치세법 제21조", "부가가치세법 제26조"] },
+    // ── 세법 > 소득세 ──
+    { text: "일용직 근로자의 원천징수는 어떻게 계산하나요?",                                        questionType: "normal",   category: "소득세",     laws: ["소득세법 제134조"] },
+    { text: "사업소득과 기타소득은 어떻게 구분해 원천징수하나요?",                                  questionType: "normal",   category: "소득세",     laws: ["소득세법 제19조", "소득세법 제21조"] },
+    { text: "퇴직소득세는 어떤 방식으로 계산되나요?",                                              questionType: "normal",   category: "소득세",     laws: ["소득세법 제48조"] },
+    // ── 세법 > 연말정산 ──
+    { text: "연말정산에서 부양가족 인적공제 요건은 어떻게 되나요?",                                 questionType: "normal",   category: "연말정산",   laws: ["소득세법 제50조"] },
+    { text: "월세 세액공제는 누가, 얼마나 받을 수 있나요?",                                         questionType: "normal",   category: "연말정산",   laws: ["조세특례제한법 제95조의2"] },
+    { text: "중도 입사자·퇴사자의 연말정산은 어떻게 처리하나요?",                                   questionType: "normal",   category: "연말정산",   laws: ["소득세법 제137조"] },
   ];
 
   const filteredPrompts  = prompts.filter(p => p.category === selectedCategory);
