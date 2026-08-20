@@ -184,14 +184,82 @@ export function popupStatus(p: BOPopup, at: number = Date.now()): PopupStatus {
   return "노출중";
 }
 
+// ── 계정 (ACC-001~005) ────────────────────────────────────
+export type BORole = "admin" | "operator";
+export interface BOAccount {
+  id: string;
+  loginId: string;   // 중복 불가
+  name: string;
+  password: string;  // 프로토타입: 평문 저장(운영 전환 시 서버 해시)
+  role: BORole;      // admin=계정관리 포함 전체 / operator=콘텐츠 관리만
+  createdAt: string;
+  lastLoginAt?: string; // YYYY-MM-DD HH:mm
+}
+
+const ACCOUNTS_KEY = "bo_accounts";
+const SESSION_KEY = "bo_session"; // 로그인된 loginId
+
+const SEED_ACCOUNTS: BOAccount[] = [
+  { id: "a-admin", loginId: "admin", name: "박대웅", password: "expert2!", role: "admin", createdAt: "2026-08-04" },
+  { id: "a-op", loginId: "operator", name: "운영자", password: "expert2!", role: "operator", createdAt: "2026-08-04" },
+];
+
+export function loadAccounts(): BOAccount[] {
+  const stored = read<BOAccount[]>(ACCOUNTS_KEY);
+  if (stored) return stored;
+  write(ACCOUNTS_KEY, SEED_ACCOUNTS);
+  return SEED_ACCOUNTS;
+}
+
+export function saveAccount(a: BOAccount) {
+  const list = loadAccounts();
+  const idx = list.findIndex((x) => x.id === a.id);
+  if (idx >= 0) list[idx] = a;
+  else list.unshift(a);
+  write(ACCOUNTS_KEY, list);
+}
+
+export function deleteAccount(id: string) {
+  write(ACCOUNTS_KEY, loadAccounts().filter((a) => a.id !== id));
+}
+
+export function isLoginIdTaken(loginId: string, exceptId?: string): boolean {
+  return loadAccounts().some((a) => a.loginId === loginId && a.id !== exceptId);
+}
+
+/** 로그인(ACC-001) — 성공 시 세션 저장 + 최근 접속 갱신 */
+export function login(loginId: string, password: string): BOAccount | null {
+  const acc = loadAccounts().find((a) => a.loginId === loginId && a.password === password);
+  if (!acc) return null;
+  const updated = { ...acc, lastLoginAt: nowDT() };
+  saveAccount(updated);
+  try { localStorage.setItem(SESSION_KEY, acc.loginId); } catch { /* noop */ }
+  return updated;
+}
+
+export function logout() {
+  try { localStorage.removeItem(SESSION_KEY); } catch { /* noop */ }
+}
+
+export function currentAccount(): BOAccount | null {
+  try {
+    const loginId = localStorage.getItem(SESSION_KEY);
+    if (!loginId) return null;
+    return loadAccounts().find((a) => a.loginId === loginId) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ── 버전정보 (VER) ────────────────────────────────────────
-/** 변경 이력 항목 — 계정 없음(SYS-002) 전제라 행위자 없이 시각·변경 내용만 기록(LOG-001) */
+/** 변경 이력 항목 — 시각·행위자(로그인 계정, ACC-005)·변경 내용 기록(LOG-001) */
 export interface BOVersionLog {
   id: string;
   changedAt: string; // YYYY-MM-DD HH:mm
   service: string;
   lawDataUpdatedAt: string;
   changed: ("service" | "lawDataUpdatedAt")[]; // 빈 배열 = 최초 등록
+  by?: string; // 행위자(계정 이름) — 계정 도입 전 이력은 없음
 }
 
 const VERSION_LOG_KEY = "bo_version_log";
@@ -225,7 +293,7 @@ export function saveVersion(v: ServiceVersion) {
   if (v.service !== prev.service) changed.push("service");
   if (v.lawDataUpdatedAt !== prev.lawDataUpdatedAt) changed.push("lawDataUpdatedAt");
   write(VERSION_KEY, v);
-  write(VERSION_LOG_KEY, [{ id: newId("vl"), changedAt: nowDT(), ...v, changed }, ...loadVersionLog()]);
+  write(VERSION_LOG_KEY, [{ id: newId("vl"), changedAt: nowDT(), ...v, changed, by: currentAccount()?.name }, ...loadVersionLog()]);
 }
 
 // ── 서비스 FE 공급 (service-content getter가 호출) ─────────

@@ -62,6 +62,7 @@ export function VersionAdmin() {
               <th className="font-medium px-3 py-1 whitespace-nowrap">변경일시</th>
               <th className="font-medium px-3 py-1 whitespace-nowrap">서비스 버전</th>
               <th className="font-medium px-3 py-1 whitespace-nowrap">법령 DB 갱신일</th>
+              <th className="font-medium px-3 py-1 whitespace-nowrap">작성자</th>
             </tr>
           </thead>
           <tbody>
@@ -69,7 +70,8 @@ export function VersionAdmin() {
               <tr key={l.id} className="bg-gray-50/80 text-[13px] text-foreground/90">
                 <td className="px-3 py-2.5 rounded-l-lg whitespace-nowrap text-muted-foreground">{l.changedAt}</td>
                 <td className={`px-3 py-2.5 whitespace-nowrap ${l.changed.includes("service") ? "font-semibold" : "text-muted-foreground"}`}>{l.service}</td>
-                <td className={`px-3 py-2.5 rounded-r-lg whitespace-nowrap ${l.changed.includes("lawDataUpdatedAt") ? "font-semibold" : "text-muted-foreground"}`}>{l.lawDataUpdatedAt}</td>
+                <td className={`px-3 py-2.5 whitespace-nowrap ${l.changed.includes("lawDataUpdatedAt") ? "font-semibold" : "text-muted-foreground"}`}>{l.lawDataUpdatedAt}</td>
+                <td className="px-3 py-2.5 rounded-r-lg whitespace-nowrap text-muted-foreground">{l.by ?? "—"}</td>
               </tr>
             ))}
           </tbody>
