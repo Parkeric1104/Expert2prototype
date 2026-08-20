@@ -8,6 +8,7 @@ import { AIOpinionDebatePanel } from "@/app/components/ai-opinion-debate-panel";
 import { OpinionTopicBottomSheet } from "@/app/components/opinion-topic-bottom-sheet";
 import { SimpleResponseCard } from "@/app/components/simple-response-card";
 import { MultiTurnResponse } from "@/app/components/multi-turn-response";
+import { MultiTurnIntroBanner } from "@/app/components/multi-turn-intro-banner";
 import { DualPersonaDebate } from "@/app/components/dual-persona-debate";
 import { HumanFeedbackRequest } from "@/app/components/human-feedback-request";
 import { InvalidQuestionCard } from "@/app/components/invalid-question-card";
@@ -1629,6 +1630,15 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
               <div className="text-center text-muted-foreground mt-20">
                 <p className="text-lg">대화를 시작해보세요</p>
               </div>
+            )}
+
+            {/* 단일턴 → 멀티턴 전환 1회성 안내 (첫 답변 생성 시 상단 노출, localStorage로 1회만) */}
+            {!isHistoryView && (
+              <MultiTurnIntroBanner
+                show={messages.some(
+                  (m) => !m.isUser && !m.isLoading && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
+                )}
+              />
             )}
 
             {messages.map((message, index) => {
