@@ -3,12 +3,28 @@
  * 프로토타입: bo-store의 로컬 계정으로 인증(데모 계정 힌트 노출).
  */
 import { useState } from "react";
-import { login, BOAccount } from "@/app/bo/bo-store";
+import { Check } from "lucide-react";
+import { login, getSavedLoginId, setSavedLoginId, BOAccount } from "@/app/bo/bo-store";
 import { FieldLabel, inputCls } from "@/app/bo/bo-ui";
 
+// 체크박스 (아이디 저장 / 자동 로그인)
+function CheckOption({ checked, onToggle, label }: { checked: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button type="button" onClick={onToggle} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+      <span className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${checked ? "bg-primary border-primary" : "bg-white border-gray-300"}`}>
+        {checked && <Check className="w-3 h-3 text-white" />}
+      </span>
+      {label}
+    </button>
+  );
+}
+
 export function BOLogin({ onLogin }: { onLogin: (account: BOAccount) => void }) {
-  const [loginId, setLoginId] = useState("");
+  const savedId = getSavedLoginId();
+  const [loginId, setLoginId] = useState(savedId);       // '아이디 저장' 되어 있으면 프리필
   const [password, setPassword] = useState("");
+  const [rememberId, setRememberId] = useState(!!savedId);
+  const [autoLogin, setAutoLogin] = useState(false);
   const [error, setError] = useState("");
 
   const handleSubmit = () => {
@@ -16,11 +32,12 @@ export function BOLogin({ onLogin }: { onLogin: (account: BOAccount) => void }) 
       setError("아이디와 비밀번호를 입력해 주세요.");
       return;
     }
-    const acc = login(loginId.trim(), password);
+    const acc = login(loginId.trim(), password, { autoLogin });
     if (!acc) {
       setError("아이디 또는 비밀번호가 올바르지 않아요.");
       return;
     }
+    setSavedLoginId(rememberId ? acc.loginId : null);
     onLogin(acc);
   };
 
@@ -56,6 +73,10 @@ export function BOLogin({ onLogin }: { onLogin: (account: BOAccount) => void }) 
                 placeholder="입력하기"
                 className={inputCls}
               />
+            </div>
+            <div className="flex items-center gap-4 pt-0.5">
+              <CheckOption checked={rememberId} onToggle={() => setRememberId(!rememberId)} label="아이디 저장" />
+              <CheckOption checked={autoLogin} onToggle={() => setAutoLogin(!autoLogin)} label="자동 로그인" />
             </div>
             {error && <p className="text-xs text-red-500">{error}</p>}
             <button

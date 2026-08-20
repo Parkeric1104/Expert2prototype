@@ -197,7 +197,8 @@ export interface BOAccount {
 }
 
 const ACCOUNTS_KEY = "bo_accounts";
-const SESSION_KEY = "bo_session"; // 로그인된 loginId
+const SESSION_KEY = "bo_session"; // 로그인된 loginId — 기본 sessionStorage(브라우저 세션), 자동 로그인 시 localStorage에도 저장
+const REMEMBER_KEY = "bo_saved_login_id"; // '아이디 저장' 체크 시 로그인 ID 기억
 
 const SEED_ACCOUNTS: BOAccount[] = [
   { id: "a-admin", loginId: "admin", name: "박대웅", password: "expert2!", role: "admin", createdAt: "2026-08-04" },
@@ -227,28 +228,48 @@ export function isLoginIdTaken(loginId: string, exceptId?: string): boolean {
   return loadAccounts().some((a) => a.loginId === loginId && a.id !== exceptId);
 }
 
-/** 로그인(ACC-001) — 성공 시 세션 저장 + 최근 접속 갱신 */
-export function login(loginId: string, password: string): BOAccount | null {
+/** 로그인(ACC-001) — 성공 시 세션 저장 + 최근 접속 갱신.
+ *  autoLogin: true면 localStorage에도 저장(브라우저 재시작 후에도 유지), false면 브라우저 세션 동안만 */
+export function login(loginId: string, password: string, opts?: { autoLogin?: boolean }): BOAccount | null {
   const acc = loadAccounts().find((a) => a.loginId === loginId && a.password === password);
   if (!acc) return null;
   const updated = { ...acc, lastLoginAt: nowDT() };
   saveAccount(updated);
-  try { localStorage.setItem(SESSION_KEY, acc.loginId); } catch { /* noop */ }
+  try {
+    sessionStorage.setItem(SESSION_KEY, acc.loginId);
+    if (opts?.autoLogin) localStorage.setItem(SESSION_KEY, acc.loginId);
+    else localStorage.removeItem(SESSION_KEY);
+  } catch { /* noop */ }
   return updated;
 }
 
 export function logout() {
-  try { localStorage.removeItem(SESSION_KEY); } catch { /* noop */ }
+  try {
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
+  } catch { /* noop */ }
 }
 
 export function currentAccount(): BOAccount | null {
   try {
-    const loginId = localStorage.getItem(SESSION_KEY);
+    const loginId = sessionStorage.getItem(SESSION_KEY) ?? localStorage.getItem(SESSION_KEY); // 자동 로그인 폴백
     if (!loginId) return null;
     return loadAccounts().find((a) => a.loginId === loginId) ?? null;
   } catch {
     return null;
   }
+}
+
+// '아이디 저장' (로그인정보 저장)
+export function getSavedLoginId(): string {
+  try { return localStorage.getItem(REMEMBER_KEY) ?? ""; } catch { return ""; }
+}
+
+export function setSavedLoginId(loginId: string | null) {
+  try {
+    if (loginId) localStorage.setItem(REMEMBER_KEY, loginId);
+    else localStorage.removeItem(REMEMBER_KEY);
+  } catch { /* noop */ }
 }
 
 // ── 버전정보 (VER) ────────────────────────────────────────
