@@ -36,7 +36,7 @@ export function MultiTurnIntroBanner({ show }: { show: boolean }) {
             이제 답변에 <span className="text-primary">이어서 질문</span>할 수 있어요!
           </p>
           <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
-            이전 대화를 기억해 더 정확하게 답해드려요. 궁금한 점을 자연스럽게 이어 물어보세요.
+            이전 대화를 기억해 더 정확하게 답해드려요. 궁금한 점을 이어서 물어보세요.
           </p>
         </div>
         <button
