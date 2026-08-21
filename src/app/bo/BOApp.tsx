@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Megaphone, MessageSquareWarning, Tag, ExternalLink, Users, LogOut } from "lucide-react";
 import { Toaster } from "@/app/components/ui/sonner";
 import { BOAccount, currentAccount, logout } from "@/app/bo/bo-store";
-import { BOLogin } from "@/app/bo/bo-login";
+import { BOLogin, BOPasswordChange } from "@/app/bo/bo-login";
 import { NoticeAdmin } from "@/app/bo/notice-admin";
 import { PopupAdmin } from "@/app/bo/popup-admin";
 import { VersionAdmin } from "@/app/bo/version-admin";
@@ -30,6 +30,16 @@ export function BOApp() {
     return (
       <>
         <BOLogin onLogin={(a) => { setAccount(a); setSection("notice"); }} />
+        <Toaster position="bottom-center" />
+      </>
+    );
+  }
+
+  // 초기 비밀번호(0000) 상태면 변경 강제 (ACC-006)
+  if (account.mustChangePassword) {
+    return (
+      <>
+        <BOPasswordChange account={account} onDone={(u) => setAccount(u)} onCancel={() => setAccount(null)} />
         <Toaster position="bottom-center" />
       </>
     );

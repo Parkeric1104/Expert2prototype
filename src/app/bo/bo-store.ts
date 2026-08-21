@@ -194,6 +194,28 @@ export interface BOAccount {
   role: BORole;      // admin=계정관리 포함 전체 / operator=콘텐츠 관리만
   createdAt: string;
   lastLoginAt?: string; // YYYY-MM-DD HH:mm
+  mustChangePassword?: boolean; // 초기 비밀번호(0000) 상태 — 최초 로그인 시 변경 강제(ACC-006)
+}
+
+/** 계정 생성·초기화 시 부여되는 초기 비밀번호 (ACC-006) */
+export const DEFAULT_PASSWORD = "0000";
+
+/** 비밀번호 규칙(초안): 8자 이상, 영문+숫자+특수문자 포함. 위반 시 오류 메시지, 통과 시 null */
+export function validatePassword(pw: string): string | null {
+  if (pw.length < 8) return "비밀번호는 8자 이상이어야 해요.";
+  if (!/[a-zA-Z]/.test(pw)) return "영문자를 1자 이상 포함해야 해요.";
+  if (!/[0-9]/.test(pw)) return "숫자를 1자 이상 포함해야 해요.";
+  if (!/[^a-zA-Z0-9]/.test(pw)) return "특수문자를 1자 이상 포함해야 해요.";
+  return null;
+}
+
+/** 비밀번호 변경(최초 로그인 변경 포함) — 변경 강제 플래그 해제 */
+export function changePassword(accountId: string, newPassword: string): BOAccount | null {
+  const acc = loadAccounts().find((a) => a.id === accountId);
+  if (!acc) return null;
+  const updated = { ...acc, password: newPassword, mustChangePassword: false };
+  saveAccount(updated);
+  return updated;
 }
 
 const ACCOUNTS_KEY = "bo_accounts";

@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
-  BOAccount, BORole, loadAccounts, saveAccount, deleteAccount, isLoginIdTaken, todayStr, newId,
+  BOAccount, BORole, loadAccounts, saveAccount, deleteAccount, isLoginIdTaken, DEFAULT_PASSWORD, todayStr, newId,
 } from "@/app/bo/bo-store";
 import { PageHeader, Card, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls } from "@/app/bo/bo-ui";
 
@@ -65,6 +65,7 @@ export function AccountAdmin({ me }: { me: BOAccount }) {
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="truncate font-medium">{a.name}</span>
                       {isMe && <span className="flex-shrink-0 text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">내 계정</span>}
+                      {a.mustChangePassword && <span className="flex-shrink-0 text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600">초기 비밀번호</span>}
                     </div>
                   </td>
                   <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{a.loginId}</td>
@@ -128,7 +129,7 @@ function AccountModal({ initial, onClose, onSaved }: {
 }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [loginId, setLoginId] = useState(initial?.loginId ?? "");
-  const [password, setPassword] = useState("");
+  const [resetPw, setResetPw] = useState(false); // 수정 시 '비밀번호 초기화(0000)' 선택
   const [role, setRole] = useState<BORole>(initial?.role ?? "operator");
   const [submitted, setSubmitted] = useState(false);
 
@@ -139,21 +140,22 @@ function AccountModal({ initial, onClose, onSaved }: {
         ? "이미 사용 중인 아이디예요."
         : ""
       : "아이디를 입력해 주세요.",
-    password: initial ? "" : password ? "" : "비밀번호를 입력해 주세요.",
   };
   const hasError = Object.values(errors).some(Boolean);
 
   const handleSave = () => {
     setSubmitted(true);
     if (hasError) return;
+    // 신규 생성·초기화 시 초기 비밀번호(0000) 부여 + 최초 로그인 변경 강제 (ACC-006)
     saveAccount({
       id: initial?.id ?? newId("a"),
       loginId: loginId.trim(),
       name: name.trim(),
-      password: password || initial?.password || "",
+      password: initial ? (resetPw ? DEFAULT_PASSWORD : initial.password) : DEFAULT_PASSWORD,
       role,
       createdAt: initial?.createdAt ?? todayStr(),
       lastLoginAt: initial?.lastLoginAt,
+      mustChangePassword: initial ? (resetPw ? true : initial.mustChangePassword) : true,
     });
     onSaved(initial != null);
   };
@@ -174,17 +176,26 @@ function AccountModal({ initial, onClose, onSaved }: {
             <input value={loginId} onChange={(e) => setLoginId(e.target.value)} placeholder="입력하기" className={inputCls} />
             {submitted && errors.loginId && <p className="mt-1 text-xs text-red-500">{errors.loginId}</p>}
           </div>
-          <div>
-            <FieldLabel required={!initial}>비밀번호</FieldLabel>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={initial ? "변경할 때만 입력해 주세요" : "입력하기"}
-              className={inputCls}
-            />
-            {submitted && errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
-          </div>
+          {initial ? (
+            <button
+              type="button"
+              onClick={() => setResetPw(!resetPw)}
+              className="w-full flex items-start gap-2 px-3 py-2.5 rounded-lg bg-gray-50 border border-border text-left hover:bg-gray-100 transition-colors"
+            >
+              <span className={`mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center border transition-colors ${resetPw ? "bg-primary border-primary" : "bg-white border-gray-300"}`}>
+                {resetPw && <span className="text-white text-[10px] font-bold">✓</span>}
+              </span>
+              <span className="text-xs text-foreground/80" style={{ wordBreak: "keep-all" }}>
+                비밀번호 초기화 — {DEFAULT_PASSWORD}으로 재설정되고, 다음 로그인 시 새 비밀번호로 변경해야 해요.
+              </span>
+            </button>
+          ) : (
+            <div className="px-3 py-2.5 rounded-lg bg-gray-50 border border-border">
+              <p className="text-xs text-foreground/80" style={{ wordBreak: "keep-all" }}>
+                초기 비밀번호는 <b>{DEFAULT_PASSWORD}</b>이에요. 최초 로그인 시 비밀번호 규칙에 맞는 새 비밀번호로 변경해야 해요.
+              </p>
+            </div>
+          )}
           <div>
             <FieldLabel required>권한</FieldLabel>
             <select
