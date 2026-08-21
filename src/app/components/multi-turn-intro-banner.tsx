@@ -4,7 +4,7 @@ import { Sparkles, X } from "lucide-react";
 // 단일턴 → 멀티턴 전환 안내 (1회성 플로팅 팝업).
 // 채팅 레이어 위로 뜨는 고정 카드(딤 없음·비차단) — 입력창 바로 위 하단 중앙에 노출.
 // 서버/BO 불필요 — localStorage 플래그로 브라우저당 최초 1회만, 닫으면 다시 표시하지 않음.
-// 채팅 진입 시점(첫 질문으로 채팅 화면에 들어온 순간, show=true)에 노출 — 메인 코치마크와 동일한 '접속 1회' 모델.
+// 첫 답변 완료 시점(답변 메시지가 표시된 순간, show=true)에 노출 — 1회 판정은 메인 코치마크와 동일한 localStorage 모델.
 const SEEN_KEY = "multiturn_intro_seen";
 
 export function MultiTurnIntroBanner({ show }: { show: boolean }) {

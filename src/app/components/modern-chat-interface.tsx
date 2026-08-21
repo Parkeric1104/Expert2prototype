@@ -1632,9 +1632,13 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
               </div>
             )}
 
-            {/* 단일턴 → 멀티턴 전환 1회성 안내 (채팅 진입 시 노출, localStorage로 브라우저당 1회만) */}
+            {/* 단일턴 → 멀티턴 전환 1회성 안내 (첫 답변 완료 시 노출, localStorage로 브라우저당 1회만) */}
             {!isHistoryView && (
-              <MultiTurnIntroBanner show={messages.length > 0} />
+              <MultiTurnIntroBanner
+                show={messages.some(
+                  (m) => !m.isUser && !m.isLoading && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
+                )}
+              />
             )}
 
             {messages.map((message, index) => {
