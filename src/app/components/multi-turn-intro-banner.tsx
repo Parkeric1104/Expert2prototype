@@ -25,9 +25,10 @@ export function MultiTurnIntroBanner({ show }: { show: boolean }) {
   };
 
   return (
-    // 고정 플로팅: 입력창 위(하단 중앙). 딤 없이 채팅 위에 떠 있어 진행을 막지 않음.
-    // bottom-44: 다른 플로팅 버튼('맨 아래로'·'답변 중단하기'=bottom-28) 행 위로 띄워 겹침 방지.
-    <div className="fixed bottom-44 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-[520px] px-0 pointer-events-none">
+    // 고정 플로팅: 입력창 바로 위(하단 중앙). 딤 없이 채팅 위에 떠 있어 진행을 막지 않음.
+    // bottom-28: 입력창에 밀착해 '여기서 이어 물어보세요' 맥락 강화. 다른 플로팅 버튼과의 겹침은
+    //           1회성·닫기 가능 특성상 허용(충돌은 배너 미닫힘+후속질문의 예외 경우에 한함).
+    <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-[520px] px-0 pointer-events-none">
       <div className="pointer-events-auto flex items-start gap-3 rounded-2xl bg-card border border-primary/20 px-4 py-3.5 shadow-xl">
         <span className="flex-shrink-0 mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
           <Sparkles className="h-4 w-4 text-primary" />
