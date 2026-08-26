@@ -323,13 +323,17 @@ export function loadVersion(): ServiceVersion {
 export function loadVersionLog(): BOVersionLog[] {
   const stored = read<BOVersionLog[]>(VERSION_LOG_KEY);
   if (stored) return stored;
+  // 자동 기록 시뮬레이션 — 배포 파이프라인/법령 적재 배치가 기록한 이력(VER-001/002, 운영 수동 등록 없음)
   const seed: BOVersionLog[] = [
-    { id: "vl-seed", changedAt: `${SEED_VERSION.lawDataUpdatedAt} 09:00`, ...SEED_VERSION, changed: [] },
+    { id: "vl-3", changedAt: "2026-08-04 09:12", service: "v1.4.0", lawDataUpdatedAt: "2026-08-04", changed: ["service"], by: "system(배포)" },
+    { id: "vl-2", changedAt: "2026-08-04 07:00", service: "v1.3.0", lawDataUpdatedAt: "2026-08-04", changed: ["lawDataUpdatedAt"], by: "system(법령 배치)" },
+    { id: "vl-1", changedAt: "2026-07-01 09:00", service: "v1.3.0", lawDataUpdatedAt: "2026-07-01", changed: [], by: "system(배포)" },
   ];
   write(VERSION_LOG_KEY, seed);
   return seed;
 }
 
+/** 버전 기록 — 운영 수동 등록 없음(VER-003 조회 전용). 파이프라인(/api/internal/version) 자동 기록의 시뮬레이션용으로만 유지 */
 export function saveVersion(v: ServiceVersion) {
   const prev = loadVersion();
   const changed: BOVersionLog["changed"] = [];

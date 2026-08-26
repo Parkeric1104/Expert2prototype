@@ -1,20 +1,17 @@
 /**
- * BO 버전정보 관리 (VER-001~002) — apps in toss '앱 출시' 패턴.
- * 진입 화면 = 현재 버전 요약 카드 + 변경 이력 리스트(페이지네이션),
- * 우상단 '버전 등록' → 모달 폼으로 등록. 이력은 시각·변경 항목·값 기록(LOG-001 라이트).
+ * BO 버전정보 (VER-001~003) — 조회 전용.
+ * 서비스 버전(배포 파이프라인)·법령 DB 갱신일(법령 적재 배치)이 자동 기록되며,
+ * BO는 서버에서 받은 현재 값과 변경 이력을 리스트업만 한다. 운영 수동 등록 없음.
  */
 import { useState } from "react";
-import { Plus } from "lucide-react";
-import { toast } from "sonner";
-import { loadVersion, saveVersion, loadVersionLog, BOVersionLog } from "@/app/bo/bo-store";
-import { PageHeader, Card, StatusDot, FieldLabel, Pagination, inputCls } from "@/app/bo/bo-ui";
+import { loadVersion, loadVersionLog, BOVersionLog } from "@/app/bo/bo-store";
+import { PageHeader, Card, StatusDot, Pagination } from "@/app/bo/bo-ui";
 
 const PAGE_SIZE = 5;
 
 export function VersionAdmin() {
-  const [current, setCurrent] = useState(() => loadVersion());
-  const [log, setLog] = useState<BOVersionLog[]>(() => loadVersionLog());
-  const [showModal, setShowModal] = useState(false);
+  const [current] = useState(() => loadVersion());
+  const [log] = useState<BOVersionLog[]>(() => loadVersionLog());
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(log.length / PAGE_SIZE));
@@ -24,19 +21,15 @@ export function VersionAdmin() {
     <div>
       <PageHeader
         title="버전정보"
-        desc="서비스 푸터와 법령 카테고리에 표기되는 버전정보를 관리할 수 있어요."
+        desc="배포·법령 DB 갱신 시 자동으로 기록돼요. 운영에서 별도로 등록하지 않아요."
         action={
-          <button
-            onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            버전 등록
-          </button>
+          <span className="inline-flex items-center h-8 px-3 rounded-lg bg-gray-100 text-xs font-semibold text-muted-foreground">
+            자동 기록 · 조회 전용
+          </span>
         }
       />
 
-      {/* 현재 값 요약 카드 (apps in toss '현재 출시된 버전' 패턴) */}
+      {/* 현재 값 요약 카드 (서버 수신 값) */}
       <Card className="p-5 mb-4">
         <StatusDot tone="green" label="현재 표기 중인 버전" />
         <div className="mt-2 flex items-end gap-8">
@@ -51,7 +44,7 @@ export function VersionAdmin() {
         </div>
       </Card>
 
-      {/* 변경 이력 — 계정 없음 전제라 시각·변경 내용만 기록(읽기 전용) */}
+      {/* 변경 이력 — 파이프라인이 기록한 이력 리스트(읽기 전용) */}
       <Card className="p-5">
         <h2 className="text-base font-bold text-foreground mb-4">변경 이력</h2>
         {/* 좁은 화면에서는 테이블만 가로 스크롤(글자 넘침 방지) */}
@@ -71,90 +64,20 @@ export function VersionAdmin() {
                 <td className="px-3 py-2.5 rounded-l-lg whitespace-nowrap text-muted-foreground">{l.changedAt}</td>
                 <td className={`px-3 py-2.5 whitespace-nowrap ${l.changed.includes("service") ? "font-semibold" : "text-muted-foreground"}`}>{l.service}</td>
                 <td className={`px-3 py-2.5 whitespace-nowrap ${l.changed.includes("lawDataUpdatedAt") ? "font-semibold" : "text-muted-foreground"}`}>{l.lawDataUpdatedAt}</td>
-                <td className="px-3 py-2.5 rounded-r-lg whitespace-nowrap text-muted-foreground">{l.by ?? "—"}</td>
+                <td className="px-3 py-2.5 rounded-r-lg whitespace-nowrap text-muted-foreground">
+                  {l.by ?? "—"}
+                  {l.changed.length === 0 && (
+                    <span className="ml-1.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-200/70 text-gray-600">최초 등록</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
         </div>
-        {log.length === 0 && <p className="py-14 text-center text-sm text-muted-foreground">변경 이력이 없어요.</p>}
+        {log.length === 0 && <p className="py-14 text-center text-sm text-muted-foreground">기록된 이력이 없어요.</p>}
         <Pagination page={page} totalPages={totalPages} onChange={setPage} />
       </Card>
-
-      {showModal && (
-        <VersionModal
-          current={current}
-          onClose={() => setShowModal(false)}
-          onSaved={() => {
-            setShowModal(false);
-            setCurrent(loadVersion());
-            setLog(loadVersionLog());
-            setPage(1);
-            toast.success("버전정보가 등록되었어요. 서비스에 바로 반영돼요.");
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-// ── 버전 등록 모달 (apps in toss '버전 등록하기' 패턴) ──
-function VersionModal({ current, onClose, onSaved }: {
-  current: { service: string; lawDataUpdatedAt: string };
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const [service, setService] = useState(current.service);
-  const [lawDate, setLawDate] = useState(current.lawDataUpdatedAt);
-  const [submitted, setSubmitted] = useState(false);
-
-  const errors = {
-    service: service.trim() ? "" : "서비스 버전을 입력해 주세요.",
-    lawDate: lawDate ? "" : "법령 DB 갱신일을 선택해 주세요.",
-  };
-  const hasError = Object.values(errors).some(Boolean);
-  const dirty = service.trim() !== current.service || lawDate !== current.lawDataUpdatedAt;
-
-  const handleSave = () => {
-    setSubmitted(true);
-    if (hasError) return;
-    saveVersion({ service: service.trim(), lawDataUpdatedAt: lawDate });
-    onSaved();
-  };
-
-  return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-[480px] bg-white rounded-2xl shadow-xl p-6">
-        <h3 className="text-lg font-bold text-foreground mb-5">버전 등록하기</h3>
-
-        <div className="space-y-5">
-          <div>
-            <FieldLabel required>서비스 버전</FieldLabel>
-            <input value={service} onChange={(e) => setService(e.target.value)} placeholder="예: v1.4.0" className={inputCls} />
-            <p className="mt-1.5 text-xs text-muted-foreground">메인 푸터에 표기돼요.</p>
-            {submitted && errors.service && <p className="mt-1 text-xs text-red-500">{errors.service}</p>}
-          </div>
-          <div>
-            <FieldLabel required>법령 DB 갱신일</FieldLabel>
-            <input type="date" value={lawDate} onChange={(e) => setLawDate(e.target.value)} className={inputCls} />
-            <p className="mt-1.5 text-xs text-muted-foreground">푸터와 법령 카테고리 하단에 표기돼요.</p>
-            {submitted && errors.lawDate && <p className="mt-1 text-xs text-red-500">{errors.lawDate}</p>}
-          </div>
-        </div>
-
-        <div className="mt-6 flex items-center justify-end gap-2">
-          <button onClick={onClose} className="px-4 h-10 rounded-lg bg-gray-100 text-sm font-semibold text-gray-700 hover:bg-gray-200 transition-colors">
-            닫기
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!dirty}
-            className="px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            등록하기
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
