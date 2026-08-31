@@ -42,10 +42,10 @@ export function TopHeader({
   onOpenNtsDirectory,
   onOpenManual,
 }: TopHeaderProps) {
-  // GNB 우측 외부 바로가기 클러스터 (국세청 전화번호 · 사용자 매뉴얼)
-  const GnbQuickLinks = () =>
+  // GNB 우측 전역 바로가기 버튼 (국세청 전화번호 · 사용자 매뉴얼) — 홈·채팅·정책 GNB 공통 노출
+  const QuickLinks = () =>
     onOpenNtsDirectory || onOpenManual ? (
-      <div className="ml-auto flex items-center gap-0.5 flex-shrink-0">
+      <>
         {onOpenNtsDirectory && (
           <button
             onClick={onOpenNtsDirectory}
@@ -66,9 +66,9 @@ export function TopHeader({
             <span className="max-sm:hidden">사용자 매뉴얼</span>
           </button>
         )}
-      </div>
+      </>
     ) : null;
-  // [1] 정책관리 화면 GNB: ← 메인으로 돌아가기
+  // [1] 정책관리 화면 GNB: (좌) ← 메인으로 돌아가기 · (우) 전역 바로가기(국세청·매뉴얼)
   if (variant === "policy") {
     return (
       <header className="bg-card border-b border-border">
@@ -80,12 +80,15 @@ export function TopHeader({
             <ArrowLeft className="w-4 h-4" />
             메인으로 돌아가기
           </button>
+          <div className="ml-auto flex items-center gap-0.5 flex-shrink-0">
+            <QuickLinks />
+          </div>
         </div>
       </header>
     );
   }
 
-  // [1-2] 채팅 화면 GNB: (좌) 체험판 배지 · (우) 메인으로 돌아가기
+  // [1-2] 채팅 화면 GNB: (좌) 체험판 배지 · (우) 전역 바로가기(국세청·매뉴얼) + 메인으로 돌아가기
   //  — 사이드패널 토글/워크스페이스 내비게이션은 LNB 전담(햄버거 제거로 경계 명확화)
   if (variant === "chat") {
     return (
@@ -96,14 +99,18 @@ export function TopHeader({
             {isTrial && <TrialBadge companyName={companyName} trialCount={trialCount} trialMax={trialMax} />}
           </div>
 
-          {/* 우: 메인으로 돌아가기 (곡선 화살표) */}
-          <button
-            onClick={onNavigateToMain}
-            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-          >
-            <Undo2 className="w-4 h-4" />
-            메인으로 돌아가기
-          </button>
+          {/* 우: 전역 바로가기 + 메인으로 돌아가기 */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <QuickLinks />
+            {(onOpenNtsDirectory || onOpenManual) && <div className="w-px h-5 bg-border mx-1.5" />}
+            <button
+              onClick={onNavigateToMain}
+              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg px-2.5 py-1.5 transition-colors"
+            >
+              <Undo2 className="w-4 h-4" />
+              메인으로 돌아가기
+            </button>
+          </div>
         </div>
       </header>
     );
@@ -115,7 +122,9 @@ export function TopHeader({
     <header className="bg-white">
       <div className="h-14 flex items-center gap-3 pl-6 pr-7">
         {isTrial && <TrialBadge companyName={companyName} trialCount={trialCount} trialMax={trialMax} />}
-        <GnbQuickLinks />
+        <div className="ml-auto flex items-center gap-0.5 flex-shrink-0">
+          <QuickLinks />
+        </div>
       </div>
     </header>
   );
