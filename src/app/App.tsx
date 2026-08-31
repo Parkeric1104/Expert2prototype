@@ -30,7 +30,11 @@ export default function App() {
   const [contextType, setContextType] = useState<string | undefined>(undefined); // 추천질문 프로세스 유형: 멀티턴 맥락 수 (single/multi)
   const [showLawModal, setShowLawModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
+  // 사이드패널: 고정(도킹)형 접펼침 — 접힘(레일)/펼침 상태를 localStorage에 기억
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("sidebar_collapsed") === "1"; } catch { return false; }
+  });
   const [isRefiningSearch, setIsRefiningSearch] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isAdmin] = useState<boolean>(true);
@@ -143,7 +147,11 @@ export default function App() {
   };
 
   const handleToggleSidebar = () => {
-    setShowSidebar(!showSidebar);
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("sidebar_collapsed", next ? "1" : "0"); } catch { /* noop */ }
+      return next;
+    });
   };
 
   // 퍼널 S1: 정책 등록 자격(관리자 여부) — 세션 진입 시 1회
@@ -174,7 +182,6 @@ export default function App() {
     setQuestionType(undefined);
     setCurrentView("chat");
     setCurrentStep(3);
-    setShowSidebar(false);
   };
 
   const handleOpenEmbedding = (policy: EmbeddingCorrectionPolicy) => {
@@ -281,45 +288,6 @@ export default function App() {
         background: "linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 35%, #EBF1FF 100%)",
       }}
     >
-      {/* Top Header – embedding·calculator·notice 화면에서는 미노출(자체 헤더 사용, 공지 상세는 몰입형) */}
-      {currentView !== "embedding" && currentView !== "calculator" && currentView !== "notice" && (
-        <TopHeader
-          variant={currentView === "chat" ? "chat" : currentView === "policy" ? "policy" : "home"}
-          onNavigateToMain={() => handleNavigation(handleNewChat)}
-          onNewChat={() => handleNavigation(handleNewChat)}
-          onOpenHistory={handleOpenHistory}
-          onOpenPolicyUpload={() => {
-            if (currentView === "chat" && hasChatMessages) {
-              handleNavigation(handleOpenPolicyUpload);
-            } else {
-              handleOpenPolicyUpload();
-            }
-          }}
-          onLogoClick={handleLogoClick}
-          onToggleSidebar={handleToggleSidebar}
-          onOpenNtsDirectory={() =>
-            window.open(
-              "https://nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=6740&cntntsId=8140",
-              "_blank",
-              "noopener,noreferrer"
-            )
-          }
-          onOpenManual={() =>
-            window.open(
-              "https://www.figma.com/deck/1ZXPBZL2hOhbLcfZiKLBH6",
-              "_blank",
-              "noopener,noreferrer"
-            )
-          }
-          pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
-          isSidebarOpen={showSidebar}
-          isTrial={isTrial}
-          companyName={TRIAL_COMPANY}
-          trialCount={trialCount}
-          trialMax={TRIAL_MAX}
-        />
-      )}
-
       {/* 체험판 ONE AI 프로모션 배너 — 홈: 카드 / 채팅: 콤팩트 필 (디자인 정합) */}
       {isTrial && !oneAiBannerDismissed && currentView === "home" && (
         <div className="fixed bottom-5 right-5 z-40 w-[300px] rounded-2xl shadow-xl p-5 text-white"
@@ -378,99 +346,141 @@ export default function App() {
       )}
 
 
-      {/* History Sidebar Panel */}
-      <HistorySidebarPanel
-        isOpen={showSidebar}
-        onClose={() => setShowSidebar(false)}
-        onNewChat={() => {
-          handleNavigation(handleNewChat);
-          setShowSidebar(false);
-        }}
-        onOpenManual={handleOpenManual}
-        onOpenNotices={() => {
-          setShowSidebar(false);
-          if (currentView === "chat" && hasChatMessages) {
-            handleNavigation(handleOpenNotices);
-          } else {
-            handleOpenNotices();
-          }
-        }}
-        unreadNoticeCount={getUnreadCount()}
-        onOpenPolicyList={() => {
-          if (currentView === "chat" && hasChatMessages) {
-            handleNavigation(() => handleOpenPolicyUpload("sidebar"));
-          } else {
-            handleOpenPolicyUpload("sidebar");
-          }
-          setShowSidebar(false);
-        }}
-        onViewChatHistory={handleViewChatHistory}
-        pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
-        isTrial={isTrial}
-        onToggleTrial={() => {
-          setIsTrial((v) => !v);
-          setTrialCount(0);
-          setOneAiBannerDismissed(false);
-          setShowSidebar(false);
-          handleNewChat();
-        }}
-      />
+      {/* 도킹 레이아웃: [고정 사이드패널] + [헤더 + 본문] 컬럼.
+          embedding·calculator·notice는 자체 전체화면 크롬을 쓰므로 사이드패널·헤더 미노출(몰입형). */}
+      <div className="flex flex-1 min-h-0">
+        {/* 고정(도킹)형 접펼침 사이드패널 */}
+        {currentView !== "embedding" && currentView !== "calculator" && currentView !== "notice" && (
+          <HistorySidebarPanel
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={handleToggleSidebar}
+            onNewChat={() => handleNavigation(handleNewChat)}
+            onOpenManual={handleOpenManual}
+            onOpenNotices={() => {
+              if (currentView === "chat" && hasChatMessages) {
+                handleNavigation(handleOpenNotices);
+              } else {
+                handleOpenNotices();
+              }
+            }}
+            unreadNoticeCount={getUnreadCount()}
+            onOpenPolicyList={() => {
+              if (currentView === "chat" && hasChatMessages) {
+                handleNavigation(() => handleOpenPolicyUpload("sidebar"));
+              } else {
+                handleOpenPolicyUpload("sidebar");
+              }
+            }}
+            onViewChatHistory={handleViewChatHistory}
+            pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
+            isTrial={isTrial}
+            onToggleTrial={() => {
+              setIsTrial((v) => !v);
+              setTrialCount(0);
+              setOneAiBannerDismissed(false);
+              handleNewChat();
+            }}
+          />
+        )}
 
-      {/* Main Content */}
-      {currentView === "home" && (
-        <ModernHomeView
-          onStartChat={handleStartChat}
-          onOpenLawSelector={handleOpenLawSelector}
-          selectedLaws={selectedLaws}
-          onClearLaws={() => setSelectedLaws([])}
-          onOpenPolicyManagement={() => handleOpenPolicyUpload("home_nudge")}
-          onOpenCalculator={() => setCurrentView("calculator")}
-          onOpenNoticePopup={() => setShowEmergency(true)}
-          onRegisterFileAsPolicy={handleRegisterFileAsPolicy}
-        />
-      )}
+        {/* 콘텐츠 컬럼: 헤더 + 본문 */}
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+          {/* Top Header – embedding·calculator·notice 화면에서는 미노출(자체 헤더 사용, 공지 상세는 몰입형) */}
+          {currentView !== "embedding" && currentView !== "calculator" && currentView !== "notice" && (
+            <TopHeader
+              variant={currentView === "chat" ? "chat" : currentView === "policy" ? "policy" : "home"}
+              onNavigateToMain={() => handleNavigation(handleNewChat)}
+              onNewChat={() => handleNavigation(handleNewChat)}
+              onOpenHistory={handleOpenHistory}
+              onOpenPolicyUpload={() => {
+                if (currentView === "chat" && hasChatMessages) {
+                  handleNavigation(handleOpenPolicyUpload);
+                } else {
+                  handleOpenPolicyUpload();
+                }
+              }}
+              onLogoClick={handleLogoClick}
+              onToggleSidebar={handleToggleSidebar}
+              onOpenNtsDirectory={() =>
+                window.open(
+                  "https://nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=6740&cntntsId=8140",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
+              onOpenManual={() =>
+                window.open(
+                  "https://www.figma.com/deck/1ZXPBZL2hOhbLcfZiKLBH6",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
+              pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
+              isSidebarOpen={!sidebarCollapsed}
+              isTrial={isTrial}
+              companyName={TRIAL_COMPANY}
+              trialCount={trialCount}
+              trialMax={TRIAL_MAX}
+            />
+          )}
 
-      {currentView === "chat" && (
-        <ModernChatInterface
-          key={historySession ? `history-${historySession.id}` : "live"}
-          initialMessage={chatQuery}
-          historySession={historySession ?? undefined}
-          selectedLaws={selectedLaws}
-          onOpenLawSelector={handleOpenLawSelector}
-          onStepChange={handleStepChange}
-          onCompleteDocument={handleCompleteDocument}
-          onMessagesChange={setHasChatMessages}
-          relatedLaws={relatedLaws}
-          questionType={questionType}
-          contextType={contextType}
-          requestDraftDocument={requestDraftDocument}
-          onDraftDocumentHandled={() => setRequestDraftDocument(false)}
-          isTrial={isTrial}
-        />
-      )}
+          {/* Main Content */}
+          {currentView === "home" && (
+            <ModernHomeView
+              onStartChat={handleStartChat}
+              onOpenLawSelector={handleOpenLawSelector}
+              selectedLaws={selectedLaws}
+              onClearLaws={() => setSelectedLaws([])}
+              onOpenPolicyManagement={() => handleOpenPolicyUpload("home_nudge")}
+              onOpenCalculator={() => setCurrentView("calculator")}
+              onOpenNoticePopup={() => setShowEmergency(true)}
+              onRegisterFileAsPolicy={handleRegisterFileAsPolicy}
+            />
+          )}
 
-      {currentView === "policy" && (
-        <PolicyManagementView
-          isAdmin={isAdmin}
-          onOpenEmbedding={handleOpenEmbedding}
-          isTrial={isTrial}
-          initialFile={pendingPolicyFile}
-          onConsumeInitialFile={() => setPendingPolicyFile(null)}
-        />
-      )}
+          {currentView === "chat" && (
+            <ModernChatInterface
+              key={historySession ? `history-${historySession.id}` : "live"}
+              initialMessage={chatQuery}
+              historySession={historySession ?? undefined}
+              selectedLaws={selectedLaws}
+              onOpenLawSelector={handleOpenLawSelector}
+              onStepChange={handleStepChange}
+              onCompleteDocument={handleCompleteDocument}
+              onMessagesChange={setHasChatMessages}
+              relatedLaws={relatedLaws}
+              questionType={questionType}
+              contextType={contextType}
+              requestDraftDocument={requestDraftDocument}
+              onDraftDocumentHandled={() => setRequestDraftDocument(false)}
+              isTrial={isTrial}
+            />
+          )}
 
-      {currentView === "embedding" && selectedPolicy && (
-        <EmbeddingCorrectionView
-          policy={selectedPolicy}
-          onBack={handleBackFromEmbedding}
-        />
-      )}
+          {currentView === "policy" && (
+            <PolicyManagementView
+              isAdmin={isAdmin}
+              onOpenEmbedding={handleOpenEmbedding}
+              isTrial={isTrial}
+              initialFile={pendingPolicyFile}
+              onConsumeInitialFile={() => setPendingPolicyFile(null)}
+            />
+          )}
 
-      {currentView === "calculator" && (
-        <LaborCalculatorView onBack={() => setCurrentView("home")} />
-      )}
+          {currentView === "embedding" && selectedPolicy && (
+            <EmbeddingCorrectionView
+              policy={selectedPolicy}
+              onBack={handleBackFromEmbedding}
+            />
+          )}
 
-      {currentView === "notice" && <NoticeView onBack={() => setCurrentView("home")} />}
+          {currentView === "calculator" && (
+            <LaborCalculatorView onBack={() => setCurrentView("home")} />
+          )}
+
+          {currentView === "notice" && <NoticeView onBack={() => setCurrentView("home")} />}
+        </div>
+      </div>
 
       {/* Law Selection Modal */}
       <LawSelectionModal
