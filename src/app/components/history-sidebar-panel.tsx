@@ -217,9 +217,9 @@ export function HistorySidebarPanel({
     <aside className="flex-shrink-0 w-80 h-full bg-card border-r border-border flex flex-col transition-all duration-300">
       {/* Header with Action Buttons */}
       <div className="flex-shrink-0 border-b border-border">
-        {/* 접기 토글 + 타이틀 — 좌상단 고정. 펼침 상태에선 '접기'를 명확히 뜻하는 아이콘(PanelLeftClose)으로
-            '눌러서 닫힌다'는 어포던스 제공(햄버거는 '메뉴 열기' 의미라 접힘 상태 전용) */}
-        <div className="h-14 flex items-center gap-1.5 px-3">
+        {/* 접기 토글 — 좌상단 고정(접힘 레일과 동일 위치). '메뉴' 라벨은 하위 항목이 자명해 제거.
+            펼침 상태는 '접기' 어포던스 아이콘(PanelLeftClose) 사용 */}
+        <div className="h-14 flex items-center px-3">
           <Button
             size="sm"
             variant="ghost"
@@ -230,7 +230,6 @@ export function HistorySidebarPanel({
           >
             <PanelLeftClose className="w-5 h-5" />
           </Button>
-          <h2 className="text-base font-bold text-foreground">메뉴</h2>
         </div>
 
         {/* Action Buttons */}
