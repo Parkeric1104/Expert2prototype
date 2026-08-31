@@ -14,6 +14,7 @@ import {
   Trash2,
   Sparkles,
   Menu,
+  PanelLeftClose,
 } from "lucide-react";
 import { track } from "@/app/utils/track";
 import { toast } from "sonner";
@@ -216,7 +217,8 @@ export function HistorySidebarPanel({
     <aside className="flex-shrink-0 w-80 h-full bg-card border-r border-border flex flex-col transition-all duration-300">
       {/* Header with Action Buttons */}
       <div className="flex-shrink-0 border-b border-border">
-        {/* 토글(햄버거) + 타이틀 — 햄버거를 좌상단에 고정(접힘 상태와 동일 위치·아이콘). 토스·네이버·Gmail 패턴 */}
+        {/* 접기 토글 + 타이틀 — 좌상단 고정. 펼침 상태에선 '접기'를 명확히 뜻하는 아이콘(PanelLeftClose)으로
+            '눌러서 닫힌다'는 어포던스 제공(햄버거는 '메뉴 열기' 의미라 접힘 상태 전용) */}
         <div className="h-14 flex items-center gap-1.5 px-3">
           <Button
             size="sm"
@@ -226,7 +228,7 @@ export function HistorySidebarPanel({
             aria-label="사이드패널 접기"
             title="사이드패널 접기"
           >
-            <Menu className="w-5 h-5" />
+            <PanelLeftClose className="w-5 h-5" />
           </Button>
           <h2 className="text-base font-bold text-foreground">메뉴</h2>
         </div>
