@@ -123,8 +123,8 @@ export function HistorySidebarPanel({
   if (collapsed) {
     return (
       <aside className="flex-shrink-0 w-16 h-full bg-card border-r border-border flex flex-col items-center transition-all duration-300">
-        {/* 펼치기 토글 — GNB와 같은 높이(h-14)로 좌상단 경계 정렬 */}
-        <div className="w-full h-14 flex items-center justify-center border-b border-border">
+        {/* 펼치기 토글 — GNB와 같은 높이(h-14)로 좌상단 경계 정렬 (하단 보더 없음: GNB와 라인 정합) */}
+        <div className="w-full h-14 flex items-center justify-center">
           <Button
             size="sm"
             variant="ghost"
@@ -217,8 +217,8 @@ export function HistorySidebarPanel({
     <aside className="flex-shrink-0 w-80 h-full bg-card border-r border-border flex flex-col transition-all duration-300">
       {/* Header with Action Buttons */}
       <div className="flex-shrink-0 border-b border-border">
-        {/* Title + collapse toggle — GNB와 같은 높이(h-14)로 좌상단 경계 정렬 */}
-        <div className="h-14 flex items-center justify-between px-4 border-b border-border">
+        {/* Title + collapse toggle — GNB와 같은 높이(h-14)로 정렬 (하단 보더 없음: GNB와 라인 정합) */}
+        <div className="h-14 flex items-center justify-between px-4">
           <h2 className="text-base font-bold text-foreground">메뉴</h2>
           <Button
             size="sm"
