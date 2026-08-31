@@ -123,13 +123,13 @@ export function HistorySidebarPanel({
   if (collapsed) {
     return (
       <aside className="flex-shrink-0 w-16 h-full bg-card border-r border-border flex flex-col items-center transition-all duration-300">
-        {/* 펼치기 토글 */}
-        <div className="w-full flex items-center justify-center py-3 border-b border-border">
+        {/* 펼치기 토글 — GNB와 같은 높이(h-14)로 좌상단 경계 정렬 */}
+        <div className="w-full h-14 flex items-center justify-center border-b border-border">
           <Button
             size="sm"
             variant="ghost"
             onClick={onToggleCollapse}
-            className="h-9 w-9 p-0"
+            className="h-9 w-9 p-0 text-foreground/70"
             aria-label="사이드패널 펼치기"
             title="사이드패널 펼치기"
           >
@@ -217,18 +217,18 @@ export function HistorySidebarPanel({
     <aside className="flex-shrink-0 w-80 h-full bg-card border-r border-border flex flex-col transition-all duration-300">
       {/* Header with Action Buttons */}
       <div className="flex-shrink-0 border-b border-border">
-        {/* Title + collapse toggle */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h2 className="text-lg font-bold text-foreground">메뉴</h2>
+        {/* Title + collapse toggle — GNB와 같은 높이(h-14)로 좌상단 경계 정렬 */}
+        <div className="h-14 flex items-center justify-between px-4 border-b border-border">
+          <h2 className="text-base font-bold text-foreground">메뉴</h2>
           <Button
             size="sm"
             variant="ghost"
             onClick={onToggleCollapse}
-            className="h-8 w-8 p-0"
+            className="h-9 w-9 p-0 text-foreground/70"
             aria-label="사이드패널 접기"
             title="사이드패널 접기"
           >
-            <PanelLeftClose className="w-4 h-4" />
+            <PanelLeftClose className="w-5 h-5" />
           </Button>
         </div>
 

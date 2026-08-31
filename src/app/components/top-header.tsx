@@ -1,4 +1,4 @@
-import { Menu, Undo2, ArrowLeft, ExternalLink, BookOpen } from "lucide-react";
+import { Undo2, ArrowLeft, ExternalLink, BookOpen } from "lucide-react";
 
 interface TopHeaderProps {
   variant?: "home" | "chat" | "policy";
@@ -6,10 +6,8 @@ interface TopHeaderProps {
   onOpenHistory?: () => void;
   onOpenPolicyUpload?: () => void;
   onLogoClick?: () => void;
-  onToggleSidebar?: () => void;
   onNavigateToMain?: () => void;
   pendingPoliciesCount?: number;
-  isSidebarOpen?: boolean;
   isTrial?: boolean;
   companyName?: string;
   trialCount?: number;
@@ -35,10 +33,8 @@ export function TopHeader({
   onOpenHistory,
   onOpenPolicyUpload,
   onLogoClick,
-  onToggleSidebar,
   onNavigateToMain,
   pendingPoliciesCount = 0,
-  isSidebarOpen = false,
   isTrial = false,
   companyName,
   trialCount = 0,
@@ -89,20 +85,14 @@ export function TopHeader({
     );
   }
 
-  // [1-2] 채팅 화면 GNB: ☰ + 메인으로 돌아가기 (좌측), 우측 없음
+  // [1-2] 채팅 화면 GNB: (좌) 체험판 배지 · (우) 메인으로 돌아가기
+  //  — 사이드패널 토글/워크스페이스 내비게이션은 LNB 전담(햄버거 제거로 경계 명확화)
   if (variant === "chat") {
     return (
       <header className="bg-card border-b border-border">
         <div className="h-14 flex items-center justify-between gap-3 px-5">
-          {/* 좌: 햄버거 + (체험판 배지) */}
+          {/* 좌: (체험판 배지) */}
           <div className="flex items-center gap-3 min-w-0">
-            <button
-              onClick={onToggleSidebar}
-              className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
-              aria-label="채팅 이력 열기"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
             {isTrial && <TrialBadge companyName={companyName} trialCount={trialCount} trialMax={trialMax} />}
           </div>
 
@@ -119,17 +109,11 @@ export function TopHeader({
     );
   }
 
-  // [1-1] 메인/홈 화면 GNB: ☰ (좌측). 체험판 배지는 햄버거 옆(좌측)에 배치.
+  // [1-1] 메인/홈 화면 GNB: (좌) 체험판 배지 · (우) 전역 바로가기(국세청·매뉴얼)
+  //  — 좌상단 토글/메뉴는 LNB가 소유(GNB 햄버거 제거)
   return (
     <header className="bg-white">
       <div className="h-14 flex items-center gap-3 pl-6 pr-7">
-        <button
-          onClick={onToggleSidebar}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
-          aria-label="메뉴 열기"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
         {isTrial && <TrialBadge companyName={companyName} trialCount={trialCount} trialMax={trialMax} />}
         <GnbQuickLinks />
       </div>

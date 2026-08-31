@@ -400,7 +400,6 @@ export default function App() {
                 }
               }}
               onLogoClick={handleLogoClick}
-              onToggleSidebar={handleToggleSidebar}
               onOpenNtsDirectory={() =>
                 window.open(
                   "https://nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=6740&cntntsId=8140",
@@ -416,7 +415,6 @@ export default function App() {
                 )
               }
               pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
-              isSidebarOpen={!sidebarCollapsed}
               isTrial={isTrial}
               companyName={TRIAL_COMPANY}
               trialCount={trialCount}
