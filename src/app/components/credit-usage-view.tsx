@@ -43,7 +43,7 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="w-full max-w-[560px] mx-auto px-6 max-sm:px-4 py-8" style={{ wordBreak: "keep-all" }}>
+        <div className="w-full max-w-[1000px] mx-auto px-6 max-sm:px-4 py-8" style={{ wordBreak: "keep-all" }}>
           {/* 타이틀 */}
           <div className="flex items-center gap-2 mb-6">
             <h1 className="text-xl font-bold text-foreground">크레딧 사용현황</h1>
@@ -56,6 +56,8 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
             </button>
           </div>
 
+          {/* 가로 2단: (좌) 크레딧 정보 · (우) 사용현황 그래프 */}
+          <div className="grid lg:grid-cols-2 gap-4 items-start">
           {/* 보유 + 추가 크레딧 카드 */}
           <div className="rounded-2xl border border-border bg-card shadow-sm p-5 space-y-6">
             {/* 보유 크레딧 */}
@@ -115,7 +117,7 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
           </div>
 
           {/* 최근 내 크레딧 사용현황 */}
-          <div className="mt-4 rounded-2xl border border-border bg-card shadow-sm p-5">
+          <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
             <div className="flex items-baseline justify-between mb-4">
               <h2 className="text-sm font-semibold text-foreground">최근 내 크레딧 사용현황</h2>
             </div>
@@ -163,6 +165,7 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
             <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
               * 총 크레딧 대비 당월 내가 사용한 크레딧 사용량에 대한 현황입니다.
             </p>
+          </div>
           </div>
         </div>
       </div>
