@@ -15,6 +15,7 @@ import {
   Sparkles,
   Menu,
   PanelLeftClose,
+  Coins,
 } from "lucide-react";
 import { track } from "@/app/utils/track";
 import { toast } from "sonner";
@@ -55,6 +56,7 @@ interface HistorySidebarPanelProps {
   onNewChat?: () => void;
   onOpenManual?: () => void;
   onOpenNotices?: () => void;
+  onOpenCredit?: () => void;
   unreadNoticeCount?: number;
   onOpenPolicyList?: () => void;
   onViewChatHistory?: (chatId: string) => void;
@@ -69,6 +71,7 @@ export function HistorySidebarPanel({
   onNewChat,
   onOpenManual,
   onOpenNotices,
+  onOpenCredit,
   unreadNoticeCount = 0,
   onOpenPolicyList,
   onViewChatHistory,
@@ -148,6 +151,17 @@ export function HistorySidebarPanel({
             title="새 채팅"
           >
             <MessageSquarePlus className="w-5 h-5" />
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onOpenCredit}
+            className="h-10 w-10 p-0"
+            aria-label="크레딧 사용현황"
+            title="크레딧 사용현황"
+          >
+            <Coins className="w-5 h-5" />
           </Button>
 
           <Button
@@ -240,6 +254,15 @@ export function HistorySidebarPanel({
           >
             <MessageSquarePlus className="w-4 h-4" />
             <span>새 채팅</span>
+          </Button>
+
+          <Button
+            onClick={onOpenCredit}
+            variant="outline"
+            className="w-full justify-start gap-2"
+          >
+            <Coins className="w-4 h-4" />
+            <span>크레딧 사용현황</span>
           </Button>
 
           <Button
