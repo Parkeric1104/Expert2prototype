@@ -57,13 +57,13 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
           </div>
 
           {/* 가로 2단: (좌) 크레딧 정보 · (우) 사용현황 그래프 */}
-          <div className="grid lg:grid-cols-2 gap-4 items-start">
-          {/* 보유 + 추가 크레딧 카드 */}
-          <div className="rounded-2xl border border-border bg-card shadow-sm p-5 space-y-6">
-            {/* 보유 크레딧 */}
+          <div className="grid lg:grid-cols-2 gap-4 items-stretch">
+          {/* 기본 + 추가 크레딧 카드 */}
+          <div className="h-full rounded-2xl border border-border bg-card shadow-sm p-5 space-y-6">
+            {/* 기본 크레딧 (기본 제공량 중 잔여) */}
             <div>
               <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
-                <span>보유 크레딧</span>
+                <span>기본 크레딧</span>
                 <Info className="w-3.5 h-3.5" />
               </div>
               <div className="flex items-baseline gap-1.5">
@@ -76,7 +76,7 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
               </div>
               <div className="mt-1.5 flex justify-end">
                 <span className="text-xs text-muted-foreground">
-                  <span className="px-1.5 py-0.5 rounded bg-muted text-foreground/70 mr-1">기본</span>
+                  <span className="px-1.5 py-0.5 rounded bg-muted text-foreground/70 mr-1">기본 제공량</span>
                   {nf(BASE)}
                 </span>
               </div>
@@ -117,7 +117,7 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
           </div>
 
           {/* 최근 내 크레딧 사용현황 */}
-          <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
+          <div className="h-full rounded-2xl border border-border bg-card shadow-sm p-5">
             <div className="flex items-baseline justify-between mb-4">
               <h2 className="text-sm font-semibold text-foreground">최근 내 크레딧 사용현황</h2>
             </div>
