@@ -1,6 +1,10 @@
 import { ArrowLeft, RefreshCw, Info } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine,
+  ResponsiveContainer, Cell, Tooltip,
+} from "recharts";
 
 // 크레딧 사용현황 — 전체화면(페이지 전환). 사이드패널 '크레딧 사용현황' 진입점 → 페이지 전환.
 // 제품팀 요구 필수 구성: 보유 크레딧 / 추가 크레딧 / 추가 크레딧 구매 / 최근 내 크레딧 사용현황(그래프).
@@ -16,15 +20,19 @@ const EXTRA_TOTAL = 6_000_000;
 
 // 최근 사용현황(월별) — 그래프
 const MONTHLY = [
+  { label: "4월", value: 48_500 },
+  { label: "5월", value: 55_200 },
+  { label: "6월", value: 61_800 },
   { label: "7월", value: 51_200 },
   { label: "8월", value: 53_800 },
   { label: "9월", value: 4_313, current: true },
 ];
-const AVG = 52_039;                 // 평균 크레딧 사용량
-const CURRENT_SHARE = 0.1;          // 당월 사용 비중(%) — 9월 4,313 / 총 크레딧
+const CURRENT = MONTHLY.find((m) => m.current) ?? MONTHLY[MONTHLY.length - 1];
+const AVG = Math.round(MONTHLY.reduce((s, m) => s + m.value, 0) / MONTHLY.length); // 평균 크레딧 사용량
+const CURRENT_SHARE = 0.1;          // 당월 사용 비중(%) — 당월 사용 / 총 크레딧
+const kfmt = (v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`);
 
 export function CreditUsageView({ onBack }: { onBack: () => void }) {
-  const chartMax = Math.max(...MONTHLY.map((m) => m.value), AVG) * 1.1;
   const usedPct = Math.min(100, Math.round((OWNED / BASE) * 100));
 
   return (
@@ -122,44 +130,62 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
               <h2 className="text-sm font-semibold text-foreground">최근 내 크레딧 사용현황</h2>
             </div>
             <div className="flex items-baseline justify-between mb-4">
-              <span className="text-lg font-bold text-primary">9월</span>
+              <span className="text-lg font-bold text-primary">{CURRENT.label}</span>
               <span className="text-sm text-foreground">
-                <span className="text-lg font-bold text-primary tabular-nums">{nf(4_313)}</span>
+                <span className="text-lg font-bold text-primary tabular-nums">{nf(CURRENT.value)}</span>
                 <span className="text-muted-foreground"> 크레딧 ({CURRENT_SHARE}%)</span>
               </span>
             </div>
 
-            {/* 막대 그래프 (평균선 유지) */}
-            <div className="relative h-44 flex items-end justify-around gap-6 px-2 border-b border-border">
-              {/* 평균선 */}
-              <div
-                className="absolute left-0 right-0 border-t border-dashed border-primary/50"
-                style={{ bottom: `${(AVG / chartMax) * 100}%` }}
-              >
-                <span className="absolute -top-4 right-0 text-[11px] text-primary/70 tabular-nums">
-                  평균 {nf(AVG)}
-                </span>
-              </div>
-              {MONTHLY.map((m) => (
-                <div key={m.label} className="flex-1 max-w-[64px] flex flex-col items-center gap-2 h-full justify-end">
-                  <span className="text-[11px] text-muted-foreground tabular-nums">{nf(m.value)}</span>
-                  <div
-                    className={`w-full rounded-t-lg ${m.current ? "bg-primary" : "bg-primary/40"}`}
-                    style={{ height: `${Math.max(2, (m.value / chartMax) * 100)}%` }}
+            {/* 막대 그래프 (recharts · 토스 스타일: 둥근 막대 + 가로 그리드 + 축, 평균선 유지) */}
+            <div className="h-56 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={MONTHLY} margin={{ top: 16, right: 8, left: -12, bottom: 0 }} barCategoryGap="32%">
+                  <CartesianGrid vertical={false} stroke="var(--border)" />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tick={{ fontSize: 11, fontWeight: 500, fill: "var(--muted-foreground)" }}
                   />
-                </div>
-              ))}
-            </div>
-            {/* x축 라벨 */}
-            <div className="flex items-center justify-around gap-6 px-2 mt-2">
-              {MONTHLY.map((m) => (
-                <span key={m.label} className={`flex-1 max-w-[64px] text-center text-xs ${m.current ? "font-semibold text-primary" : "text-muted-foreground"}`}>
-                  {m.label}
-                </span>
-              ))}
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    width={44}
+                    tick={{ fontSize: 11, fontWeight: 500, fill: "var(--muted-foreground)" }}
+                    tickFormatter={kfmt}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "var(--muted)", opacity: 0.35 }}
+                    formatter={(v: number) => [`${nf(v)} 크레딧`, "사용량"]}
+                    contentStyle={{
+                      borderRadius: 10,
+                      border: "1px solid var(--border)",
+                      background: "var(--card)",
+                      color: "var(--foreground)",
+                      fontSize: 12,
+                      boxShadow: "0 8px 24px rgba(20,30,45,.12)",
+                    }}
+                    labelStyle={{ color: "var(--muted-foreground)", fontWeight: 600 }}
+                  />
+                  <ReferenceLine
+                    y={AVG}
+                    stroke="var(--primary)"
+                    strokeDasharray="4 4"
+                    strokeOpacity={0.55}
+                    label={{ value: `평균 ${nf(AVG)}`, position: "insideTopRight", fontSize: 11, fill: "var(--primary)" }}
+                  />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40}>
+                    {MONTHLY.map((m, i) => (
+                      <Cell key={i} fill="var(--primary)" fillOpacity={m.current ? 1 : 0.35} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
 
-            <div className="mt-4 text-right text-xs text-muted-foreground">
+            <div className="mt-3 text-right text-xs text-muted-foreground">
               ··· 평균 크레딧 사용량 : <span className="tabular-nums">{nf(AVG)}</span> 크레딧
             </div>
             <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
