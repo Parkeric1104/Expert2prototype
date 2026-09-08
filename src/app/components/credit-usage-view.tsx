@@ -2,6 +2,9 @@ import { ArrowLeft, RefreshCw, Info } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import {
+  Tooltip as UITooltip, TooltipTrigger, TooltipContent, TooltipProvider,
+} from "@/app/components/ui/tooltip";
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine,
   ResponsiveContainer, Cell, Tooltip,
 } from "recharts";
@@ -36,6 +39,7 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
   const usedPct = Math.min(100, Math.round((OWNED / BASE) * 100));
 
   return (
+    <TooltipProvider delayDuration={100}>
     <div className="flex-1 min-h-0 flex flex-col">
       {/* 상단: 메인으로 돌아가기 */}
       <header className="flex-shrink-0 bg-card border-b border-border">
@@ -72,7 +76,16 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
             <div>
               <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
                 <span>기본 크레딧</span>
-                <Info className="w-3.5 h-3.5" />
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" aria-label="기본 크레딧 설명" className="inline-flex items-center text-muted-foreground hover:text-foreground">
+                      <Info className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[260px]" style={{ wordBreak: "keep-all" }}>
+                    사용중인 요금제의 기본 제공 크레딧 중 아직 사용하지 않은 크레딧 수입니다.
+                  </TooltipContent>
+                </UITooltip>
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-bold text-foreground tabular-nums">{nf(OWNED)}</span>
@@ -94,7 +107,16 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
             <div>
               <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
                 <span>추가 크레딧</span>
-                <Info className="w-3.5 h-3.5" />
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" aria-label="추가 크레딧 설명" className="inline-flex items-center text-muted-foreground hover:text-foreground">
+                      <Info className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[260px]" style={{ wordBreak: "keep-all" }}>
+                    기본 제공 크레딧 외에 추가로 구매한 크레딧 중 아직 사용하지 않은 크레딧 수입니다.
+                  </TooltipContent>
+                </UITooltip>
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-bold text-foreground tabular-nums">{nf(EXTRA)}</span>
@@ -196,5 +218,6 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
