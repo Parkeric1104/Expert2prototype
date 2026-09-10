@@ -39,6 +39,32 @@ const CURRENT = MONTHLY.find((m) => m.current) ?? MONTHLY[MONTHLY.length - 1];
 const AVG = 205_802;        // 평균 크레딧 사용량
 const CURRENT_SHARE = 8;    // 당월 사용 비중(%) — 당월 사용 / 총 크레딧
 
+// 호버 툴팁 (Y축 생략 대신 각 월의 정확한 수치를 노출) — 셀렉 상태 없이 호버 전용
+function ChartTooltip({ active, payload }: {
+  active?: boolean;
+  payload?: Array<{ payload: { label: string; value: number; current?: boolean } }>;
+}) {
+  if (!active || !payload || !payload.length) return null;
+  const p = payload[0].payload;
+  return (
+    <div
+      className="rounded-[10px] border border-border bg-card px-3 py-2 shadow-lg"
+      style={{ wordBreak: "keep-all", boxShadow: "0 8px 24px rgba(20,30,45,.12)" }}
+    >
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <span className="text-xs font-semibold text-muted-foreground">{p.label}</span>
+        {p.current && (
+          <span className="text-[10px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium">당월</span>
+        )}
+      </div>
+      <div className="text-sm font-bold text-foreground tabular-nums">
+        {nf(p.value)}
+        <span className="ml-1 text-xs font-medium text-muted-foreground">크레딧</span>
+      </div>
+    </div>
+  );
+}
+
 export function CreditUsageView({ onBack }: { onBack: () => void }) {
   const usedPct = Math.min(100, Math.round((OWNED / BASE) * 100));
 
@@ -200,17 +226,8 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
                   />
                   <YAxis hide domain={[0, "dataMax"]} />
                   <Tooltip
-                    cursor={{ fill: "var(--muted)", opacity: 0.35 }}
-                    formatter={(v: number) => [`${nf(v)} 크레딧`, "사용량"]}
-                    contentStyle={{
-                      borderRadius: 10,
-                      border: "1px solid var(--border)",
-                      background: "var(--card)",
-                      color: "var(--foreground)",
-                      fontSize: 12,
-                      boxShadow: "0 8px 24px rgba(20,30,45,.12)",
-                    }}
-                    labelStyle={{ color: "var(--muted-foreground)", fontWeight: 600 }}
+                    cursor={{ fill: "var(--muted)", opacity: 0.3 }}
+                    content={<ChartTooltip />}
                   />
                   <ReferenceLine
                     y={AVG}
