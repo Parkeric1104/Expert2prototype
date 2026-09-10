@@ -1,6 +1,5 @@
-import { ArrowLeft, RefreshCw, Info } from "lucide-react";
+import { Menu, Undo2, RefreshCw, Info, Coins } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/app/components/ui/button";
 import {
   Tooltip as UITooltip, TooltipTrigger, TooltipContent, TooltipProvider,
 } from "@/app/components/ui/tooltip";
@@ -10,30 +9,35 @@ import {
 } from "recharts";
 
 // 크레딧 사용현황 — 전체화면(페이지 전환). 사이드패널 '크레딧 사용현황' 진입점 → 페이지 전환.
-// 제품팀 요구 필수 구성: 보유 크레딧 / 추가 크레딧 / 추가 크레딧 구매 / 최근 내 크레딧 사용현황(그래프).
-// 값은 데모 더미(실서비스는 정산 API 주입).
+// 구성: 헤더(아이콘·타이틀·부제 + 새로고침·추가 크레딧 구매) / 기본·추가 크레딧 카드 2단 / 최근 사용현황(월별 그래프).
+// 값은 데모 더미(실서비스는 정산 API 주입). Figma 사용현황 페이지 디자인 반영.
 
 const nf = (n: number) => n.toLocaleString("ko-KR");
 
-// 보유/추가 크레딧
-const OWNED = 4_233_082;   // 보유(기본) 잔여
+// 기본/추가 크레딧
+const OWNED = 4_233_082;   // 기본 크레딧 잔여
 const BASE = 6_600_000;    // 기본 제공 총량
 const EXTRA = 0;           // 추가 크레딧 잔여
-const EXTRA_TOTAL = 6_000_000;
+const RENEW_AT = "2026-12-31 00:00 갱신 예정";
 
-// 최근 사용현황(월별) — 그래프
+// 최근 사용현황(월별) — 그래프 (최근 12개월, 당월 = 12월)
 const MONTHLY = [
-  { label: "4월", value: 48_500 },
-  { label: "5월", value: 55_200 },
-  { label: "6월", value: 61_800 },
-  { label: "7월", value: 51_200 },
-  { label: "8월", value: 53_800 },
-  { label: "9월", value: 4_313, current: true },
+  { label: "1월", value: 140_000 },
+  { label: "2월", value: 165_000 },
+  { label: "3월", value: 120_000 },
+  { label: "4월", value: 185_000 },
+  { label: "5월", value: 210_000 },
+  { label: "6월", value: 225_000 },
+  { label: "7월", value: 150_000 },
+  { label: "8월", value: 235_000 },
+  { label: "9월", value: 175_000 },
+  { label: "10월", value: 245_000 },
+  { label: "11월", value: 200_000 },
+  { label: "12월", value: 416_183, current: true },
 ];
 const CURRENT = MONTHLY.find((m) => m.current) ?? MONTHLY[MONTHLY.length - 1];
-const AVG = Math.round(MONTHLY.reduce((s, m) => s + m.value, 0) / MONTHLY.length); // 평균 크레딧 사용량
-const CURRENT_SHARE = 0.1;          // 당월 사용 비중(%) — 당월 사용 / 총 크레딧
-const kfmt = (v: number) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`);
+const AVG = 205_802;        // 평균 크레딧 사용량
+const CURRENT_SHARE = 8;    // 당월 사용 비중(%) — 당월 사용 / 총 크레딧
 
 export function CreditUsageView({ onBack }: { onBack: () => void }) {
   const usedPct = Math.min(100, Math.round((OWNED / BASE) * 100));
@@ -41,71 +45,92 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
   return (
     <TooltipProvider delayDuration={100}>
     <div className="flex-1 min-h-0 flex flex-col">
-      {/* 상단: 메인으로 돌아가기 */}
+      {/* 상단 바: 메뉴 · 메인으로 돌아가기 */}
       <header className="flex-shrink-0 bg-card border-b border-border">
-        <div className="h-14 flex items-center px-6">
+        <div className="h-14 flex items-center justify-between px-6">
+          <button
+            aria-label="메뉴"
+            className="w-9 h-9 -ml-2 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <button
             onClick={onBack}
             className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <Undo2 className="w-4 h-4" />
             메인으로 돌아가기
           </button>
         </div>
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="w-full max-w-[1000px] mx-auto px-6 max-sm:px-4 py-8" style={{ wordBreak: "keep-all" }}>
-          {/* 타이틀 */}
-          <div className="flex items-center gap-2 mb-6">
-            <h1 className="text-xl font-bold text-foreground">크레딧 사용현황</h1>
-            <button
-              onClick={() => toast.success("크레딧 사용현황을 새로고침했습니다.")}
-              aria-label="새로고침"
-              className="w-7 h-7 flex items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
+        <div className="w-full max-w-[1120px] mx-auto px-6 max-sm:px-4 py-8" style={{ wordBreak: "keep-all" }}>
+          {/* 헤더: 아이콘 + 타이틀/부제 + 액션(새로고침·추가 크레딧 구매) */}
+          <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-white flex-shrink-0">
+                <Coins className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">크레딧 사용현황</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  보유 크레딧과 월별 사용량을 확인하고, 크레딧을 추가로 구매할 수 있습니다.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => toast.success("크레딧 사용현황을 새로고침했습니다.")}
+                className="h-9 px-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                새로고침
+              </button>
+              <button
+                onClick={() => toast.info("추가 크레딧 구매는 결제 연동 후 제공될 예정입니다.")}
+                className="h-9 px-4 inline-flex items-center rounded-lg bg-primary text-white text-sm font-semibold hover:opacity-95 transition-opacity"
+              >
+                추가 크레딧 구매
+              </button>
+            </div>
           </div>
 
-          {/* 가로 2단: (좌) 크레딧 정보 · (우) 사용현황 그래프 */}
-          <div className="grid lg:grid-cols-2 gap-4 items-stretch">
-          {/* 기본 + 추가 크레딧 카드 */}
-          <div className="h-full rounded-2xl border border-border bg-card shadow-sm p-5 space-y-6">
-            {/* 기본 크레딧 (기본 제공량 중 잔여) */}
-            <div>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
-                <span>기본 크레딧</span>
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" aria-label="기본 크레딧 설명" className="inline-flex items-center text-muted-foreground hover:text-foreground">
-                      <Info className="w-3.5 h-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[260px]" style={{ wordBreak: "keep-all" }}>
-                    사용중인 요금제의 기본 제공 크레딧 중 아직 사용하지 않은 크레딧 수입니다.
-                  </TooltipContent>
-                </UITooltip>
+          {/* 기본 · 추가 크레딧 카드 2단 (기본이 더 넓게) */}
+          <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4 mb-4">
+            {/* 기본 크레딧 */}
+            <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <span>기본 크레딧</span>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" aria-label="기본 크레딧 설명" className="inline-flex items-center text-muted-foreground hover:text-foreground">
+                        <Info className="w-3.5 h-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[260px]" style={{ wordBreak: "keep-all" }}>
+                      사용중인 요금제의 기본 제공 크레딧 중 아직 사용하지 않은 크레딧 수입니다.
+                    </TooltipContent>
+                  </UITooltip>
+                </div>
+                <span className="text-xs text-muted-foreground">{RENEW_AT}</span>
               </div>
-              <div className="flex items-baseline gap-1.5">
+              <div className="mt-2 flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-foreground tabular-nums">{nf(OWNED)}</span>
-                <span className="text-sm text-muted-foreground">크레딧</span>
+                <span className="text-sm text-muted-foreground tabular-nums">/{nf(BASE)}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">2026-10-01 00:00 갱신 예정</p>
               <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
                 <div className="h-full rounded-full bg-primary" style={{ width: `${usedPct}%` }} />
               </div>
-              <div className="mt-1.5 flex justify-end">
-                <span className="text-xs text-muted-foreground">
-                  <span className="px-1.5 py-0.5 rounded bg-muted text-foreground/70 mr-1">기본 제공량</span>
-                  {nf(BASE)}
-                </span>
-              </div>
+              <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+                · 매달 기본 제공되는 크레딧은 갱신일까지 사용할 수 있으며, 미사용분은 소멸됩니다.
+              </p>
             </div>
 
             {/* 추가 크레딧 */}
-            <div>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
+            <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <span>추가 크레딧</span>
                 <UITooltip>
                   <TooltipTrigger asChild>
@@ -118,51 +143,53 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
                   </TooltipContent>
                 </UITooltip>
               </div>
-              <div className="flex items-baseline gap-1.5">
+              <div className="mt-2 flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-foreground tabular-nums">{nf(EXTRA)}</span>
-                <span className="text-sm text-muted-foreground">크레딧</span>
               </div>
               <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${Math.round((EXTRA / EXTRA_TOTAL) * 100)}%` }} />
+                <div className="h-full rounded-full bg-primary" style={{ width: "0%" }} />
               </div>
-              <div className="mt-1.5 flex justify-end">
-                <span className="text-xs text-muted-foreground tabular-nums">{nf(EXTRA_TOTAL)}</span>
-              </div>
+              <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+                · 추가 구매한 미사용 크레딧은 이월 가능합니다.
+              </p>
             </div>
-
-            {/* 안내 문구 */}
-            <ul className="space-y-1 text-xs text-muted-foreground leading-relaxed">
-              <li>* 매달 기본 제공되는 크레딧은 갱신일까지 사용할 수 있으며, 미사용분은 소멸됩니다.</li>
-              <li>* 추가 구매한 미사용 크레딧은 이월 가능합니다.</li>
-            </ul>
-
-            {/* 추가 크레딧 구매 */}
-            <Button
-              onClick={() => toast.info("추가 크레딧 구매는 결제 연동 후 제공될 예정입니다.")}
-              className="w-full h-11 rounded-xl text-white font-semibold hover:opacity-95"
-              style={{ background: "linear-gradient(135deg, #5784FF 0%, #8B5CF6 100%)" }}
-            >
-              추가 크레딧 구매
-            </Button>
           </div>
 
-          {/* 최근 내 크레딧 사용현황 */}
-          <div className="h-full rounded-2xl border border-border bg-card shadow-sm p-5">
-            <div className="flex items-baseline justify-between mb-4">
-              <h2 className="text-sm font-semibold text-foreground">최근 내 크레딧 사용현황</h2>
-            </div>
-            <div className="flex items-baseline justify-between mb-4">
-              <span className="text-lg font-bold text-primary">{CURRENT.label}</span>
-              <span className="text-sm text-foreground">
-                <span className="text-lg font-bold text-primary tabular-nums">{nf(CURRENT.value)}</span>
-                <span className="text-muted-foreground"> 크레딧 ({CURRENT_SHARE}%)</span>
-              </span>
+          {/* 최근 내 크레딧 사용현황 (전체 폭) */}
+          <div className="rounded-2xl border border-border bg-card shadow-sm p-5">
+            <div className="flex items-center gap-1 text-sm font-semibold text-foreground mb-4">
+              <span>최근 내 크레딧 사용현황</span>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" aria-label="사용현황 설명" className="inline-flex items-center text-muted-foreground hover:text-foreground">
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[260px]" style={{ wordBreak: "keep-all" }}>
+                  총 크레딧 대비 당월 내가 사용한 크레딧 사용량에 대한 현황입니다.
+                </TooltipContent>
+              </UITooltip>
             </div>
 
-            {/* 막대 그래프 (recharts · 토스 스타일: 둥근 막대 + 가로 그리드 + 축, 평균선 유지) */}
-            <div className="h-56 w-full">
+            {/* 요약 지표: 당월 사용량 · 평균 사용량 */}
+            <div className="flex flex-wrap gap-x-10 gap-y-3 mb-5">
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">{CURRENT.label} 사용량</p>
+                <p className="text-2xl font-bold text-foreground tabular-nums">
+                  {nf(CURRENT.value)}
+                  <span className="ml-1 text-sm font-medium text-muted-foreground">({CURRENT_SHARE}%)</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">평균 크레딧 사용량</p>
+                <p className="text-2xl font-bold text-foreground tabular-nums">{nf(AVG)}</p>
+              </div>
+            </div>
+
+            {/* 막대 그래프 (12개월 · 당월 강조 · 평균선) */}
+            <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={MONTHLY} margin={{ top: 16, right: 8, left: -12, bottom: 0 }} barCategoryGap="32%">
+                <BarChart data={MONTHLY} margin={{ top: 16, right: 8, left: 0, bottom: 0 }} barCategoryGap="28%">
                   <CartesianGrid vertical={false} stroke="var(--border)" />
                   <XAxis
                     dataKey="label"
@@ -171,13 +198,7 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
                     tickMargin={8}
                     tick={{ fontSize: 11, fontWeight: 500, fill: "var(--muted-foreground)" }}
                   />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    width={44}
-                    tick={{ fontSize: 11, fontWeight: 500, fill: "var(--muted-foreground)" }}
-                    tickFormatter={kfmt}
-                  />
+                  <YAxis hide domain={[0, "dataMax"]} />
                   <Tooltip
                     cursor={{ fill: "var(--muted)", opacity: 0.35 }}
                     formatter={(v: number) => [`${nf(v)} 크레딧`, "사용량"]}
@@ -195,25 +216,17 @@ export function CreditUsageView({ onBack }: { onBack: () => void }) {
                     y={AVG}
                     stroke="var(--primary)"
                     strokeDasharray="4 4"
-                    strokeOpacity={0.55}
-                    label={{ value: `평균 ${nf(AVG)}`, position: "insideTopRight", fontSize: 11, fill: "var(--primary)" }}
+                    strokeOpacity={0.6}
+                    label={{ value: "평균선", position: "insideTopLeft", fontSize: 11, fill: "var(--primary)" }}
                   />
-                  <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={40}>
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={36}>
                     {MONTHLY.map((m, i) => (
-                      <Cell key={i} fill="var(--primary)" fillOpacity={m.current ? 1 : 0.35} />
+                      <Cell key={i} fill="var(--primary)" fillOpacity={m.current ? 1 : 0.3} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
-
-            <div className="mt-3 text-right text-xs text-muted-foreground">
-              ··· 평균 크레딧 사용량 : <span className="tabular-nums">{nf(AVG)}</span> 크레딧
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-              * 총 크레딧 대비 당월 내가 사용한 크레딧 사용량에 대한 현황입니다.
-            </p>
-          </div>
           </div>
         </div>
       </div>
