@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ArrowLeft, Download, Printer, Sparkles, RefreshCw, ChevronLeft, ChevronRight, FileSearch, FileEdit, FileText, PenSquare, Newspaper, Bookmark, MessageSquare, HelpCircle } from "lucide-react";
+import { ArrowLeft, Download, Printer, Sparkles, RefreshCw, ChevronLeft, ChevronRight, FileSearch, FileEdit, FileText, PenSquare, Newspaper, Bookmark, MessageSquare, HelpCircle, ShieldCheck, ShieldAlert } from "lucide-react";
 import characterImg from "@/assets/dobi-chat.png";
 import { TrialBlockModal } from "@/app/components/trial-block-modal";
+import { useExpertAuth, LICENSE_LABELS } from "@/app/data/expert-auth";
 
 interface DocumentSection {
   title: string;
@@ -51,12 +52,19 @@ export function DocumentView({
 }: DocumentViewProps) {
   const [showTrialBlock, setShowTrialBlock] = useState(false); // 체험판: 요약/헤더 버튼 미제공
 
+  // 의견서 운영통제(법무검토 260928): 전문가만 명의 발행 가능 + 검토·승인 전에는 '초안' 워터마크.
+  // 전문가 명의 자동발행 방지 — AI 초안 → 전문가 검토·승인 체크 후에만 발행/다운로드가 정식본으로 처리.
+  const expertAuth = useExpertAuth();
+  const isExpert = expertAuth.status === "verified";
+  const [reviewApproved, setReviewApproved] = useState(false);
+  const approved = isExpert && reviewApproved; // 정식본(전문가 검토·승인 완료) 여부
+
   const handlePrint = () => {
     window.print();
   };
 
   const handleDownload = () => {
-    console.log("Download document");
+    console.log(approved ? "Download document (전문가 승인본)" : "Download document (초안)");
   };
 
   // 기본 섹션 데이터
@@ -172,6 +180,42 @@ export function DocumentView({
         </div>
       )}
 
+      {/* 전문가 검토·승인 통제 바 (법무검토 260928) — 전문가 명의 자동발행 방지 */}
+      <div className="print:hidden flex-shrink-0">
+        {isExpert ? (
+          <label
+            className={`flex items-center gap-2.5 px-6 max-sm:px-3 py-2.5 border-b cursor-pointer transition-colors ${
+              approved ? "bg-emerald-50/70 border-emerald-100" : "bg-amber-50/70 border-amber-100"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={reviewApproved}
+              onChange={(e) => setReviewApproved(e.target.checked)}
+              className="w-4 h-4 accent-emerald-600 flex-shrink-0"
+            />
+            {approved ? (
+              <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            ) : (
+              <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            )}
+            <span className="text-sm text-gray-700" style={{ wordBreak: "keep-all" }}>
+              {approved
+                ? `전문가 검토·승인 완료 — ${expertAuth.licenseType ? LICENSE_LABELS[expertAuth.licenseType] : "전문가"} ${expertAuth.name ?? ""} 명의로 발행됩니다.`
+                : "본인이 내용을 검토·수정했으며, 본인 명의로 발행하는 데 동의합니다. (승인 전에는 '초안'으로 표기됩니다)"}
+            </span>
+          </label>
+        ) : (
+          <div className="flex items-center gap-2.5 px-6 max-sm:px-3 py-2.5 bg-amber-50/70 border-b border-amber-100">
+            <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span className="text-sm text-gray-600" style={{ wordBreak: "keep-all" }}>
+              전문가 검토 전 <b className="text-gray-800">초안</b>입니다. 상세분석·의견서의 정식 발행은
+              <b className="text-gray-800"> 전문가 인증</b> 후 검토·승인 시 전문가 명의로 제공됩니다.
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Document Content - Scrollable */}
       <div className="flex-1 overflow-y-auto bg-gray-100">
         <div className="min-h-full p-6 flex flex-col items-center gap-4">
@@ -222,7 +266,17 @@ export function DocumentView({
             </div>
           )}
           {/* A4 Paper */}
-          <div className="bg-white shadow-2xl w-full max-w-[840px] rounded-2xl mb-6 print:shadow-none print:rounded-none print:max-w-full print:mb-0">
+          <div className="relative bg-white shadow-2xl w-full max-w-[840px] rounded-2xl mb-6 print:shadow-none print:rounded-none print:max-w-full print:mb-0 overflow-hidden">
+            {/* 초안 워터마크 — 전문가 검토·승인 전(정식본 아님) 표시. 인쇄에도 노출. */}
+            {!approved && (
+              <div className="pointer-events-none absolute inset-0 z-10 flex flex-wrap items-center justify-center gap-x-10 gap-y-16 opacity-[0.06] select-none">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <span key={i} className="text-3xl font-extrabold text-gray-900 -rotate-[30deg] whitespace-nowrap">
+                    초안 · 전문가 검토 전
+                  </span>
+                ))}
+              </div>
+            )}
             {/* HEADER — 기본 PC웹, 모바일만 여백·폰트 축소 */}
             <header className="p-7 max-sm:p-4 pb-5 max-sm:pb-4 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
               {/* Title */}

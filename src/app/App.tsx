@@ -20,6 +20,8 @@ import { ServiceFeedbackModal } from "@/app/components/service-feedback-modal";
 import { POLICY_NUDGE_PENDING_KEY, POLICY_NUDGE_DISMISS_KEY } from "@/app/components/policy-register-inline-cta";
 import { Toaster } from "@/app/components/ui/sonner";
 import { getHistorySession, ChatHistorySession } from "@/app/data/chat-history";
+import { ExpertVerifyModal } from "@/app/components/expert-verify-modal";
+import { useExpertAuth } from "@/app/data/expert-auth";
 
 export default function App() {
   const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding" | "calculator" | "notice" | "credit">("home");
@@ -89,6 +91,9 @@ export default function App() {
   }, [contentTick, popupDismissedKey]);
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
   const [historySession, setHistorySession] = useState<ChatHistorySession | null>(null); // 채팅 이력 보기(전체화면 복원)
+  // 전문가 인증(자격 검증) — 법무검토(260928): 상세분석·의견서는 승인된 전문가에게만 제공
+  const expertAuth = useExpertAuth();
+  const [showExpertVerify, setShowExpertVerify] = useState(false);
 
   // pending 정책 개수 확인 (테스트용: 3개)
   useEffect(() => {
@@ -385,6 +390,8 @@ export default function App() {
             }}
             onViewChatHistory={handleViewChatHistory}
             pendingPoliciesCount={isAdmin ? pendingPoliciesCount : 0}
+            expertStatus={expertAuth.status}
+            onOpenExpertVerify={() => setShowExpertVerify(true)}
             isTrial={isTrial}
             onToggleTrial={() => {
               setIsTrial((v) => !v);
@@ -513,6 +520,12 @@ export default function App() {
       <ServiceFeedbackModal
         isOpen={showServiceFeedback}
         onClose={() => setShowServiceFeedback(false)}
+      />
+
+      {/* 전문가 인증(자격 검증) 모달 */}
+      <ExpertVerifyModal
+        isOpen={showExpertVerify}
+        onClose={() => setShowExpertVerify(false)}
       />
 
       {/* Toast Notifications */}

@@ -16,6 +16,7 @@ import {
   Menu,
   PanelLeftClose,
   Coins,
+  ShieldCheck,
 } from "lucide-react";
 import { track } from "@/app/utils/track";
 import { toast } from "sonner";
@@ -61,6 +62,8 @@ interface HistorySidebarPanelProps {
   onOpenPolicyList?: () => void;
   onViewChatHistory?: (chatId: string) => void;
   pendingPoliciesCount?: number;
+  expertStatus?: "none" | "pending" | "verified" | "rejected";
+  onOpenExpertVerify?: () => void;
   isTrial?: boolean;
   onToggleTrial?: () => void;
 }
@@ -76,6 +79,8 @@ export function HistorySidebarPanel({
   onOpenPolicyList,
   onViewChatHistory,
   pendingPoliciesCount = 0,
+  expertStatus = "none",
+  onOpenExpertVerify,
   isTrial = false,
   onToggleTrial,
 }: HistorySidebarPanelProps) {
@@ -287,6 +292,23 @@ export function HistorySidebarPanel({
               </span>
             )}
           </Button>
+
+          {/* 전문가 인증 (법무검토: 상세분석·의견서는 승인 전문가만) */}
+          {onOpenExpertVerify && (
+            <Button
+              onClick={onOpenExpertVerify}
+              variant="outline"
+              className="w-full justify-start gap-2"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>전문가 인증</span>
+              {expertStatus === "verified" ? (
+                <span className="ml-auto px-1.5 h-5 flex items-center justify-center bg-emerald-100 text-emerald-600 text-xs font-bold rounded-full">인증</span>
+              ) : expertStatus === "pending" ? (
+                <span className="ml-auto px-1.5 h-5 flex items-center justify-center bg-amber-100 text-amber-600 text-xs font-bold rounded-full">심사중</span>
+              ) : null}
+            </Button>
+          )}
 
           {/* 체험판 전환/종료 */}
           {onToggleTrial && (
