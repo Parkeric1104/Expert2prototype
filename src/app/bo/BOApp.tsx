@@ -4,7 +4,7 @@
  * 로그인 필수(ACC-001), 계정관리는 관리자 권한만 노출(ACC-002).
  */
 import { useState } from "react";
-import { Megaphone, MessageSquareWarning, Tag, ExternalLink, Users, LogOut } from "lucide-react";
+import { Megaphone, MessageSquareWarning, Tag, ExternalLink, Users, LogOut, ShieldCheck } from "lucide-react";
 import { Toaster } from "@/app/components/ui/sonner";
 import { BOAccount, currentAccount, logout } from "@/app/bo/bo-store";
 import { BOLogin, BOPasswordChange } from "@/app/bo/bo-login";
@@ -12,8 +12,9 @@ import { NoticeAdmin } from "@/app/bo/notice-admin";
 import { PopupAdmin } from "@/app/bo/popup-admin";
 import { VersionAdmin } from "@/app/bo/version-admin";
 import { AccountAdmin } from "@/app/bo/account-admin";
+import { ExpertReviewAdmin } from "@/app/bo/expert-review-admin";
 
-type Section = "notice" | "popup" | "version" | "account";
+type Section = "notice" | "popup" | "version" | "expert" | "account";
 
 const CONTENT_NAV: { key: Section; label: string; Icon: typeof Megaphone; iconColor: string }[] = [
   { key: "notice", label: "공지사항", Icon: Megaphone, iconColor: "text-primary" },
@@ -83,6 +84,7 @@ export function BOApp() {
           {account.role === "admin" && (
             <>
               <p className="px-2 pt-4 pb-1.5 text-[11px] font-medium text-muted-foreground/70">관리</p>
+              {navItem("expert", "전문가 인증", ShieldCheck, "text-blue-500")}
               {navItem("account", "계정관리", Users, "text-emerald-500")}
             </>
           )}
@@ -122,6 +124,7 @@ export function BOApp() {
           {section === "notice" && <NoticeAdmin />}
           {section === "popup" && <PopupAdmin />}
           {section === "version" && <VersionAdmin />}
+          {section === "expert" && account.role === "admin" && <ExpertReviewAdmin me={account} />}
           {section === "account" && account.role === "admin" && <AccountAdmin me={account} />}
         </div>
       </main>
