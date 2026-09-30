@@ -1,4 +1,5 @@
 import { SourcesAndHistoryPanel } from "@/app/components/sources-and-history-panel";
+import { RagSourceSelect, showRagSelect } from "@/app/components/rag-source-select";
 import { useState, useRef, useEffect } from "react";
 import { ChatBubble } from "@/app/components/chat-bubble";
 import { UserMessageBubble } from "@/app/components/user-message-bubble";
@@ -249,6 +250,7 @@ export function ModernChatInterface({
   const [opinionFlowStarted, setOpinionFlowStarted] = useState(false);
   const [lastDraftTopicTitle, setLastDraftTopicTitle] = useState<string>("");
   const [previousSelectedLaws, setPreviousSelectedLaws] = useState<string[]>(selectedLaws);
+  const [klleonRag, setKlleonRag] = useState(false); // 근복단 PE(+add): 답변 소스 — 클라이온 RAG ON/OFF
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number; type: string; data: ArrayBuffer | string }[]>([]);
   const [showSecurityAlert, setShowSecurityAlert] = useState(false);
   const [userQuestion, setUserQuestion] = useState<string>(initialMessage || "");
@@ -1837,22 +1839,26 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
         <div className="max-w-3xl mx-auto px-6 py-4">
           <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl shadow-sm flex flex-col">
             {/* Input Row */}
-            <div className="flex items-center gap-3 px-4 py-3">
-              <input
-                ref={chatInputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder={getPlaceholder()}
-                disabled={isInputDisabled}
-                className="flex-1 bg-transparent border-none outline-none text-base text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-              />
+            <input
+              ref={chatInputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={getPlaceholder()}
+              disabled={isInputDisabled}
+              className="w-full bg-transparent border-none outline-none text-base text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed px-5 pt-4 pb-1"
+            />
+            {/* Toolbar Row — 우측 클러스터(RAG·발송) */}
+            <div className="flex items-center gap-1.5 px-3 pb-3 pt-1">
+              <div className="flex-1" />
+              {/* 근복단 PE(+add): 답변 소스(RAG) — 발송 버튼과 함께 우측 클러스터에 배치(멀티턴에도 동일 적용) */}
+              {showRagSelect() && <RagSourceSelect value={klleonRag} onChange={setKlleonRag} />}
               <button
                 type="submit"
                 disabled={!inputValue.trim() || isInputDisabled}
-                className="w-10 h-10 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
+                className="w-9 h-9 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center flex-shrink-0"
               >
-                <Send className="w-4.5 h-4.5" />
+                <Send className="w-4 h-4" />
               </button>
             </div>
           </form>

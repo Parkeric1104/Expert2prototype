@@ -3,9 +3,10 @@ import { track } from "@/app/utils/track";
 import { getServiceVersion } from "@/app/data/service-content";
 import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
+import { RagSourceSelect } from "@/app/components/rag-source-select";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
-  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search, MoreHorizontal, AlertTriangle, Database
+  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search, MoreHorizontal, AlertTriangle
 } from "lucide-react";
 import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
@@ -68,7 +69,6 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   // 운영·단독 서비스엔 미노출(프로파일 플래그로 제어). 프로토타입 검토용 기본 노출, ?klleon=off 로 숨김.
   const showKlleonToggle = typeof window === "undefined" ? true : new URLSearchParams(window.location.search).get("klleon") !== "off";
   const [klleonRag, setKlleonRag] = useState(false); // 기본 OFF(내부 RAG) — 영업 확정 시 디폴트 조정
-  const [showRagMenu, setShowRagMenu] = useState(false); // 답변 소스 드롭다운
 
   // 탭 전환 시 해당 탭의 첫 칩으로 리셋
   const handleSelectTab = (tab: string) => {
@@ -358,53 +358,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
               </div>
             )}
 
-            {/* 근복단 PE(+add): 답변 소스 선택 — 내부 RAG / 클라이온 RAG. 법령선택과 같은 '답변 조건' 그룹에 드롭다운 칩으로 배치 */}
-            {showKlleonToggle && (
-              <div className="relative flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowRagMenu((v) => !v)}
-                  aria-haspopup="listbox"
-                  aria-expanded={showRagMenu}
-                  title="답변에 사용할 지식베이스(RAG)를 선택합니다"
-                  className={`h-8 flex items-center gap-1.5 pl-2.5 pr-2 rounded-full text-sm whitespace-nowrap border transition-colors ${
-                    klleonRag ? "bg-primary/8 border-primary/25 text-primary" : "border-border text-foreground/80 hover:bg-muted/70"
-                  }`}
-                >
-                  <Database className="w-3.5 h-3.5" />
-                  <span className="font-medium">{klleonRag ? "클라이온 RAG" : "내부 RAG"}</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showRagMenu ? "rotate-180" : ""} opacity-60`} />
-                </button>
-                {showRagMenu && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowRagMenu(false)} />
-                    <div className="absolute bottom-full left-0 mb-2 w-52 bg-card border border-border rounded-xl shadow-xl p-1.5 z-50">
-                      {[
-                        { v: false, label: "내부 RAG", desc: "표준 법령 지식베이스" },
-                        { v: true, label: "클라이온 RAG", desc: "공단 지식베이스" },
-                      ].map((o) => (
-                        <button
-                          key={String(o.v)}
-                          type="button"
-                          onClick={() => { setKlleonRag(o.v); setShowRagMenu(false); }}
-                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/60 text-left transition-colors"
-                        >
-                          <span className="w-4 flex-shrink-0 flex items-center justify-center">
-                            {klleonRag === o.v && <Check className="w-4 h-4 text-primary" />}
-                          </span>
-                          <span className="flex-1 min-w-0">
-                            <span className="block text-sm font-medium text-foreground">{o.label}</span>
-                            <span className="block text-xs text-muted-foreground">{o.desc}</span>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* 구분선 (법령/RAG ↔ 파일칩) */}
+            {/* 구분선 (법령 ↔ 파일칩) */}
             {uploadedFiles.length > 0 && <span className="w-px h-5 bg-border mx-0.5 flex-shrink-0" />}
 
             {/* 파일 칩 (첨부 시) — 색상 아이콘 + X, 3개 초과 시 ⋯ */}
@@ -485,6 +439,9 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
             >
               <Paperclip className="w-4 h-4" />
             </button>
+
+            {/* 근복단 PE(+add): 답변 소스(RAG) — 파일첨부와 전송 사이에 배치 */}
+            {showKlleonToggle && <RagSourceSelect value={klleonRag} onChange={setKlleonRag} />}
 
             {/* 우: 전송 */}
             <button
