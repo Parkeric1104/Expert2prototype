@@ -6,7 +6,7 @@ import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import { RagSourceSelect } from "@/app/components/rag-source-select";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
-  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search, MoreHorizontal, AlertTriangle
+  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search, MoreHorizontal, AlertTriangle, Megaphone
 } from "lucide-react";
 import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
@@ -56,6 +56,19 @@ const TAB_CHIPS: Record<string, string[]> = {
   "경로테스트": ["근로계약 경로질문"],
 };
 const ITEMS_PER_PAGE = 4;
+
+// 큐레이션(시즌 이슈) — BO 운영 콘텐츠(CUR). 공지와 달리 '전면 노출→클릭→질문 프리필'로 유입·전환 유도.
+// 단일 활성 세트(기간 기반 전환). 각 항목 클릭 시 추천질문과 동일하게 질문을 바로 시작한다.
+const CURATION_SET = {
+  tag: "THIS MONTH · 큐레이션",
+  title: "세무·노무 이슈 TOP 3",
+  caption: "11월, 이번 달 꼭 챙길 이슈",
+  items: [
+    { icon: FileText,        title: "성실신고확인 대상 판정·준비",   badge: "마감 수요 +28%",      question: "성실신고확인 대상 판정 기준과 준비해야 할 사항을 알려주세요.",            laws: ["소득세법 제70조의2"] },
+    { icon: ClipboardCheck,  title: "부가세 예정신고 체크리스트",     badge: "11/25 마감 · +34%",   question: "부가가치세 예정신고 일정과 준비 서류 체크리스트를 알려주세요.",            laws: ["부가가치세법 제48조"] },
+    { icon: Users,           title: "연말정산 대비 노무 이슈",       badge: "통상임금·연차수당 +30%", question: "연말정산을 앞두고 통상임금·연차수당 관련 노무 이슈를 정리해 주세요.",      laws: ["근로기준법 제2조", "근로기준법 제60조"] },
+  ],
+};
 
 export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator, onOpenNoticePopup, onRegisterFileAsPolicy }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
@@ -484,6 +497,37 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
             </p>
           </div>
         )}
+
+        {/* 큐레이션 — 이번 달 이슈 (BO 운영 콘텐츠 CUR · 공지와 달리 전면 노출→클릭→질문 전환) */}
+        <div className="w-full rounded-2xl border border-primary/15 overflow-hidden shadow-sm">
+          <div className="bg-gradient-to-br from-primary to-[#3F6BFF] text-white px-4 py-3">
+            <div className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide opacity-90">
+              <Megaphone className="w-3.5 h-3.5" />{CURATION_SET.tag}
+            </div>
+            <div className="text-[15px] font-extrabold mt-0.5">{CURATION_SET.title}</div>
+          </div>
+          <div className="bg-card divide-y divide-border/60">
+            {CURATION_SET.items.map((it, i) => {
+              const Icon = it.icon;
+              return (
+                <button
+                  key={i}
+                  onClick={() => { track("curation_click", { title: it.title }); handlePromptClick(it.question, it.laws, "normal"); }}
+                  className="flex items-center gap-3 w-full px-3.5 py-3 text-left hover:bg-muted/40 transition-colors group"
+                >
+                  <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-4 h-4" />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-semibold text-foreground truncate">{it.title}</span>
+                    <span className="block text-[11px] font-semibold text-amber-600 mt-0.5">{it.badge}</span>
+                  </span>
+                  <span className="text-[11px] font-bold text-white bg-primary rounded-lg px-2.5 py-1.5 flex-shrink-0 group-hover:brightness-110 transition">질문하기</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* 추천 질문 */}
         <div className="w-full flex flex-col gap-4">
