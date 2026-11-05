@@ -61,7 +61,7 @@ const TAB_CHIPS: Record<string, string[]> = {
 // 단일 활성 세트(기간 기반 전환). 각 항목 클릭 시 추천질문과 동일하게 질문을 바로 시작한다.
 // deadline: 마감일(YYYY-MM-DD) — D-day 태그는 오늘 기준 자동 계산(ddayLabel).
 const CURATION_SET = {
-  caption: "이번 달 체크포인트",
+  caption: "체크포인트",
   items: [
     { icon: ClipboardCheck,  title: "부가세 예정신고 체크리스트",   sub: "11/25 마감",     deadline: "2026-11-25", question: "부가가치세 예정신고 일정과 준비 서류 체크리스트를 알려주세요.",            laws: ["부가가치세법 제48조"] },
     { icon: FileText,        title: "성실신고확인 대상 판정·준비", sub: "신고 전 준비",   deadline: "2026-12-20", question: "성실신고확인 대상 판정 기준과 준비해야 할 사항을 알려주세요.",            laws: ["소득세법 제70조의2"] },
