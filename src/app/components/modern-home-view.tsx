@@ -511,7 +511,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
         <div className="grid grid-cols-1 md:grid-cols-[1.36fr_1fr] gap-4 items-stretch">
 
           {/* 좌: 분야별 자주 묻는 질문 */}
-          <div className="bg-card border border-border/60 rounded-2xl shadow-sm p-4 flex flex-col">
+          <div className="min-w-0 bg-card border border-border/60 rounded-2xl shadow-sm p-4 flex flex-col">
             <span className="text-sm font-extrabold tracking-tight text-foreground">분야별 자주 묻는 질문</span>
 
             {/* 탭 (검정 언더라인) */}
@@ -531,13 +531,13 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
               ))}
             </div>
 
-            {/* 칩 (회색 pill) */}
-            <div className="flex gap-1.5 flex-wrap mt-3">
+            {/* 칩 (2depth 카테고리) — 한 줄 가로 스크롤(줄바꿈 X·스크롤바 숨김) */}
+            <div className="flex gap-1.5 mt-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {TAB_CHIPS[selectedTab].map(cat => (
                 <button
                   key={cat}
                   onClick={() => handleCategoryChange(cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                     selectedCategory === cat
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-foreground/70 hover:bg-muted/70"
@@ -598,7 +598,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
           </div>
 
           {/* 우: 큐레이션(이번 달 이슈) + 게시판(공지) */}
-          <div className="bg-card border border-border/60 rounded-2xl shadow-sm p-4 flex flex-col">
+          <div className="min-w-0 bg-card border border-border/60 rounded-2xl shadow-sm p-4 flex flex-col">
             {/* 큐레이션 — BO 운영 콘텐츠(CUR) · 클릭→질문 전환 */}
             <span className="text-sm font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
               <Megaphone className="w-4 h-4 text-primary" />{CURATION_SET.caption}
