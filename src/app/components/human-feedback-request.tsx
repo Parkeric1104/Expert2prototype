@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, Search, Lightbulb } from "lucide-react";
+import { Search, HelpCircle } from "lucide-react";
 import characterImg from "@/assets/dobi-chat.png";
 
 interface HumanFeedbackRequestProps {
@@ -19,7 +19,8 @@ export function HumanFeedbackRequest({
 }: HumanFeedbackRequestProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 사실 관계 분석 생성 (insufficient일 경우에만)
+  // 되묻기 포인트 생성 (insufficient일 경우에만)
+  // [0] = 이해한 내용(요약), [1..] = 추가로 알려주면 좋은 것(되묻기)
   const generateFactPoints = (): string[] | null => {
     if (reason !== "insufficient") return null;
 
@@ -75,30 +76,11 @@ export function HumanFeedbackRequest({
     }
   };
 
-  // 검토 제목 (사실관계 상단에 노출) — 질문 키워드로 도출
-  const generateTitle = (): string => {
-    const q = originalQuestion.toLowerCase();
-    if (q.includes("퇴직금") || q.includes("중간정산")) return "퇴직금 중간정산 요청에 대한 법적 검토";
-    if (q.includes("연차") || q.includes("휴가")) return "연차휴가 적용에 대한 법적 검토";
-    if (q.includes("임금") || q.includes("급여") || q.includes("체불")) return "임금 지급에 대한 법적 검토";
-    if (q.includes("해고") || q.includes("징계")) return "해고·징계의 정당성에 대한 법적 검토";
-    if (q.includes("산재") || q.includes("재해") || q.includes("사고")) return "업무상 재해 인정에 대한 법적 검토";
-    return "질문 내용에 대한 법적 검토";
-  };
-
   const factPoints = generateFactPoints();
   const descriptionText = getDescriptionText();
-  const reviewTitle = generateTitle();
-  // '질문 분석 완료' 시각 (마운트 시 1회 고정)
-  const [analyzedAt] = useState<string>(() =>
-    new Date().toLocaleString("ko-KR", {
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    })
-  );
+  // 이해 요약(첫 포인트)과 되묻기 항목(나머지)을 분리
+  const understood = factPoints?.[0];
+  const asks = factPoints ? factPoints.slice(1) : [];
 
   const handleSuggestedQuestionClick = (question: string) => {
     if (isSubmitting) return;
@@ -116,101 +98,91 @@ export function HumanFeedbackRequest({
   };
 
   return (
-    <div className="my-6 space-y-4">
-      {/* 1. 마스코트 + 인사 버블 (라이트 퍼플) */}
+    <div className="my-6 space-y-3">
+      {/* 어시스턴트 '되묻기' 버블 — 최종 답변이 아니라 '추가 질문'으로 읽히도록 대화체 구성 */}
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden ring-2 ring-indigo-100 dark:ring-indigo-900/40 bg-indigo-50">
           <img src={characterImg} alt="노무도우미" className="w-full h-full object-cover" />
         </div>
-        <div className="max-w-[680px] rounded-2xl rounded-tl-sm bg-blue-150 dark:bg-indigo-950/30 px-4 py-3">
-          <p className="text-sm text-foreground leading-relaxed" style={{ wordBreak: "keep-all" }}>
-            노무도우미에 문의해주셔서 감사합니다.
-            <br />
-            질문하신 내용이 아래와 같다면 '계속 진행하기' 버튼을, 아니면 추천 질문에서 선택해 주세요.
-          </p>
+
+        <div
+          className="max-w-[680px] rounded-2xl rounded-tl-sm bg-blue-150 dark:bg-indigo-950/30 px-5 py-4 space-y-3.5"
+          style={{ wordBreak: "keep-all" }}
+        >
+          {/* 리드: 아직 답변이 아님을 분명히 */}
+          <div className="flex items-start gap-2">
+            <HelpCircle className="w-[18px] h-[18px] text-primary flex-shrink-0 mt-[1px]" />
+            <p className="text-sm font-bold text-foreground leading-relaxed">
+              더 정확한 답변을 위해, 답변 전에 몇 가지만 확인할게요.
+            </p>
+          </div>
+
+          {factPoints ? (
+            <>
+              {/* 이해한 내용 요약 */}
+              {understood && (
+                <p className="text-sm text-foreground/90 leading-relaxed">
+                  <span className="font-semibold">이렇게 이해했어요</span> — {understood}
+                </p>
+              )}
+
+              {/* 되묻기: 알려주면 좋은 것 */}
+              {asks.length > 0 && (
+                <div className="rounded-xl bg-card/70 px-3.5 py-3">
+                  <p className="text-[13px] font-bold text-foreground mb-2">
+                    아래를 알려주시면 더 정확히 답변드릴 수 있어요
+                  </p>
+                  <ul className="space-y-1.5">
+                    {asks.map((point, index) => (
+                      <li key={index} className="flex items-start gap-2 text-[13px] text-foreground/85 leading-relaxed">
+                        <span className="mt-[7px] w-1 h-1 rounded-full bg-primary flex-shrink-0" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 선택 안내 */}
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                이대로 답변을 받으시거나, 위 내용을 더해 질문을 다듬어 주세요.
+              </p>
+            </>
+          ) : (
+            descriptionText && (
+              <p className="text-sm text-foreground/90 leading-relaxed">{descriptionText}</p>
+            )
+          )}
         </div>
       </div>
 
-      {/* 2. 질문 분석 완료 카드 (아이콘 + 타임스탬프) */}
-      {factPoints && (
-        <div className="bg-card border border-border rounded-2xl shadow-sm px-5 py-4">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="w-4 h-4 text-primary" />
-            <span className="text-sm font-bold text-foreground">질문 분석 완료</span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1 pl-6">{analyzedAt}</p>
-        </div>
-      )}
-
-      {/* 3. 제목 + 사실관계 (언박스, insufficient 전용) */}
-      {factPoints && (
-        <div>
-          <h3 className="text-base font-bold text-foreground mb-4" style={{ wordBreak: "keep-all" }}>
-            {reviewTitle}
-          </h3>
-          <div className="flex items-center gap-1.5 mb-2.5">
-            <Search className="w-4 h-4 text-primary" />
-            <span className="text-[15px] font-bold text-foreground">사실관계</span>
-          </div>
-          <ol
-            className="space-y-2 text-sm text-muted-foreground pl-0.5"
-            style={{ wordBreak: "keep-all", overflowWrap: "break-word" }}
-          >
-            {factPoints.map((point, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="font-semibold text-foreground/70 flex-shrink-0 tabular-nums">
-                  {index + 1}.
-                </span>
-                <span className="leading-relaxed">{point}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-
-      {/* 설명 텍스트 (invalid / inappropriate 전용) */}
-      {!factPoints && descriptionText && (
-        <p className="text-sm text-muted-foreground" style={{ wordBreak: "keep-all" }}>
-          {descriptionText}
-        </p>
-      )}
-
-      {/* 4. 하단 액션 바 (안내문 좌 · 버튼 우) */}
-      <div className="border-t border-border pt-4 flex items-center justify-between gap-3 flex-wrap">
-        {factPoints ? (
-          <p className="text-sm text-muted-foreground" style={{ wordBreak: "keep-all" }}>
-            위 내용으로 계속 진행할까요, 아니면 질문을 더 구체적으로 다듬을까요?
-          </p>
-        ) : (
-          <span />
-        )}
-        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
-          <button
-            onClick={handleEditQuestion}
-            disabled={isSubmitting}
-            className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ wordBreak: "keep-all" }}
-          >
-            질문 수정
-          </button>
-          <button
-            onClick={handleContinue}
-            disabled={isSubmitting}
-            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ wordBreak: "keep-all" }}
-          >
-            계속 진행하기
-          </button>
-        </div>
+      {/* 액션 — 되묻기에 대한 응답 (버블과 좌측 정렬) */}
+      <div className="flex items-center gap-2 pl-[52px] flex-wrap">
+        <button
+          onClick={handleContinue}
+          disabled={isSubmitting}
+          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ wordBreak: "keep-all" }}
+        >
+          {factPoints ? "이대로 답변 받기" : "다시 질문하기"}
+        </button>
+        <button
+          onClick={handleEditQuestion}
+          disabled={isSubmitting}
+          className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ wordBreak: "keep-all" }}
+        >
+          질문 다듬기
+        </button>
       </div>
 
       {/* 추천 질문 */}
       {suggestedQuestions.length > 0 && (
-        <div>
+        <div className="pl-[52px] pt-1">
           <div className="flex items-center gap-1.5 mb-2 px-1">
             <Search className="w-3.5 h-3.5 text-primary" />
             <p className="text-xs font-medium text-muted-foreground">
-              추천 질문으로 질문을 보강해보세요.
+              또는 추천 질문으로 더 구체적으로 물어보세요.
             </p>
           </div>
           <div className="space-y-2">
@@ -219,7 +191,7 @@ export function HumanFeedbackRequest({
                 key={index}
                 onClick={() => handleSuggestedQuestionClick(question)}
                 disabled={isSubmitting}
-                className="w-full text-left px-4 py-3.5 bg-blue-150 hover:opacity-90 rounded-xl transition-opacity text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full text-left px-4 py-3 bg-card border border-border hover:border-primary/40 hover:bg-muted/40 rounded-xl transition-colors text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ wordBreak: "keep-all", overflowWrap: "break-word" }}
               >
                 {question}

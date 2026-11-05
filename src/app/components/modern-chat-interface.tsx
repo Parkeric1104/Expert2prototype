@@ -1601,7 +1601,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
   const getPlaceholder = (): string => {
     if (isHistoryView) return "저장된 상담 이력입니다. 새 질문은 '새 채팅'에서 진행해 주세요.";
     if (chatEnded) return "답변이 제한되어 상담이 종료되었습니다.";
-    if (feedbackPending && !feedbackEditMode) return "계속 진행하기 또는 질문 수정을 선택해 주세요.";
+    if (feedbackPending && !feedbackEditMode) return "'이대로 답변 받기' 또는 '질문 다듬기'를 선택해 주세요.";
     if (isDebateInProgress) return "AI 상세의견 진행 중...";
     if (isStreaming) return "답변 출력 중...";
     if (isAnswerLoading) return "답변 생성 중...";
