@@ -6,7 +6,7 @@ import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import { RagSourceSelect } from "@/app/components/rag-source-select";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
-  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Sparkles, Search, MoreHorizontal, AlertTriangle, Megaphone
+  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Search, MoreHorizontal, AlertTriangle, Megaphone
 } from "lucide-react";
 import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
@@ -64,9 +64,9 @@ const CURATION_SET = {
   title: "세무·노무 이슈 TOP 3",
   caption: "11월, 이번 달 꼭 챙길 이슈",
   items: [
-    { icon: FileText,        title: "성실신고확인 대상 판정·준비",   badge: "마감 수요 +28%",      question: "성실신고확인 대상 판정 기준과 준비해야 할 사항을 알려주세요.",            laws: ["소득세법 제70조의2"] },
-    { icon: ClipboardCheck,  title: "부가세 예정신고 체크리스트",     badge: "11/25 마감 · +34%",   question: "부가가치세 예정신고 일정과 준비 서류 체크리스트를 알려주세요.",            laws: ["부가가치세법 제48조"] },
-    { icon: Users,           title: "연말정산 대비 노무 이슈",       badge: "통상임금·연차수당 +30%", question: "연말정산을 앞두고 통상임금·연차수당 관련 노무 이슈를 정리해 주세요.",      laws: ["근로기준법 제2조", "근로기준법 제60조"] },
+    { icon: FileText,        title: "성실신고확인 대상 판정·준비",   sub: "신고 마감 전 수요 집중",  pct: "+28%", question: "성실신고확인 대상 판정 기준과 준비해야 할 사항을 알려주세요.",            laws: ["소득세법 제70조의2"] },
+    { icon: ClipboardCheck,  title: "부가세 예정신고 체크리스트",     sub: "11/25 마감",            pct: "+34%", question: "부가가치세 예정신고 일정과 준비 서류 체크리스트를 알려주세요.",            laws: ["부가가치세법 제48조"] },
+    { icon: Users,           title: "연말정산 대비 노무 이슈",       sub: "통상임금·연차수당",       pct: "+30%", question: "연말정산을 앞두고 통상임금·연차수당 관련 노무 이슈를 정리해 주세요.",      laws: ["근로기준법 제2조", "근로기준법 제60조"] },
   ],
 };
 
@@ -293,17 +293,17 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
         {/* 인삿말+입력 그룹 — 기본 PC웹(28px=섹션 간격), 모바일만 촘촘히(16px) */}
         <div className="flex flex-col gap-7 max-sm:gap-4">
 
-        {/* 인삿말(좌) + 캐릭터(우) — 디자인 정합(좌측 정렬, 캐릭터 우측) */}
-        <div className="w-full flex items-start justify-between gap-4 max-sm:gap-3">
-          <div className="space-y-1.5">
-            <p className="text-[22px] max-sm:text-lg leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
-              안녕하세요, <span className="font-bold">세법/노무도우미</span> 입니다.
+        {/* 인삿말(좌) + 캐릭터(우) — 토스식 압축(굵은 한 줄 + 보조설명) */}
+        <div className="w-full flex items-center justify-between gap-4 max-sm:gap-3">
+          <div>
+            <p className="text-[24px] max-sm:text-xl font-extrabold tracking-tight text-foreground" style={{ wordBreak: "keep-all" }}>
+              안녕하세요 👋
             </p>
-            <p className="text-[22px] max-sm:text-lg leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
-              복잡하고 까다로운 세법과 노무 문제, 무엇이든 물어보세요.
+            <p className="text-sm max-sm:text-[13px] text-muted-foreground mt-1.5" style={{ wordBreak: "keep-all" }}>
+              복잡한 세법·노무 문제, 무엇이든 물어보세요.
             </p>
           </div>
-          <div className="w-[76px] h-[76px] max-sm:w-14 max-sm:h-14 flex-shrink-0 overflow-hidden">
+          <div className="w-[64px] h-[64px] max-sm:w-12 max-sm:h-12 flex-shrink-0 overflow-hidden">
             <img src={characterImg} alt="세법/노무도우미" className="w-full h-full object-contain" />
           </div>
         </div>
@@ -498,136 +498,124 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
           </div>
         )}
 
-        {/* ── 디스커버리: 이렇게 시작해보세요 (좌 큐레이션 / 우 추천질문 — 역할 분리로 경쟁 제거) ── */}
-        <div className="w-full flex flex-col gap-3">
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-bold text-foreground">이렇게 시작해보세요</span>
+        {/* ── 이번 달 이슈 (큐레이션 · 토스식 리스트 섹션) ── */}
+        <div className="w-full">
+          <div className="flex items-center mb-1">
+            <span className="text-[17px] font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
+              <Megaphone className="w-[18px] h-[18px] text-primary" />{CURATION_SET.caption}
+            </span>
+            <button className="ml-auto text-[13px] text-muted-foreground font-medium hover:text-foreground transition-colors">전체 보기 ›</button>
+          </div>
+          <div>
+            {CURATION_SET.items.map((it, i) => {
+              const Icon = it.icon;
+              return (
+                <button
+                  key={i}
+                  onClick={() => { track("curation_click", { title: it.title }); handlePromptClick(it.question, it.laws, "normal"); }}
+                  className="flex items-center gap-3.5 w-full py-3 px-1 text-left border-t border-border/50 first:border-t-0 hover:bg-muted/30 transition-colors group"
+                >
+                  <span className="w-10 h-10 rounded-xl bg-primary/8 text-primary flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-[18px] h-[18px]" />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[15px] font-semibold text-foreground truncate">{it.title}</span>
+                    <span className="block text-[13px] text-muted-foreground mt-0.5 truncate">{it.sub}</span>
+                  </span>
+                  <span className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-[13px] font-bold text-rose-500">{it.pct}</span>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── 분야별 자주 묻는 질문 (추천질문 · 토스식) ── */}
+        <div className="w-full">
+          <span className="text-[17px] font-extrabold tracking-tight text-foreground">분야별 자주 묻는 질문</span>
+
+          {/* 탭 (토스식 검정 언더라인) */}
+          <div className="flex items-center gap-5 border-b border-border/60 mt-2.5">
+            {HOME_TABS.map(tab => (
+              <button
+                key={tab}
+                onClick={() => handleSelectTab(tab)}
+                className={`pb-2.5 -mb-px text-[15px] border-b-2 transition-colors ${
+                  selectedTab === tab
+                    ? "font-bold text-foreground border-foreground"
+                    : "text-muted-foreground border-transparent hover:text-foreground"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          {/* 칩 (토스식 회색 pill) */}
+          <div className="flex gap-2 flex-wrap mt-3.5">
+            {TAB_CHIPS[selectedTab].map(cat => (
+              <button
+                key={cat}
+                onClick={() => handleCategoryChange(cat)}
+                className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all ${
+                  selectedCategory === cat
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground/70 hover:bg-muted/70"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
 
-            {/* 큐레이션 — 지금 챙길 이슈 (BO 운영 콘텐츠 CUR · 전면 노출→클릭→질문 전환) */}
-            <div className="rounded-2xl border border-primary/15 bg-card overflow-hidden">
-              <div className="flex items-center gap-1.5 px-4 pt-3.5 pb-2.5 text-[13px] font-bold text-foreground">
-                <Megaphone className="w-3.5 h-3.5 text-primary" />{CURATION_SET.caption}
-                <span className="ml-auto text-[10.5px] font-extrabold text-white bg-primary rounded-full px-2 py-0.5">지금 챙길 것</span>
-              </div>
-              <div className="px-2 pb-2 divide-y divide-border/50">
-                {CURATION_SET.items.map((it, i) => {
-                  const Icon = it.icon;
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => { track("curation_click", { title: it.title }); handlePromptClick(it.question, it.laws, "normal"); }}
-                      className="flex items-center gap-3 w-full px-2 py-2.5 rounded-lg hover:bg-muted/40 transition-colors text-left group"
-                    >
-                      <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-3.5 h-3.5" />
-                      </span>
-                      <span className="flex-1 min-w-0">
-                        <span className="block text-[13px] font-semibold text-foreground truncate">{it.title}</span>
-                        <span className="block text-[10.5px] font-semibold text-amber-600 mt-0.5">{it.badge}</span>
-                      </span>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary flex-shrink-0 transition-colors" />
-                    </button>
-                  );
-                })}
-              </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-4 w-fit mt-3 px-3 py-1 rounded-full bg-indigo-200/40">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  aria-label={`${page}페이지`}
+                  className={`text-[12px] font-medium transition-colors ${
+                    currentPage === page ? "text-primary font-semibold" : "text-muted-foreground/60 hover:text-muted-foreground"
+                  }`}
+                >
+                  • {page}
+                </button>
+              ))}
             </div>
+          )}
 
-            {/* 추천질문 — 분야별 자주 묻는 질문 (상시 탐색) */}
-            <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-              <div className="flex items-center gap-1.5 px-4 pt-3.5 pb-2 text-[13px] font-bold text-foreground">
-                분야별 자주 묻는 질문
-                <span className="ml-auto text-[10.5px] font-bold text-muted-foreground bg-muted rounded-full px-2 py-0.5">둘러보기</span>
-              </div>
-
-              {/* 탭 */}
-              <div className="flex items-center gap-4 px-4 border-b border-border/60">
-                {HOME_TABS.map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => handleSelectTab(tab)}
-                    className={`pb-2 -mb-px text-[13px] border-b-2 transition-colors ${
-                      selectedTab === tab
-                        ? "font-bold text-foreground border-primary"
-                        : "text-muted-foreground border-transparent hover:text-foreground"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-
-              {/* 하위 카테고리 칩 */}
-              <div className="flex gap-1.5 flex-wrap px-4 pt-3">
-                {TAB_CHIPS[selectedTab].map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => handleCategoryChange(cat)}
-                    className={`px-3 py-1 rounded-full text-[11.5px] font-medium transition-all ${
-                      selectedCategory === cat
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-foreground border border-border/60 hover:border-primary/40"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex items-center gap-4 mx-4 mt-2 px-3 py-1 rounded-full bg-indigo-200/40">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      aria-label={`${page}페이지`}
-                      className={`text-[11px] font-medium transition-colors ${
-                        currentPage === page
-                          ? "text-primary font-semibold"
-                          : "text-muted-foreground/60 hover:text-muted-foreground"
-                      }`}
-                    >
-                      • {page}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* 질문 목록 */}
-              <div className="flex flex-col px-2 pb-2 pt-1">
-                {paginatedPrompts.map((prompt, idx) => {
-                  const detailedSuffix = " (상세답변)";
-                  const isDetailed = prompt.text.endsWith(detailedSuffix);
-                  const displayText = isDetailed ? prompt.text.slice(0, -detailedSuffix.length) : prompt.text;
-                  const processLabel = prompt.contextType
-                    ? `${prompt.questionType === "detailed" ? "상세답변" : "간단답변"} - ${prompt.contextType === "single" ? "단일맥락" : "다중맥락"}`
-                    : undefined;
-                  return (
-                    <button
-                      key={`${selectedCategory}-${currentPage}-${idx}`}
-                      onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType, prompt.contextType)}
-                      className="flex items-center gap-2.5 w-full px-2 py-2.5 rounded-lg hover:bg-muted/40 transition-colors text-left group"
-                    >
-                      <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                      <span className="flex-1 text-[13px] text-foreground leading-snug">
-                        {displayText}
-                        {isDetailed && !processLabel && (
-                          <span className="ml-1 text-[10.5px] font-medium text-primary/60 align-middle">(상세답변)</span>
-                        )}
-                        {processLabel && (
-                          <span className="ml-1 text-[10.5px] font-medium text-primary/60 align-middle">({processLabel})</span>
-                        )}
-                      </span>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0 transition-colors" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
+          {/* 질문 목록 (토스식 리스트) */}
+          <div className="mt-1.5">
+            {paginatedPrompts.map((prompt, idx) => {
+              const detailedSuffix = " (상세답변)";
+              const isDetailed = prompt.text.endsWith(detailedSuffix);
+              const displayText = isDetailed ? prompt.text.slice(0, -detailedSuffix.length) : prompt.text;
+              const processLabel = prompt.contextType
+                ? `${prompt.questionType === "detailed" ? "상세답변" : "간단답변"} - ${prompt.contextType === "single" ? "단일맥락" : "다중맥락"}`
+                : undefined;
+              return (
+                <button
+                  key={`${selectedCategory}-${currentPage}-${idx}`}
+                  onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType, prompt.contextType)}
+                  className="flex items-center gap-3 w-full py-3 px-1 text-left border-t border-border/50 first:border-t-0 hover:bg-muted/30 transition-colors group"
+                >
+                  <Search className="w-[15px] h-[15px] text-muted-foreground/70 flex-shrink-0" />
+                  <span className="flex-1 text-[14.5px] font-medium text-foreground leading-snug">
+                    {displayText}
+                    {isDetailed && !processLabel && (
+                      <span className="ml-1.5 text-[12px] font-medium text-primary/60 align-middle">(상세답변)</span>
+                    )}
+                    {processLabel && (
+                      <span className="ml-1.5 text-[12px] font-medium text-primary/60 align-middle">({processLabel})</span>
+                    )}
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary flex-shrink-0 transition-colors" />
+                </button>
+              );
+            })}
           </div>
         </div>
 
