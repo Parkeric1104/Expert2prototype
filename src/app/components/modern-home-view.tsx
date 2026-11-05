@@ -91,12 +91,30 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   const showKlleonToggle = typeof window === "undefined" ? true : new URLSearchParams(window.location.search).get("klleon") !== "off";
   const [klleonRag, setKlleonRag] = useState(false); // 기본 OFF(내부 RAG) — 영업 확정 시 디폴트 조정
 
-  // 탭 전환 시 해당 탭의 첫 칩으로 리셋
+  // 2depth 칩 가로 스크롤 — 한 줄 넘칠 때 좌/우 방향 버튼 노출
+  const chipScrollRef = useRef<HTMLDivElement>(null);
+  const [chipArrows, setChipArrows] = useState({ left: false, right: false });
+  const updateChipArrows = () => {
+    const el = chipScrollRef.current;
+    if (!el) return;
+    setChipArrows({ left: el.scrollLeft > 2, right: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 });
+  };
+  const scrollChips = (dir: 1 | -1) => chipScrollRef.current?.scrollBy({ left: dir * 180, behavior: "smooth" });
+
+  // 탭 전환 시 해당 탭의 첫 칩으로 리셋 + 칩 스크롤 처음으로
   const handleSelectTab = (tab: string) => {
     setSelectedTab(tab);
     setSelectedCategory(TAB_CHIPS[tab][0]);
     setCurrentPage(1);
+    if (chipScrollRef.current) chipScrollRef.current.scrollLeft = 0;
   };
+
+  // 칩 목록·창 크기 변화 시 방향 버튼 갱신
+  useEffect(() => {
+    updateChipArrows();
+    window.addEventListener("resize", updateChipArrows);
+    return () => window.removeEventListener("resize", updateChipArrows);
+  }, [selectedTab]);
 
   // 미등록 순간 유도 넛지 (이력 기반): 사규 관련 노무 세션 발생 + '다시 안 보기' 안 함 → 노출
   const [showPolicyNudge, setShowPolicyNudge] = useState<boolean>(
@@ -531,21 +549,51 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
               ))}
             </div>
 
-            {/* 칩 (2depth 카테고리) — 한 줄 가로 스크롤(줄바꿈 X·스크롤바 숨김) */}
-            <div className="flex gap-1.5 mt-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {TAB_CHIPS[selectedTab].map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => handleCategoryChange(cat)}
-                  className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    selectedCategory === cat
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground/70 hover:bg-muted/70"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+            {/* 칩 (2depth 카테고리) — 한 줄 가로 스크롤 + 넘칠 때만 좌/우 방향 버튼 */}
+            <div className="relative mt-3">
+              {chipArrows.left && (
+                <>
+                  <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-9 bg-gradient-to-r from-card to-transparent z-10" />
+                  <button
+                    onClick={() => scrollChips(-1)}
+                    aria-label="이전 카테고리"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+              <div
+                ref={chipScrollRef}
+                onScroll={updateChipArrows}
+                className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {TAB_CHIPS[selectedTab].map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => handleCategoryChange(cat)}
+                    className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      selectedCategory === cat
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground/70 hover:bg-muted/70"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              {chipArrows.right && (
+                <>
+                  <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-9 bg-gradient-to-l from-card to-transparent z-10" />
+                  <button
+                    onClick={() => scrollChips(1)}
+                    aria-label="다음 카테고리"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-card border border-border shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
             </div>
 
             {totalPages > 1 && (
