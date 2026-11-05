@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { track } from "@/app/utils/track";
-import { getServiceVersion } from "@/app/data/service-content";
+import { getServiceVersion, getNotices } from "@/app/data/service-content";
 import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import { RagSourceSelect } from "@/app/components/rag-source-select";
 import {
   Paperclip, X, FileText, Info, ChevronDown, ArrowUp, ArrowRight,
-  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Search, MoreHorizontal, AlertTriangle, Megaphone
+  Plus, Check, Zap, FileEdit, ChevronLeft, ChevronRight, Settings2, Search, MoreHorizontal, AlertTriangle, Megaphone, ClipboardList
 } from "lucide-react";
 import {
   Scale, Calendar, Clock, Shield, Users, Briefcase,
@@ -28,6 +28,7 @@ interface ModernHomeViewProps {
   onOpenPolicyManagement?: () => void; // 미등록 넛지 배너 → 정책 문서 관리 진입
   onOpenCalculator?: () => void; // 펑션 메뉴 → 노무 계산기 진입
   onOpenNoticePopup?: () => void; // 펑션 메뉴 → 공지 팝업(프로토타입 확인용)
+  onOpenNotices?: () => void; // 홈 게시판 → 공지사항 전체(종🔔과 동일 소스)
   onRegisterFileAsPolicy?: (file: { name: string; size: number }) => void; // 파일 오류 팝업 '등록하기' → 노무정책문서관리 등록
 }
 
@@ -59,18 +60,25 @@ const ITEMS_PER_PAGE = 4;
 
 // 큐레이션(시즌 이슈) — BO 운영 콘텐츠(CUR). 공지와 달리 '전면 노출→클릭→질문 프리필'로 유입·전환 유도.
 // 단일 활성 세트(기간 기반 전환). 각 항목 클릭 시 추천질문과 동일하게 질문을 바로 시작한다.
+// deadline: 마감일(YYYY-MM-DD) — D-day 태그는 오늘 기준 자동 계산(ddayLabel).
 const CURATION_SET = {
-  tag: "THIS MONTH · 큐레이션",
-  title: "세무·노무 이슈 TOP 3",
-  caption: "11월, 이번 달 꼭 챙길 이슈",
+  caption: "이번 달 이슈",
   items: [
-    { icon: FileText,        title: "성실신고확인 대상 판정·준비",   sub: "신고 마감 전 수요 집중",  pct: "+28%", question: "성실신고확인 대상 판정 기준과 준비해야 할 사항을 알려주세요.",            laws: ["소득세법 제70조의2"] },
-    { icon: ClipboardCheck,  title: "부가세 예정신고 체크리스트",     sub: "11/25 마감",            pct: "+34%", question: "부가가치세 예정신고 일정과 준비 서류 체크리스트를 알려주세요.",            laws: ["부가가치세법 제48조"] },
-    { icon: Users,           title: "연말정산 대비 노무 이슈",       sub: "통상임금·연차수당",       pct: "+30%", question: "연말정산을 앞두고 통상임금·연차수당 관련 노무 이슈를 정리해 주세요.",      laws: ["근로기준법 제2조", "근로기준법 제60조"] },
+    { icon: ClipboardCheck,  title: "부가세 예정신고 체크리스트",   sub: "11/25 마감",     deadline: "2026-11-25", question: "부가가치세 예정신고 일정과 준비 서류 체크리스트를 알려주세요.",            laws: ["부가가치세법 제48조"] },
+    { icon: FileText,        title: "성실신고확인 대상 판정·준비", sub: "신고 전 준비",   deadline: "2026-12-20", question: "성실신고확인 대상 판정 기준과 준비해야 할 사항을 알려주세요.",            laws: ["소득세법 제70조의2"] },
+    { icon: Users,           title: "연말정산 대비 노무 이슈",     sub: "통상임금·연차수당", deadline: "2027-01-15", question: "연말정산을 앞두고 통상임금·연차수당 관련 노무 이슈를 정리해 주세요.",      laws: ["근로기준법 제2조", "근로기준법 제60조"] },
   ],
 };
 
-export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator, onOpenNoticePopup, onRegisterFileAsPolicy }: ModernHomeViewProps) {
+// 마감일 → D-day 라벨(오늘 기준). 당일=D-DAY, 지난 건 숨김 처리는 호출부에서.
+function ddayLabel(deadline: string): string {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const due = new Date(deadline + "T00:00:00");
+  const diff = Math.round((due.getTime() - today.getTime()) / 86400000);
+  return diff <= 0 ? "D-DAY" : `D-${diff}`;
+}
+
+export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator, onOpenNoticePopup, onOpenNotices, onRegisterFileAsPolicy }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
@@ -103,6 +111,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   );
 
   const svcVersion = getServiceVersion(); // #3 버전 정보(푸터 표기)
+  const boardNotices = getNotices().slice(0, 2); // 홈 게시판 — 종🔔과 동일 소스(최신 2건)
 
   // 퍼널 S2: 홈 넛지(정책 등록 유도) 노출 시 1회 집계
   useEffect(() => {
@@ -284,26 +293,26 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
         </div>
       )}
 
-      {/* 스크롤 영역 — 기본 PC웹(좌우 36px), 모바일만 16px */}
-      <div className="flex-1 min-h-0 w-full flex items-start justify-center px-9 max-sm:px-4 overflow-y-auto">
+      {/* 스크롤 영역 — 콘텐츠 상하·좌우 중앙정렬(팝업 1020×720 기준), 모바일은 상단정렬 */}
+      <div className="flex-1 min-h-0 w-full flex items-center max-sm:items-start justify-center px-9 max-sm:px-4 overflow-y-auto">
 
-      {/* 메인 콘텐츠 — 기본 PC웹, 모바일만 상단여백·섹션간격 축소 */}
-      <div className="w-full max-w-[760px] flex flex-col items-stretch gap-7 max-sm:gap-6 relative z-10 pt-12 max-sm:pt-6 pb-6">
+      {/* 메인 콘텐츠 — 중앙정렬 블록(최대폭 824) */}
+      <div className="w-full max-w-[824px] flex flex-col items-stretch gap-7 max-sm:gap-6 relative z-10 py-8 max-sm:pt-6 pb-6">
 
         {/* 인삿말+입력 그룹 — 기본 PC웹(28px=섹션 간격), 모바일만 촘촘히(16px) */}
         <div className="flex flex-col gap-7 max-sm:gap-4">
 
-        {/* 인삿말(좌) + 캐릭터(우) — 토스식 압축(굵은 한 줄 + 보조설명) */}
-        <div className="w-full flex items-center justify-between gap-4 max-sm:gap-3">
-          <div>
-            <p className="text-[24px] max-sm:text-xl font-extrabold tracking-tight text-foreground" style={{ wordBreak: "keep-all" }}>
-              안녕하세요 👋
+        {/* 인삿말(좌) + 캐릭터(우) — 디자인 정합(좌측 정렬, 캐릭터 우측) */}
+        <div className="w-full flex items-start justify-between gap-4 max-sm:gap-3">
+          <div className="space-y-1.5">
+            <p className="text-[22px] max-sm:text-lg leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
+              안녕하세요, <span className="font-bold">세법/노무도우미</span> 입니다.
             </p>
-            <p className="text-sm max-sm:text-[13px] text-muted-foreground mt-1.5" style={{ wordBreak: "keep-all" }}>
-              복잡한 세법·노무 문제, 무엇이든 물어보세요.
+            <p className="text-[22px] max-sm:text-lg leading-snug text-foreground" style={{ wordBreak: "keep-all" }}>
+              복잡하고 까다로운 세법과 노무 문제, 무엇이든 물어보세요.
             </p>
           </div>
-          <div className="w-[64px] h-[64px] max-sm:w-12 max-sm:h-12 flex-shrink-0 overflow-hidden">
+          <div className="w-[76px] h-[76px] max-sm:w-14 max-sm:h-14 flex-shrink-0 overflow-hidden">
             <img src={characterImg} alt="세법/노무도우미" className="w-full h-full object-contain" />
           </div>
         </div>
@@ -498,125 +507,151 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
           </div>
         )}
 
-        {/* ── 이번 달 이슈 (큐레이션 · 토스식 리스트 섹션) ── */}
-        <div className="w-full">
-          <div className="flex items-center mb-1">
-            <span className="text-[17px] font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
-              <Megaphone className="w-[18px] h-[18px] text-primary" />{CURATION_SET.caption}
-            </span>
-            <button className="ml-auto text-[13px] text-muted-foreground font-medium hover:text-foreground transition-colors">전체 보기 ›</button>
-          </div>
-          <div>
-            {CURATION_SET.items.map((it, i) => {
-              const Icon = it.icon;
-              return (
+        {/* ── 디스커버리 2단: 좌 추천질문 / 우 큐레이션+게시판 (흰 카드) ── */}
+        <div className="grid grid-cols-1 md:grid-cols-[1.36fr_1fr] gap-4 items-stretch">
+
+          {/* 좌: 분야별 자주 묻는 질문 */}
+          <div className="bg-card border border-border/60 rounded-2xl shadow-sm p-4 flex flex-col">
+            <span className="text-sm font-extrabold tracking-tight text-foreground">분야별 자주 묻는 질문</span>
+
+            {/* 탭 (검정 언더라인) */}
+            <div className="flex items-center gap-4 border-b border-border/60 mt-2.5">
+              {HOME_TABS.map(tab => (
                 <button
-                  key={i}
-                  onClick={() => { track("curation_click", { title: it.title }); handlePromptClick(it.question, it.laws, "normal"); }}
-                  className="flex items-center gap-3.5 w-full py-3 px-1 text-left border-t border-border/50 first:border-t-0 hover:bg-muted/30 transition-colors group"
-                >
-                  <span className="w-10 h-10 rounded-xl bg-primary/8 text-primary flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-[18px] h-[18px]" />
-                  </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-[15px] font-semibold text-foreground truncate">{it.title}</span>
-                    <span className="block text-[13px] text-muted-foreground mt-0.5 truncate">{it.sub}</span>
-                  </span>
-                  <span className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-[13px] font-bold text-rose-500">{it.pct}</span>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── 분야별 자주 묻는 질문 (추천질문 · 토스식) ── */}
-        <div className="w-full">
-          <span className="text-[17px] font-extrabold tracking-tight text-foreground">분야별 자주 묻는 질문</span>
-
-          {/* 탭 (토스식 검정 언더라인) */}
-          <div className="flex items-center gap-5 border-b border-border/60 mt-2.5">
-            {HOME_TABS.map(tab => (
-              <button
-                key={tab}
-                onClick={() => handleSelectTab(tab)}
-                className={`pb-2.5 -mb-px text-[15px] border-b-2 transition-colors ${
-                  selectedTab === tab
-                    ? "font-bold text-foreground border-foreground"
-                    : "text-muted-foreground border-transparent hover:text-foreground"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* 칩 (토스식 회색 pill) */}
-          <div className="flex gap-2 flex-wrap mt-3.5">
-            {TAB_CHIPS[selectedTab].map(cat => (
-              <button
-                key={cat}
-                onClick={() => handleCategoryChange(cat)}
-                className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all ${
-                  selectedCategory === cat
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground/70 hover:bg-muted/70"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="flex items-center gap-4 w-fit mt-3 px-3 py-1 rounded-full bg-indigo-200/40">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  aria-label={`${page}페이지`}
-                  className={`text-[12px] font-medium transition-colors ${
-                    currentPage === page ? "text-primary font-semibold" : "text-muted-foreground/60 hover:text-muted-foreground"
+                  key={tab}
+                  onClick={() => handleSelectTab(tab)}
+                  className={`pb-2 -mb-px text-sm border-b-2 transition-colors ${
+                    selectedTab === tab
+                      ? "font-bold text-foreground border-foreground"
+                      : "text-muted-foreground border-transparent hover:text-foreground"
                   }`}
                 >
-                  • {page}
+                  {tab}
                 </button>
               ))}
             </div>
-          )}
 
-          {/* 질문 목록 (토스식 리스트) */}
-          <div className="mt-1.5">
-            {paginatedPrompts.map((prompt, idx) => {
-              const detailedSuffix = " (상세답변)";
-              const isDetailed = prompt.text.endsWith(detailedSuffix);
-              const displayText = isDetailed ? prompt.text.slice(0, -detailedSuffix.length) : prompt.text;
-              const processLabel = prompt.contextType
-                ? `${prompt.questionType === "detailed" ? "상세답변" : "간단답변"} - ${prompt.contextType === "single" ? "단일맥락" : "다중맥락"}`
-                : undefined;
-              return (
+            {/* 칩 (회색 pill) */}
+            <div className="flex gap-1.5 flex-wrap mt-3">
+              {TAB_CHIPS[selectedTab].map(cat => (
                 <button
-                  key={`${selectedCategory}-${currentPage}-${idx}`}
-                  onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType, prompt.contextType)}
-                  className="flex items-center gap-3 w-full py-3 px-1 text-left border-t border-border/50 first:border-t-0 hover:bg-muted/30 transition-colors group"
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    selectedCategory === cat
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground/70 hover:bg-muted/70"
+                  }`}
                 >
-                  <Search className="w-[15px] h-[15px] text-muted-foreground/70 flex-shrink-0" />
-                  <span className="flex-1 text-[14.5px] font-medium text-foreground leading-snug">
-                    {displayText}
-                    {isDetailed && !processLabel && (
-                      <span className="ml-1.5 text-[12px] font-medium text-primary/60 align-middle">(상세답변)</span>
-                    )}
-                    {processLabel && (
-                      <span className="ml-1.5 text-[12px] font-medium text-primary/60 align-middle">({processLabel})</span>
-                    )}
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary flex-shrink-0 transition-colors" />
+                  {cat}
                 </button>
-              );
-            })}
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-4 w-fit mt-2.5 px-3 py-1 rounded-full bg-indigo-200/40">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    aria-label={`${page}페이지`}
+                    className={`text-[11px] font-medium transition-colors ${
+                      currentPage === page ? "text-primary font-semibold" : "text-muted-foreground/60 hover:text-muted-foreground"
+                    }`}
+                  >
+                    • {page}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 질문 목록 */}
+            <div className="mt-1">
+              {paginatedPrompts.map((prompt, idx) => {
+                const detailedSuffix = " (상세답변)";
+                const isDetailed = prompt.text.endsWith(detailedSuffix);
+                const displayText = isDetailed ? prompt.text.slice(0, -detailedSuffix.length) : prompt.text;
+                const processLabel = prompt.contextType
+                  ? `${prompt.questionType === "detailed" ? "상세답변" : "간단답변"} - ${prompt.contextType === "single" ? "단일맥락" : "다중맥락"}`
+                  : undefined;
+                return (
+                  <button
+                    key={`${selectedCategory}-${currentPage}-${idx}`}
+                    onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType, prompt.contextType)}
+                    className="flex items-center gap-2.5 w-full py-2.5 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors group"
+                  >
+                    <Search className="w-3.5 h-3.5 text-muted-foreground/70 flex-shrink-0" />
+                    <span className="flex-1 min-w-0 text-[13.5px] font-medium text-foreground/90 leading-snug truncate">
+                      {displayText}
+                      {isDetailed && !processLabel && (
+                        <span className="ml-1 text-[11.5px] font-medium text-primary/60 align-middle">(상세답변)</span>
+                      )}
+                      {processLabel && (
+                        <span className="ml-1 text-[11.5px] font-medium text-primary/60 align-middle">({processLabel})</span>
+                      )}
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary flex-shrink-0 transition-colors" />
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          {/* 우: 큐레이션(이번 달 이슈) + 게시판(공지) */}
+          <div className="bg-card border border-border/60 rounded-2xl shadow-sm p-4 flex flex-col">
+            {/* 큐레이션 — BO 운영 콘텐츠(CUR) · 클릭→질문 전환 */}
+            <span className="text-sm font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
+              <Megaphone className="w-4 h-4 text-primary" />{CURATION_SET.caption}
+            </span>
+            <div className="mt-1.5">
+              {CURATION_SET.items.slice(0, 2).map((it, i) => {
+                const Icon = it.icon;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => { track("curation_click", { title: it.title }); handlePromptClick(it.question, it.laws, "normal"); }}
+                    className="flex items-center gap-2.5 w-full py-2.5 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors"
+                  >
+                    <span className="w-9 h-9 rounded-[10px] bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-[17px] h-[17px]" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[13px] font-bold text-foreground truncate">{it.title}</span>
+                      <span className="block text-[11px] text-muted-foreground mt-0.5 truncate">{it.sub}</span>
+                    </span>
+                    <span className="text-[11px] font-extrabold text-white bg-rose-500 rounded-md px-2 py-1 flex-shrink-0">{ddayLabel(it.deadline)}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 분할선 */}
+            <div className="h-px bg-border/60 my-3.5" />
+
+            {/* 게시판 — 기존 공지(종🔔)와 동일 소스 */}
+            <div className="flex items-center">
+              <span className="text-sm font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
+                <ClipboardList className="w-4 h-4 text-muted-foreground" />게시판
+              </span>
+              <button onClick={onOpenNotices} className="ml-auto text-xs text-muted-foreground font-medium hover:text-foreground transition-colors">더보기 ›</button>
+            </div>
+            <div className="mt-1.5">
+              {boardNotices.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={onOpenNotices}
+                  className="flex items-center gap-2 w-full py-2 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors"
+                >
+                  <span className={`text-[10px] font-extrabold rounded-md px-1.5 py-1 flex-shrink-0 ${n.type === "공지" ? "text-primary bg-primary/10" : "text-purple-600 bg-purple-500/10"}`}>
+                    {n.type === "공지" ? "공지" : n.type === "릴리즈노트" ? "릴리즈" : n.type}
+                  </span>
+                  <span className="flex-1 min-w-0 text-[12.5px] font-medium text-foreground/90 truncate">{n.title}</span>
+                  <span className="text-[11px] text-muted-foreground/70 flex-shrink-0">{n.date.slice(5).replace("-", ".")}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
         </div>
 
       </div>

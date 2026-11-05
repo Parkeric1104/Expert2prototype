@@ -451,6 +451,7 @@ export default function App() {
               onOpenPolicyManagement={() => handleOpenPolicyUpload("home_nudge")}
               onOpenCalculator={() => setCurrentView("calculator")}
               onOpenNoticePopup={() => setShowEmergency(true)}
+              onOpenNotices={() => setCurrentView("notice")}
               onRegisterFileAsPolicy={handleRegisterFileAsPolicy}
             />
           )}
