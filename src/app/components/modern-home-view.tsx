@@ -56,7 +56,6 @@ const TAB_CHIPS: Record<string, string[]> = {
   "세법": ["법인세", "부가가치세", "소득세", "연말정산"],
   "경로테스트": ["근로계약 경로질문"],
 };
-const ITEMS_PER_PAGE = 4;
 
 // 큐레이션(시즌 이슈) — BO 운영 콘텐츠(CUR). 공지와 달리 '전면 노출→클릭→질문 프리필'로 유입·전환 유도.
 // 단일 활성 세트(기간 기반 전환). 각 항목 클릭 시 추천질문과 동일하게 질문을 바로 시작한다.
@@ -84,7 +83,6 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   const [isDragging, setIsDragging]     = useState(false);
   const [selectedTab, setSelectedTab]   = useState("인사・노무");
   const [selectedCategory, setSelectedCategory] = useState("근로계약");
-  const [currentPage, setCurrentPage]   = useState(1);
   const [showAttachList, setShowAttachList] = useState(false); // 첨부 '더보기' 팝오버
   // 근복단 PE 요구사항(+add): 답변 소스 토글 — ON=클라이온 RAG / OFF=내부 RAG.
   // 운영·단독 서비스엔 미노출(프로파일 플래그로 제어). 프로토타입 검토용 기본 노출, ?klleon=off 로 숨김.
@@ -101,12 +99,15 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   };
   const scrollChips = (dir: 1 | -1) => chipScrollRef.current?.scrollBy({ left: dir * 180, behavior: "smooth" });
 
-  // 탭 전환 시 해당 탭의 첫 칩으로 리셋 + 칩 스크롤 처음으로
+  // 질문 목록 내부 스크롤(고정 높이) — 카테고리/탭 전환 시 맨 위로
+  const qScrollRef = useRef<HTMLDivElement>(null);
+
+  // 탭 전환 시 해당 탭의 첫 칩으로 리셋 + 칩/질문 스크롤 처음으로
   const handleSelectTab = (tab: string) => {
     setSelectedTab(tab);
     setSelectedCategory(TAB_CHIPS[tab][0]);
-    setCurrentPage(1);
     if (chipScrollRef.current) chipScrollRef.current.scrollLeft = 0;
+    if (qScrollRef.current) qScrollRef.current.scrollTop = 0;
   };
 
   // 칩 목록·창 크기 변화 시 방향 버튼 갱신
@@ -204,14 +205,9 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
     { text: "중도 입사자·퇴사자의 연말정산은 어떻게 처리하나요?",                                   questionType: "normal",   category: "연말정산",   laws: ["소득세법 제137조"] },
   ];
 
-  const filteredPrompts  = prompts.filter(p => p.category === selectedCategory);
-  const totalPages       = Math.ceil(filteredPrompts.length / ITEMS_PER_PAGE);
-  const paginatedPrompts = filteredPrompts.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const filteredPrompts  = prompts.filter(p => p.category === selectedCategory); // 고정 높이 내부 스크롤로 전량 노출
 
-  const handleCategoryChange = (cat: string) => { setSelectedCategory(cat); setCurrentPage(1); };
+  const handleCategoryChange = (cat: string) => { setSelectedCategory(cat); if (qScrollRef.current) qScrollRef.current.scrollTop = 0; };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -596,52 +592,44 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
               )}
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center gap-4 w-fit mt-2.5 px-3 py-1 rounded-full bg-indigo-200/40">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    aria-label={`${page}페이지`}
-                    className={`text-[11px] font-medium transition-colors ${
-                      currentPage === page ? "text-primary font-semibold" : "text-muted-foreground/60 hover:text-muted-foreground"
-                    }`}
-                  >
-                    • {page}
-                  </button>
-                ))}
+            {/* 질문 목록 — 고정 높이 내부 스크롤(3개 노출·초과분 스크롤) + 하단 페이드 */}
+            <div className="relative mt-1">
+              <div
+                ref={qScrollRef}
+                className="max-h-[150px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {filteredPrompts.map((prompt, idx) => {
+                  const detailedSuffix = " (상세답변)";
+                  const isDetailed = prompt.text.endsWith(detailedSuffix);
+                  const displayText = isDetailed ? prompt.text.slice(0, -detailedSuffix.length) : prompt.text;
+                  const processLabel = prompt.contextType
+                    ? `${prompt.questionType === "detailed" ? "상세답변" : "간단답변"} - ${prompt.contextType === "single" ? "단일맥락" : "다중맥락"}`
+                    : undefined;
+                  return (
+                    <button
+                      key={`${selectedCategory}-${idx}`}
+                      onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType, prompt.contextType)}
+                      className="flex items-center gap-2.5 w-full py-2.5 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors group"
+                    >
+                      <Search className="w-3.5 h-3.5 text-muted-foreground/70 flex-shrink-0" />
+                      <span className="flex-1 min-w-0 text-[13.5px] font-medium text-foreground/90 leading-snug truncate">
+                        {displayText}
+                        {isDetailed && !processLabel && (
+                          <span className="ml-1 text-[11.5px] font-medium text-primary/60 align-middle">(상세답변)</span>
+                        )}
+                        {processLabel && (
+                          <span className="ml-1 text-[11.5px] font-medium text-primary/60 align-middle">({processLabel})</span>
+                        )}
+                      </span>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary flex-shrink-0 transition-colors" />
+                    </button>
+                  );
+                })}
               </div>
-            )}
-
-            {/* 질문 목록 */}
-            <div className="mt-1">
-              {paginatedPrompts.map((prompt, idx) => {
-                const detailedSuffix = " (상세답변)";
-                const isDetailed = prompt.text.endsWith(detailedSuffix);
-                const displayText = isDetailed ? prompt.text.slice(0, -detailedSuffix.length) : prompt.text;
-                const processLabel = prompt.contextType
-                  ? `${prompt.questionType === "detailed" ? "상세답변" : "간단답변"} - ${prompt.contextType === "single" ? "단일맥락" : "다중맥락"}`
-                  : undefined;
-                return (
-                  <button
-                    key={`${selectedCategory}-${currentPage}-${idx}`}
-                    onClick={() => handlePromptClick(prompt.text, prompt.laws, prompt.questionType, prompt.contextType)}
-                    className="flex items-center gap-2.5 w-full py-2.5 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors group"
-                  >
-                    <Search className="w-3.5 h-3.5 text-muted-foreground/70 flex-shrink-0" />
-                    <span className="flex-1 min-w-0 text-[13.5px] font-medium text-foreground/90 leading-snug truncate">
-                      {displayText}
-                      {isDetailed && !processLabel && (
-                        <span className="ml-1 text-[11.5px] font-medium text-primary/60 align-middle">(상세답변)</span>
-                      )}
-                      {processLabel && (
-                        <span className="ml-1 text-[11.5px] font-medium text-primary/60 align-middle">({processLabel})</span>
-                      )}
-                    </span>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary flex-shrink-0 transition-colors" />
-                  </button>
-                );
-              })}
+              {/* 3개 초과 시 하단 페이드(더 있음 암시) */}
+              {filteredPrompts.length > 3 && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-card to-transparent" />
+              )}
             </div>
           </div>
 
