@@ -7,7 +7,8 @@ interface HumanFeedbackRequestProps {
   originalQuestion: string;
   onSubmitRevision: (revisedQuestion: string) => void;
   suggestedQuestions?: string[];
-  onQuestionSelect?: (question: string) => void; // 추천 질문 선택 시 입력창에 자동 입력
+  onQuestionSelect?: (question: string) => void; // 추천 질문 선택 시 입력창에 자동 입력(교체)
+  onAddContext?: () => void; // '맥락 추가하기' — 입력창을 비우고 추가 정보만 받음(원 질문 보존)
 }
 
 export function HumanFeedbackRequest({
@@ -16,6 +17,7 @@ export function HumanFeedbackRequest({
   onSubmitRevision,
   suggestedQuestions = [],
   onQuestionSelect,
+  onAddContext,
 }: HumanFeedbackRequestProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -87,8 +89,8 @@ export function HumanFeedbackRequest({
     onQuestionSelect?.(question);
   };
 
-  const handleEditQuestion = () => {
-    // 원본 질문을 입력창에 넣어 수정할 수 있도록
+  const handleRetype = () => {
+    // invalid/inappropriate: 원본 질문을 입력창에 넣어 다시 작성
     onQuestionSelect?.(originalQuestion);
   };
 
@@ -145,7 +147,7 @@ export function HumanFeedbackRequest({
 
               {/* 선택 안내 */}
               <p className="text-[13px] text-muted-foreground leading-relaxed">
-                이대로 답변을 받으시거나, 위 내용을 더해 질문을 다듬어 주세요.
+                이대로 답변을 받으시거나, 위 정보를 더해 주시면 더 정확히 답변드려요.
               </p>
             </>
           ) : (
@@ -158,22 +160,35 @@ export function HumanFeedbackRequest({
 
       {/* 액션 — 되묻기에 대한 응답 (버블과 좌측 정렬) */}
       <div className="flex items-center gap-2 pl-[52px] flex-wrap">
-        <button
-          onClick={handleContinue}
-          disabled={isSubmitting}
-          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ wordBreak: "keep-all" }}
-        >
-          {factPoints ? "이대로 답변 받기" : "다시 질문하기"}
-        </button>
-        <button
-          onClick={handleEditQuestion}
-          disabled={isSubmitting}
-          className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ wordBreak: "keep-all" }}
-        >
-          질문 다듬기
-        </button>
+        {factPoints ? (
+          <>
+            <button
+              onClick={handleContinue}
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ wordBreak: "keep-all" }}
+            >
+              이대로 답변 받기
+            </button>
+            <button
+              onClick={() => onAddContext?.()}
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-lg border border-primary/50 text-sm font-medium text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ wordBreak: "keep-all" }}
+            >
+              맥락 추가하기
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={handleRetype}
+            disabled={isSubmitting}
+            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ wordBreak: "keep-all" }}
+          >
+            질문 다시 입력하기
+          </button>
+        )}
       </div>
 
       {/* 추천 질문 */}

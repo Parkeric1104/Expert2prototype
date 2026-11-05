@@ -223,19 +223,33 @@ export function ModernChatInterface({
   const [isTyping, setIsTyping] = useState(false);
   // 가드레일 차단 시 채팅 종료 (재시도 불가)
   const [chatEnded, setChatEnded] = useState(false);
-  // 휴먼피드백 진행 중 입력영역 잠금 — '질문 수정'/추천질문 선택 시에만 편집 허용 (2026-07-06 개선)
+  // 휴먼피드백 진행 중 입력영역 잠금 — '맥락 추가'/추천질문 선택 시에만 편집 허용 (2026-07-06 개선)
   const [feedbackEditMode, setFeedbackEditMode] = useState(false);
+  // 맥락 추가 모드: true면 입력값을 '원 질문 교체'가 아니라 '원 질문 + 추가 맥락'으로 합쳐 답변 (2026-11-05)
+  const [feedbackContextMode, setFeedbackContextMode] = useState(false);
   const chatInputRef = useRef<HTMLInputElement>(null);
 
   // 휴먼피드백이 해소되면(진행/재질문) 편집 모드 초기화
   useEffect(() => {
-    if (!messages.some(m => m.needsFeedback)) setFeedbackEditMode(false);
+    if (!messages.some(m => m.needsFeedback)) {
+      setFeedbackEditMode(false);
+      setFeedbackContextMode(false);
+    }
   }, [messages]);
 
-  // 피드백 카드에서 질문 수정/추천질문 선택 → 입력창 잠금 해제 + 자동 입력 + 포커스
+  // 추천질문 선택 → 입력창 잠금 해제 + 자동 입력(교체) + 포커스
   const handleFeedbackQuestionSelect = (question: string) => {
     setFeedbackEditMode(true);
+    setFeedbackContextMode(false);
     setInputValue(question);
+    setTimeout(() => chatInputRef.current?.focus(), 0);
+  };
+
+  // '맥락 추가하기' → 입력창을 비우고 추가 정보만 받음 (원 질문은 보존, 제출 시 합쳐짐)
+  const handleAddContext = () => {
+    setFeedbackEditMode(true);
+    setFeedbackContextMode(true);
+    setInputValue("");
     setTimeout(() => chatInputRef.current?.focus(), 0);
   };
   const [showDocPreview, setShowDocPreview] = useState(false);
@@ -955,10 +969,17 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
       m => !m.isUser && (m.isSimpleResponse || m.isEnhancedResponse || m.isMultiTurnResponse)
     );
 
-    // ── 휴먼피드백 단계에서의 재제출(질문 수정 등): 휴먼피드백은 첫 질문에 1번만 ──
-    // 이전 질문·피드백을 제거하고 편집 질문으로 교체한 뒤, 피드백 재노출 없이 바로 상세 답변
+    // ── 휴먼피드백 단계에서의 재제출: 휴먼피드백은 첫 질문에 1번만 ──
+    // 맥락 추가 모드면 원 질문을 보존하고 추가 맥락을 합쳐 '보강된 질문'을 생성, 그 외(추천질문)는 교체.
     if (!hasPriorAnswer) {
-      const v = validateQuestion(savedInput);
+      const originalQ = messages.find(m => m.isUser)?.text || "";
+      const effectiveQuestion =
+        feedbackContextMode && originalQ
+          ? `${originalQ}\n\n[추가 맥락] ${savedInput}`
+          : savedInput;
+
+      // 가드레일 검증은 '실제 답변할 질문'(맥락 추가 시 원 질문 포함) 기준
+      const v = validateQuestion(effectiveQuestion);
       const blocked = v.reason === "inappropriate" || v.reason === "unethical" || v.reason === "out-of-scope" || v.reason === "meaningless";
       if (blocked) {
         // 가드레일 거부: 세션 유지·카운트 제외(PRD RIS-001, CHA-004)
@@ -975,8 +996,9 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
         }, 800);
         return;
       }
-      setMessages([userMsg]); // 이전 질문/피드백 제거
-      proceedWithAnswer(savedInput); // 상세 답변 (휴먼피드백 재노출 없음)
+      // 보강된 질문을 사용자 메시지로 노출(이전 질문/피드백 제거) 후 상세 답변 생성
+      setMessages([{ ...userMsg, text: effectiveQuestion }]);
+      proceedWithAnswer(effectiveQuestion); // 상세 답변 (휴먼피드백 재노출 없음)
       return;
     }
 
@@ -1601,7 +1623,8 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
   const getPlaceholder = (): string => {
     if (isHistoryView) return "저장된 상담 이력입니다. 새 질문은 '새 채팅'에서 진행해 주세요.";
     if (chatEnded) return "답변이 제한되어 상담이 종료되었습니다.";
-    if (feedbackPending && !feedbackEditMode) return "'이대로 답변 받기' 또는 '질문 다듬기'를 선택해 주세요.";
+    if (feedbackPending && !feedbackEditMode) return "'이대로 답변 받기' 또는 '맥락 추가하기'를 선택해 주세요.";
+    if (feedbackPending && feedbackContextMode) return "추가로 알려줄 정보를 입력해 주세요 (예: 입사일, 상시근로자 수, 사유 등)";
     if (isDebateInProgress) return "AI 상세의견 진행 중...";
     if (isStreaming) return "답변 출력 중...";
     if (isAnswerLoading) return "답변 생성 중...";
@@ -1671,6 +1694,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                     onSubmitRevision={handleRevisedQuestion}
                     suggestedQuestions={message.suggestedQuestions}
                     onQuestionSelect={handleFeedbackQuestionSelect}
+                    onAddContext={handleAddContext}
                   />
                 )}
                 {/* 가드레일 차단 등 일반 텍스트 응답 */}
