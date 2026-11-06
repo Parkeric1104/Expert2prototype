@@ -1623,7 +1623,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
   const getPlaceholder = (): string => {
     if (isHistoryView) return "저장된 상담 이력입니다. 새 질문은 '새 채팅'에서 진행해 주세요.";
     if (chatEnded) return "답변이 제한되어 상담이 종료되었습니다.";
-    if (feedbackPending && !feedbackEditMode) return "'이대로 답변 받기' 또는 '맥락 추가하기'를 선택해 주세요.";
+    if (feedbackPending && !feedbackEditMode) return "'바로 답변받기' 또는 '자세히 알려주기'를 선택해 주세요.";
     if (feedbackPending && feedbackContextMode) return "추가로 알려줄 정보를 입력해 주세요 (예: 입사일, 상시근로자 수, 사유 등)";
     if (isDebateInProgress) return "AI 상세의견 진행 중...";
     if (isStreaming) return "답변 출력 중...";

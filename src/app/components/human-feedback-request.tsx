@@ -168,7 +168,7 @@ export function HumanFeedbackRequest({
               className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ wordBreak: "keep-all" }}
             >
-              이대로 답변 받기
+              바로 답변받기
             </button>
             <button
               onClick={() => onAddContext?.()}
@@ -176,7 +176,7 @@ export function HumanFeedbackRequest({
               className="px-4 py-2 rounded-lg border border-primary/50 text-sm font-medium text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ wordBreak: "keep-all" }}
             >
-              맥락 추가하기
+              자세히 알려주기
             </button>
           </>
         ) : (
