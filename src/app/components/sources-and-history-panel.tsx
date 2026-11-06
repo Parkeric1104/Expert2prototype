@@ -3,6 +3,8 @@ import {
   X, Scale, FileText, Gavel, Globe, BookOpen,
   ChevronDown, ChevronUp, RotateCcw, ExternalLink,
 } from "lucide-react";
+import { LawCenterView } from "@/app/components/law-viewer-panel";
+import { getLawArticle } from "@/app/data/law-content";
 
 export type SourceType = "법령" | "해석례" | "사규" | "판례" | "행정규칙";
 
@@ -78,6 +80,15 @@ export function getSourceDisplayTitle(source: PanelSource): string {
     return `#${bare}`;
   }
   return source.title;
+}
+
+// 법령 출처 제목을 "[제N조] 법령명(제목)" 형태로 — 국가법령정보센터 표기와 통일
+function lawHeaderTitle(title: string): string {
+  const a = getLawArticle(title);
+  if (a.articleNo && a.lawName) {
+    return `[${a.articleNo}] ${a.lawName}${a.articleTitle ? `(${a.articleTitle})` : ""}`;
+  }
+  return title;
 }
 
 export function getSourceSubtitle(source: PanelSource): string {
@@ -295,7 +306,7 @@ export function SourcesContent({ sources, initialSelectedTitle }: SourcesContent
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-primary leading-snug">
-                          {getSourceDisplayTitle(src)}
+                          {src.type === "법령" ? lawHeaderTitle(src.title) : getSourceDisplayTitle(src)}
                         </p>
                         {subtitle && (
                           <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
@@ -310,30 +321,37 @@ export function SourcesContent({ sources, initialSelectedTitle }: SourcesContent
                     </button>
                     {isOpen && (
                       <div className="px-5 pb-5 bg-muted/20">
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${TYPE_BADGE[src.type]}`}>
-                            {src.type}
-                          </span>
-                          {getHighlightMarkers(src.title).length > 0 && (
-                            <span className="text-[11px] text-amber-600 dark:text-amber-400">
-                              답변에 인용된 조항이 강조 표시됩니다
-                            </span>
-                          )}
-                        </div>
-                        <HighlightedContent
-                          content={src.content ?? "내용이 준비 중입니다."}
-                          title={src.title}
-                        />
-                        {src.url && (
-                          <a
-                            href={src.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 mt-4 text-xs font-medium text-primary hover:underline"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            law.go.kr에서 원문 새 창으로 보기
-                          </a>
+                        {src.type === "법령" ? (
+                          // 법령 원문 — 국가법령정보센터 카드(실제 형태)로 노출
+                          <LawCenterView lawRef={src.title} fallbackContent={src.content} />
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${TYPE_BADGE[src.type]}`}>
+                                {src.type}
+                              </span>
+                              {getHighlightMarkers(src.title).length > 0 && (
+                                <span className="text-[11px] text-amber-600 dark:text-amber-400">
+                                  답변에 인용된 조항이 강조 표시됩니다
+                                </span>
+                              )}
+                            </div>
+                            <HighlightedContent
+                              content={src.content ?? "내용이 준비 중입니다."}
+                              title={src.title}
+                            />
+                            {src.url && (
+                              <a
+                                href={src.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 mt-4 text-xs font-medium text-primary hover:underline"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                law.go.kr에서 원문 새 창으로 보기
+                              </a>
+                            )}
+                          </>
                         )}
                       </div>
                     )}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Megaphone, ChevronRight, ChevronLeft } from "lucide-react";
 import { getCurationSet, ddayLabel, type CurationItem } from "@/app/data/curation";
+import { LawViewerPanel } from "@/app/components/law-viewer-panel";
 
 // 체크포인트 전체 페이지(전체화면). 홈 '체크포인트 > 더보기' → 페이지 전환으로 진입.
 // 목록: 상단 '메인으로 돌아가기' 바 노출.
@@ -17,10 +18,12 @@ export function CurationView({
 }) {
   const { caption, items } = getCurationSet();
   const [selected, setSelected] = useState<CurationItem | null>(initialItem);
+  const [lawRef, setLawRef] = useState<string | null>(null); // 근거법령 칩 클릭 → 법령 뷰어 패널
 
   // ── 상세: 공지 상세와 동일(상단 GNB 미노출 + 하단 고정 바) ─────────────
   if (selected) {
     return (
+      <>
       <div className="flex-1 min-h-0 flex flex-col">
         {/* 본문(고정 영역, 내부 스크롤) */}
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -41,10 +44,16 @@ export function CurationView({
 
             {selected.laws.length > 0 && (
               <div className="mt-6">
-                <p className="text-xs font-semibold text-muted-foreground mb-2">근거 법령</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">근거 법령 <span className="font-normal text-muted-foreground/70">· 선택하면 원문을 볼 수 있어요</span></p>
                 <div className="flex flex-wrap gap-1.5">
                   {selected.laws.map((law, li) => (
-                    <span key={li} className="text-[12px] font-medium text-primary bg-primary/10 rounded-md px-2.5 py-1">{law}</span>
+                    <button
+                      key={li}
+                      onClick={() => setLawRef(law)}
+                      className="text-[12px] font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-md px-2.5 py-1 transition-colors"
+                    >
+                      {law}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -74,6 +83,8 @@ export function CurationView({
           </div>
         </div>
       </div>
+      <LawViewerPanel lawRef={lawRef} onClose={() => setLawRef(null)} />
+      </>
     );
   }
 
