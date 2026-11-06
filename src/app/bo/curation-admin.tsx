@@ -4,12 +4,13 @@
  * 저장 시 서비스 FE(홈 체크포인트·전체 페이지)에 무배포 반영.
  */
 import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   BOCuration, loadCuration, saveCuration, deleteCuration, curationStatus, CurationStatus, todayStr, newId,
 } from "@/app/bo/bo-store";
 import { ddayLabel } from "@/app/data/curation";
+import { LAW_SUGGESTIONS } from "@/app/components/law-selection-modal";
 import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, PeriodCell } from "@/app/bo/bo-ui";
 
 const PAGE_SIZE = 5;
@@ -163,13 +164,11 @@ function CurationForm({ initial, onCancel, onSaved }: { initial: BOCuration | nu
   const [deadline, setDeadline] = useState(initial?.deadline ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
   const [question, setQuestion] = useState(initial?.question ?? "");
-  const [lawsText, setLawsText] = useState((initial?.laws ?? []).join(", "));
+  const [laws, setLaws] = useState<string[]>(initial?.laws ?? []);
   const [active, setActive] = useState(initial?.active ?? true);
   const [publishStart, setPublishStart] = useState(initial?.publishStart ?? "");
   const [publishEnd, setPublishEnd] = useState(initial?.publishEnd ?? "");
   const [submitted, setSubmitted] = useState(false);
-
-  const laws = lawsText.split(",").map((s) => s.trim()).filter(Boolean);
 
   const errors = {
     title: title.trim() ? (title.length > 40 ? "제목은 40자까지 입력할 수 있어요." : "") : "제목을 입력해 주세요.",
@@ -296,8 +295,7 @@ function CurationForm({ initial, onCancel, onSaved }: { initial: BOCuration | nu
               </div>
               <div>
                 <FieldLabel>근거 법령</FieldLabel>
-                <input value={lawsText} onChange={(e) => setLawsText(e.target.value)} placeholder="예: 부가가치세법 제48조, 소득세법 제70조의2" className={inputCls} />
-                <p className="mt-1.5 text-xs text-muted-foreground">쉼표(,)로 구분해 여러 개 입력할 수 있어요.</p>
+                <LawPicker value={laws} onChange={setLaws} />
               </div>
             </div>
           </Card>
@@ -359,6 +357,88 @@ function CurationForm({ initial, onCancel, onSaved }: { initial: BOCuration | nu
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+// 근거 법령 검색-추가 피커 — 법령명 검색 후 선택(칩 추가), 조문까지 직접 입력 후 Enter로 추가.
+// 쉼표 입력 대신 '추가된 항목'을 칩으로 구분해 표시한다.
+function LawPicker({ value, onChange }: { value: string[]; onChange: (laws: string[]) => void }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const q = query.trim();
+
+  const suggestions = LAW_SUGGESTIONS
+    .filter((name) => !value.includes(name) && (!q || name.includes(q)))
+    .slice(0, 8);
+  const canAddCustom = !!q && !value.includes(q) && !LAW_SUGGESTIONS.includes(q);
+
+  const add = (name: string) => {
+    const v = name.trim();
+    if (!v || value.includes(v)) { setQuery(""); return; }
+    onChange([...value, v]);
+    setQuery("");
+  };
+  const remove = (name: string) => onChange(value.filter((n) => n !== name));
+
+  return (
+    <div>
+      {/* 추가된 법령 — 칩으로 구분 표시 */}
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {value.map((name) => (
+            <span key={name} className="inline-flex items-center gap-1 text-[12px] font-medium text-primary bg-primary/10 rounded-md pl-2.5 pr-1 py-1">
+              {name}
+              <button
+                type="button"
+                onClick={() => remove(name)}
+                aria-label={`${name} 제거`}
+                className="w-4 h-4 rounded flex items-center justify-center text-primary/70 hover:text-primary hover:bg-primary/15 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* 검색 입력 + 추천 드롭다운 */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+        <input
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); if (q) add(q); }
+            if (e.key === "Escape") setOpen(false);
+          }}
+          placeholder="법령명 검색 후 선택 (예: 부가가치세법) · 조문까지 입력 후 Enter"
+          className="w-full h-10 pl-8 pr-3 rounded-lg border border-border bg-white text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors placeholder:text-muted-foreground/60"
+        />
+        {open && (suggestions.length > 0 || canAddCustom) && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+            <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg max-h-56 overflow-y-auto py-1">
+              {canAddCustom && (
+                <li>
+                  <button type="button" onClick={() => add(q)} className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60">
+                    <span className="text-muted-foreground">직접 추가</span> · <b className="text-foreground">{q}</b>
+                  </button>
+                </li>
+              )}
+              {suggestions.map((name) => (
+                <li key={name}>
+                  <button type="button" onClick={() => add(name)} className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted/60">{name}</button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+      <p className="mt-1.5 text-xs text-muted-foreground" style={{ wordBreak: "keep-all" }}>
+        법령명을 검색해 선택하거나, 조문까지 입력하고 Enter로 추가할 수 있어요. 추가된 항목은 칩으로 표시돼요.
+      </p>
     </div>
   );
 }

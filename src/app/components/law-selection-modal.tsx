@@ -79,6 +79,12 @@ const ALL_LABOR_IDS = [
   ...COMPANY_REGULATIONS.map((r) => r.id),
 ];
 
+// 근거법령 검색용 법령명 목록(세법 + 노무). BO 체크포인트 '근거법령' 검색-추가에 사용.
+export const LAW_SUGGESTIONS: string[] = [
+  ...TAX_LAWS.map((l) => l.name),
+  ...AVAILABLE_LAWS.map((l) => l.name),
+];
+
 export function LawSelectionModal({ isOpen, onClose, selectedLaws, onConfirm }: LawSelectionModalProps) {
   const [localSelectedLaws, setLocalSelectedLaws] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
