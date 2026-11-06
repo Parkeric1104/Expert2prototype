@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { track } from "@/app/utils/track";
 import { getServiceVersion, getNotices } from "@/app/data/service-content";
+import { CURATION_SET, ddayLabel } from "@/app/data/curation";
 import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import { RagSourceSelect } from "@/app/components/rag-source-select";
@@ -28,7 +29,8 @@ interface ModernHomeViewProps {
   onOpenPolicyManagement?: () => void; // 미등록 넛지 배너 → 정책 문서 관리 진입
   onOpenCalculator?: () => void; // 펑션 메뉴 → 노무 계산기 진입
   onOpenNoticePopup?: () => void; // 펑션 메뉴 → 공지 팝업(프로토타입 확인용)
-  onOpenNotices?: () => void; // 홈 게시판 → 공지사항 전체(종🔔과 동일 소스)
+  onOpenNotices?: () => void; // 홈 게시판 → 게시판 전체(종🔔과 동일 소스)
+  onOpenCuration?: () => void; // 홈 체크포인트 더보기 → 체크포인트 전체 페이지
   onRegisterFileAsPolicy?: (file: { name: string; size: number }) => void; // 파일 오류 팝업 '등록하기' → 노무정책문서관리 등록
 }
 
@@ -57,34 +59,15 @@ const TAB_CHIPS: Record<string, string[]> = {
   "경로테스트": ["근로계약 경로질문"],
 };
 
-// 큐레이션(시즌 이슈) — BO 운영 콘텐츠(CUR). 공지와 달리 '전면 노출→클릭→질문 프리필'로 유입·전환 유도.
-// 단일 활성 세트(기간 기반 전환). 각 항목 클릭 시 추천질문과 동일하게 질문을 바로 시작한다.
-// deadline: 마감일(YYYY-MM-DD) — D-day 태그는 오늘 기준 자동 계산(ddayLabel).
-const CURATION_SET = {
-  caption: "체크포인트",
-  items: [
-    { icon: ClipboardCheck,  title: "부가세 예정신고 체크리스트",   sub: "11/25 마감",     deadline: "2026-11-25", question: "부가가치세 예정신고 일정과 준비 서류 체크리스트를 알려주세요.",            laws: ["부가가치세법 제48조"] },
-    { icon: FileText,        title: "성실신고확인 대상 판정·준비", sub: "신고 전 준비",   deadline: "2026-12-20", question: "성실신고확인 대상 판정 기준과 준비해야 할 사항을 알려주세요.",            laws: ["소득세법 제70조의2"] },
-    { icon: Users,           title: "연말정산 대비 노무 이슈",     sub: "통상임금·연차수당", deadline: "2027-01-15", question: "연말정산을 앞두고 통상임금·연차수당 관련 노무 이슈를 정리해 주세요.",      laws: ["근로기준법 제2조", "근로기준법 제60조"] },
-  ],
-};
+// 큐레이션(체크포인트) 데이터·D-day 계산은 @/app/data/curation 로 분리(홈·전체페이지 공용).
 
-// 마감일 → D-day 라벨(오늘 기준). 당일=D-DAY, 지난 건 숨김 처리는 호출부에서.
-function ddayLabel(deadline: string): string {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const due = new Date(deadline + "T00:00:00");
-  const diff = Math.round((due.getTime() - today.getTime()) / 86400000);
-  return diff <= 0 ? "D-DAY" : `D-${diff}`;
-}
-
-export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator, onOpenNoticePopup, onOpenNotices, onRegisterFileAsPolicy }: ModernHomeViewProps) {
+export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator, onOpenNoticePopup, onOpenNotices, onOpenCuration, onRegisterFileAsPolicy }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
   const [selectedTab, setSelectedTab]   = useState("인사・노무");
   const [selectedCategory, setSelectedCategory] = useState("근로계약");
   const [showAttachList, setShowAttachList] = useState(false); // 첨부 '더보기' 팝오버
-  const [showAllCuration, setShowAllCuration] = useState(false); // 체크포인트 더보기(인라인 펼치기)
   // 근복단 PE 요구사항(+add): 답변 소스 토글 — ON=클라이온 RAG / OFF=내부 RAG.
   // 운영·단독 서비스엔 미노출(프로파일 플래그로 제어). 프로토타입 검토용 기본 노출, ?klleon=off 로 숨김.
   const showKlleonToggle = typeof window === "undefined" ? true : new URLSearchParams(window.location.search).get("klleon") !== "off";
@@ -641,17 +624,12 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
               <span className="text-sm font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
                 <Megaphone className="w-4 h-4 text-primary" />{CURATION_SET.caption}
               </span>
-              {CURATION_SET.items.length > 2 && (
-                <button
-                  onClick={() => setShowAllCuration(v => !v)}
-                  className="ml-auto text-xs text-muted-foreground font-medium hover:text-foreground transition-colors"
-                >
-                  {showAllCuration ? "접기 ‹" : "더보기 ›"}
-                </button>
+              {onOpenCuration && (
+                <button onClick={onOpenCuration} className="ml-auto text-xs text-muted-foreground font-medium hover:text-foreground transition-colors">더보기 ›</button>
               )}
             </div>
             <div className="mt-1.5">
-              {CURATION_SET.items.slice(0, showAllCuration ? CURATION_SET.items.length : 2).map((it, i) => {
+              {CURATION_SET.items.slice(0, 2).map((it, i) => {
                 return (
                   <button
                     key={i}

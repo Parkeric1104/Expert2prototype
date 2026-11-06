@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { track } from "@/app/utils/track";
 import { FunnelDebugPanel } from "@/app/components/funnel-debug-panel";
 import { NoticeView } from "@/app/components/notice-view";
+import { CurationView } from "@/app/components/curation-view";
 import { CreditUsageView } from "@/app/components/credit-usage-view";
 import { EmergencyPopup } from "@/app/components/emergency-popup";
 import { getEmergency, getUnreadCount } from "@/app/data/service-content";
@@ -24,7 +25,7 @@ import { ExpertVerifyModal } from "@/app/components/expert-verify-modal";
 import { useExpertAuth } from "@/app/data/expert-auth";
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding" | "calculator" | "notice" | "credit">("home");
+  const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding" | "calculator" | "notice" | "curation" | "credit">("home");
   const contentTick = useContentTick(); // BO 콘텐츠 변경(다른 탭)을 새로고침 없이 반영 — App+하위 리렌더로 getter 재조회
   const [chatQuery, setChatQuery] = useState<string>("");
   const [selectedLaws, setSelectedLaws] = useState<string[]>([]);
@@ -360,7 +361,7 @@ export default function App() {
           embedding·calculator·notice는 자체 전체화면 크롬을 쓰므로 사이드패널·헤더 미노출(몰입형). */}
       <div className="flex flex-1 min-h-0">
         {/* 고정(도킹)형 접펼침 사이드패널 */}
-        {currentView !== "embedding" && currentView !== "calculator" && currentView !== "notice" && currentView !== "credit" && (
+        {currentView !== "embedding" && currentView !== "calculator" && currentView !== "notice" && currentView !== "curation" && currentView !== "credit" && (
           <HistorySidebarPanel
             collapsed={sidebarCollapsed}
             onToggleCollapse={handleToggleSidebar}
@@ -405,7 +406,7 @@ export default function App() {
         {/* 콘텐츠 컬럼: 헤더 + 본문 */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           {/* Top Header – embedding·calculator·notice 화면에서는 미노출(자체 헤더 사용, 공지 상세는 몰입형) */}
-          {currentView !== "embedding" && currentView !== "calculator" && currentView !== "notice" && currentView !== "credit" && (
+          {currentView !== "embedding" && currentView !== "calculator" && currentView !== "notice" && currentView !== "curation" && currentView !== "credit" && (
             <TopHeader
               variant={currentView === "chat" ? "chat" : currentView === "policy" ? "policy" : "home"}
               onNavigateToMain={() => handleNavigation(handleNewChat)}
@@ -452,6 +453,7 @@ export default function App() {
               onOpenCalculator={() => setCurrentView("calculator")}
               onOpenNoticePopup={() => setShowEmergency(true)}
               onOpenNotices={() => setCurrentView("notice")}
+              onOpenCuration={() => setCurrentView("curation")}
               onRegisterFileAsPolicy={handleRegisterFileAsPolicy}
             />
           )}
@@ -497,6 +499,13 @@ export default function App() {
           )}
 
           {currentView === "notice" && <NoticeView onBack={() => setCurrentView("home")} />}
+
+          {currentView === "curation" && (
+            <CurationView
+              onBack={() => setCurrentView("home")}
+              onSelectQuestion={(question, laws) => handleStartChat(question, selectedLaws, laws, "normal")}
+            />
+          )}
 
           {currentView === "credit" && <CreditUsageView onBack={() => setCurrentView("home")} />}
         </div>
