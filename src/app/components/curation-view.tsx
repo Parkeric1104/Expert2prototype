@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Megaphone, ChevronRight, ChevronLeft, X } from "lucide-react";
+import { ArrowLeft, Megaphone, ChevronRight, ChevronLeft, X, ArrowUp, MessageSquarePlus } from "lucide-react";
 import { getCurationSet, ddayLabel, type CurationItem } from "@/app/data/curation";
 import { LawCenterView } from "@/app/components/law-viewer-panel";
 
@@ -10,13 +10,24 @@ import { LawCenterView } from "@/app/components/law-viewer-panel";
 export function CurationView({
   onBack,
   initialItem = null,
+  onAskQuestion,
 }: {
   onBack: () => void;
   initialItem?: CurationItem | null; // 메인 항목 클릭 진입 시 바로 상세로 노출(더보기는 목록)
+  onAskQuestion?: (question: string, laws: string[]) => void; // 상세에서 직접 입력한 질문으로 대화 시작
 }) {
   const { caption, items } = getCurationSet();
   const [selected, setSelected] = useState<CurationItem | null>(initialItem);
   const [lawRef, setLawRef] = useState<string | null>(null); // 근거법령 칩 클릭 → 법령 뷰어 패널
+  const [asking, setAsking] = useState(false); // 하단 '질문하기' → 질문 입력창 즉시 노출
+  const [askText, setAskText] = useState("");
+
+  const submitAsk = () => {
+    const q = askText.trim();
+    if (!q || !selected) return;
+    onAskQuestion?.(q, selected.laws); // 체크포인트 근거법령을 관련 법령으로 전달
+  };
+  const openItem = (it: CurationItem) => { setSelected(it); setAsking(false); setAskText(""); };
 
   // ── 상세: 공지 상세와 동일(상단 GNB 미노출 + 하단 고정 바) ─────────────
   if (selected) {
@@ -63,15 +74,54 @@ export function CurationView({
         {/* 하단 고정: 본문과 동일 배경, 구분선으로만 분리. 좌 '목록으로' / 우 질문 CTA */}
         <div className="flex-shrink-0">
           <div className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4">
-            <div className="border-t border-border py-4">
-              <button
-                onClick={() => setSelected(null)}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                목록으로
-              </button>
-            </div>
+            {asking ? (
+              <div className="border-t border-border py-3">
+                <div className="flex items-end gap-2">
+                  <textarea
+                    autoFocus
+                    value={askText}
+                    onChange={(e) => setAskText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitAsk(); } }}
+                    placeholder="이 체크포인트에 대해 궁금한 점을 입력해 보세요."
+                    rows={1}
+                    className="flex-1 resize-none px-3.5 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors placeholder:text-muted-foreground/70"
+                    style={{ maxHeight: 120 }}
+                  />
+                  <button
+                    onClick={submitAsk}
+                    disabled={!askText.trim()}
+                    aria-label="질문 보내기"
+                    className="h-10 w-10 flex-shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground/50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => { setAsking(false); setAskText(""); }}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  닫기
+                </button>
+              </div>
+            ) : (
+              <div className="border-t border-border py-4 flex items-center justify-between gap-3">
+                <button
+                  onClick={() => setSelected(null)}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  목록으로
+                </button>
+                <button
+                  onClick={() => setAsking(true)}
+                  className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  <MessageSquarePlus className="w-4 h-4" />
+                  질문하기
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -125,7 +175,7 @@ export function CurationView({
             {items.map((it, i) => (
               <li key={i}>
                 <button
-                  onClick={() => setSelected(it)}
+                  onClick={() => openItem(it)}
                   className="group w-full text-left px-4 py-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all flex items-center gap-3"
                 >
                   <span className="flex-1 min-w-0">
