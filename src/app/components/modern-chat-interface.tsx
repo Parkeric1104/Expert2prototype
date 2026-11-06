@@ -245,12 +245,21 @@ export function ModernChatInterface({
     setTimeout(() => chatInputRef.current?.focus(), 0);
   };
 
-  // '맥락 추가하기' → 입력창을 비우고 추가 정보만 받음 (원 질문은 보존, 제출 시 합쳐짐)
+  // '내용 추가하기' → 입력창을 비우고 추가 정보만 받음 (원 질문은 보존, 제출 시 합쳐짐)
   const handleAddContext = () => {
     setFeedbackEditMode(true);
     setFeedbackContextMode(true);
     setInputValue("");
     setTimeout(() => chatInputRef.current?.focus(), 0);
+  };
+
+  // 맥락 추가 칩(원클릭) → 원 질문에 맥락을 더해 보강 질문 생성 후 바로 답변
+  const handleContextChip = (chip: string) => {
+    const originalQ = messages.find((m) => m.isUser)?.text || "";
+    const combined = originalQ ? `${originalQ}\n\n[추가 맥락] ${chip}` : chip;
+    const userMsg: Message = { id: Date.now().toString(), text: combined, isUser: true };
+    setMessages([userMsg]); // 이전 질문/피드백 제거
+    proceedWithAnswer(combined); // 상세 답변 (휴먼피드백 재노출 없음)
   };
   const [showDocPreview, setShowDocPreview] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -1695,6 +1704,7 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                     suggestedQuestions={message.suggestedQuestions}
                     onQuestionSelect={handleFeedbackQuestionSelect}
                     onAddContext={handleAddContext}
+                    onContextChip={handleContextChip}
                   />
                 )}
                 {/* 가드레일 차단 등 일반 텍스트 응답 */}
