@@ -84,6 +84,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   const [selectedTab, setSelectedTab]   = useState("인사・노무");
   const [selectedCategory, setSelectedCategory] = useState("근로계약");
   const [showAttachList, setShowAttachList] = useState(false); // 첨부 '더보기' 팝오버
+  const [showAllCuration, setShowAllCuration] = useState(false); // 체크포인트 더보기(인라인 펼치기)
   // 근복단 PE 요구사항(+add): 답변 소스 토글 — ON=클라이온 RAG / OFF=내부 RAG.
   // 운영·단독 서비스엔 미노출(프로파일 플래그로 제어). 프로토타입 검토용 기본 노출, ?klleon=off 로 숨김.
   const showKlleonToggle = typeof window === "undefined" ? true : new URLSearchParams(window.location.search).get("klleon") !== "off";
@@ -636,11 +637,21 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
           {/* 우: 큐레이션(이번 달 이슈) + 게시판(공지) */}
           <div className="min-w-0 bg-card border border-border/60 rounded-2xl shadow-sm p-4 flex flex-col">
             {/* 큐레이션 — BO 운영 콘텐츠(CUR) · 클릭→질문 전환 */}
-            <span className="text-sm font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
-              <Megaphone className="w-4 h-4 text-primary" />{CURATION_SET.caption}
-            </span>
+            <div className="flex items-center">
+              <span className="text-sm font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
+                <Megaphone className="w-4 h-4 text-primary" />{CURATION_SET.caption}
+              </span>
+              {CURATION_SET.items.length > 2 && (
+                <button
+                  onClick={() => setShowAllCuration(v => !v)}
+                  className="ml-auto text-xs text-muted-foreground font-medium hover:text-foreground transition-colors"
+                >
+                  {showAllCuration ? "접기 ‹" : "더보기 ›"}
+                </button>
+              )}
+            </div>
             <div className="mt-1.5">
-              {CURATION_SET.items.slice(0, 2).map((it, i) => {
+              {CURATION_SET.items.slice(0, showAllCuration ? CURATION_SET.items.length : 2).map((it, i) => {
                 return (
                   <button
                     key={i}
