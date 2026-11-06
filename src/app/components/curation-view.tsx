@@ -9,11 +9,9 @@ import { LawCenterView } from "@/app/components/law-viewer-panel";
 //   - 항목 클릭 → 상세에서 본문·근거 법령 확인 → CTA로 질문 시작(onSelectQuestion).
 export function CurationView({
   onBack,
-  onSelectQuestion,
   initialItem = null,
 }: {
   onBack: () => void;
-  onSelectQuestion: (question: string, laws: string[]) => void;
   initialItem?: CurationItem | null; // 메인 항목 클릭 진입 시 바로 상세로 노출(더보기는 목록)
 }) {
   const { caption, items } = getCurationSet();
@@ -65,20 +63,13 @@ export function CurationView({
         {/* 하단 고정: 본문과 동일 배경, 구분선으로만 분리. 좌 '목록으로' / 우 질문 CTA */}
         <div className="flex-shrink-0">
           <div className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4">
-            <div className="border-t border-border py-4 flex items-center justify-between gap-3">
+            <div className="border-t border-border py-4">
               <button
                 onClick={() => setSelected(null)}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
                 목록으로
-              </button>
-              <button
-                onClick={() => onSelectQuestion(selected.question, selected.laws)}
-                className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-              >
-                이 내용으로 질문하기
-                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>

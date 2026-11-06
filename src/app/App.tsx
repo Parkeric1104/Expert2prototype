@@ -525,7 +525,6 @@ export default function App() {
           {currentView === "curation" && (
             <CurationView
               onBack={() => setCurrentView("home")}
-              onSelectQuestion={(question, laws) => handleStartChat(question, selectedLaws, laws, "normal")}
               initialItem={curationInitial}
             />
           )}
