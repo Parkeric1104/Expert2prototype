@@ -647,6 +647,11 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                   </button>
                 );
               })}
+              {curation.items.length === 0 && (
+                <p className="py-5 text-center text-xs text-muted-foreground/70" style={{ wordBreak: "keep-all" }}>
+                  지금은 등록된 체크포인트가 없어요.
+                </p>
+              )}
             </div>
 
             {/* 분할선 */}
@@ -673,6 +678,11 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                   <span className="text-[11px] text-muted-foreground/70 flex-shrink-0">{n.date.slice(5).replace("-", ".")}</span>
                 </button>
               ))}
+              {boardNotices.length === 0 && (
+                <p className="py-5 text-center text-xs text-muted-foreground/70" style={{ wordBreak: "keep-all" }}>
+                  등록된 게시글이 없어요.
+                </p>
+              )}
             </div>
           </div>
 
