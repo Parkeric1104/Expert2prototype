@@ -176,7 +176,7 @@ export function HumanFeedbackRequest({
               className="px-4 py-2 rounded-lg border border-primary/50 text-sm font-medium text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ wordBreak: "keep-all" }}
             >
-              자세히 알려주기
+              내용 추가하기
             </button>
           </>
         ) : (
