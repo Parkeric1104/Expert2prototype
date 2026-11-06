@@ -161,6 +161,7 @@ function CurationForm({ initial, onCancel, onSaved }: { initial: BOCuration | nu
   const [title, setTitle] = useState(initial?.title ?? "");
   const [sub, setSub] = useState(initial?.sub ?? "");
   const [deadline, setDeadline] = useState(initial?.deadline ?? "");
+  const [body, setBody] = useState(initial?.body ?? "");
   const [question, setQuestion] = useState(initial?.question ?? "");
   const [lawsText, setLawsText] = useState((initial?.laws ?? []).join(", "));
   const [active, setActive] = useState(initial?.active ?? true);
@@ -190,6 +191,7 @@ function CurationForm({ initial, onCancel, onSaved }: { initial: BOCuration | nu
       title: title.trim(),
       sub: sub.trim(),
       deadline,
+      body: body.trim(),
       question: question.trim(),
       laws,
       active,
@@ -256,6 +258,24 @@ function CurationForm({ initial, onCancel, onSaved }: { initial: BOCuration | nu
                   <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${active ? "left-[22px]" : "left-0.5"}`} />
                 </button>
               </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-base font-bold text-foreground mb-1">상세 본문</h2>
+            <p className="text-sm text-muted-foreground mb-5" style={{ wordBreak: "keep-all" }}>
+              체크포인트 상세 화면에 노출되는 설명이에요(공지 상세와 동일 구조). 비워 두면 상세 화면에 설명 없이 제목·마감·법령만 노출돼요.
+            </p>
+            <div>
+              <FieldLabel>본문</FieldLabel>
+              <textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="예: 법인 사업자는 제2기 예정신고·납부를 준비해야 합니다. 직전 과세기간 납부세액의 50%가 예정고지되며…"
+                rows={6}
+                className="w-full px-3 py-2.5 rounded-lg border border-border bg-white text-sm leading-relaxed outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors placeholder:text-muted-foreground/70 resize-y"
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">줄바꿈(빈 줄)은 문단으로 표시돼요.</p>
             </div>
           </Card>
 
