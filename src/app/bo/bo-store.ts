@@ -6,6 +6,7 @@
  * 실제 서비스 전환 시 이 모듈이 BO API 클라이언트로 대체된다.
  */
 import type { Notice, NoticeType, Emergency, EmergencySeverity, ServiceVersion } from "@/app/data/service-content";
+import type { CurationItem } from "@/app/data/curation";
 
 // ── 저장 모델 ─────────────────────────────────────────────
 export interface BONotice {
@@ -181,6 +182,57 @@ export function popupStatus(p: BOPopup, at: number = Date.now()): PopupStatus {
   if (!p.active) return "비활성";
   if (p.publishStart && at < new Date(p.publishStart).getTime()) return "예약";
   if (p.publishEnd && at > new Date(p.publishEnd).getTime()) return "종료";
+  return "노출중";
+}
+
+// ── 체크포인트/큐레이션 (CUR) ─────────────────────────────
+export interface BOCuration {
+  id: string;
+  title: string;      // ≤40 (CUR-002)
+  sub: string;        // ≤30 부제(상태/마감 라벨)
+  deadline: string;   // YYYY-MM-DD — D-day 태그 자동 계산 기준(DDY)
+  question: string;   // 클릭 시 시작되는 질문
+  laws: string[];     // 근거 법령
+  active: boolean;    // 노출 여부
+  createdAt: string;
+  publishStart?: string;
+  publishEnd?: string;
+}
+
+const CURATION_KEY = "bo_curation";
+
+// 최초 진입 시드 — FE 정적 소스(data/curation)와 동일 내용
+const SEED_CURATION: BOCuration[] = [
+  { id: "c-1", title: "부가세 예정신고 체크리스트",   sub: "11/25 마감",       deadline: "2026-11-25", question: "부가가치세 예정신고 일정과 준비 서류 체크리스트를 알려주세요.",       laws: ["부가가치세법 제48조"],                active: true, createdAt: "2026-10-20" },
+  { id: "c-2", title: "성실신고확인 대상 판정·준비", sub: "신고 전 준비",     deadline: "2026-12-20", question: "성실신고확인 대상 판정 기준과 준비해야 할 사항을 알려주세요.",       laws: ["소득세법 제70조의2"],                active: true, createdAt: "2026-10-20" },
+  { id: "c-3", title: "연말정산 대비 노무 이슈",     sub: "통상임금·연차수당", deadline: "2027-01-15", question: "연말정산을 앞두고 통상임금·연차수당 관련 노무 이슈를 정리해 주세요.", laws: ["근로기준법 제2조", "근로기준법 제60조"], active: true, createdAt: "2026-10-20" },
+];
+
+export function loadCuration(): BOCuration[] {
+  const stored = read<BOCuration[]>(CURATION_KEY);
+  if (stored) return stored;
+  write(CURATION_KEY, SEED_CURATION);
+  return SEED_CURATION;
+}
+
+export function saveCuration(c: BOCuration) {
+  const list = loadCuration();
+  const idx = list.findIndex((x) => x.id === c.id);
+  if (idx >= 0) list[idx] = c;
+  else list.unshift(c);
+  write(CURATION_KEY, list);
+}
+
+export function deleteCuration(id: string) {
+  write(CURATION_KEY, loadCuration().filter((c) => c.id !== id));
+}
+
+export type CurationStatus = "노출중" | "예약" | "종료" | "비활성";
+
+export function curationStatus(c: BOCuration, at: number = Date.now()): CurationStatus {
+  if (!c.active) return "비활성";
+  if (c.publishStart && at < new Date(c.publishStart).getTime()) return "예약";
+  if (c.publishEnd && at > new Date(c.publishEnd).getTime()) return "종료";
   return "노출중";
 }
 
@@ -379,4 +431,14 @@ export function getBOEmergency(): Emergency | null {
 
 export function getBOVersion(): ServiceVersion | null {
   return read<ServiceVersion>(VERSION_KEY);
+}
+
+/** BO 저장값 기준 현재 노출 체크포인트(활성 + 기간 내, 마감일 임박순). BO 미사용 시 null → 정적 소스 폴백 */
+export function getBOCuration(): CurationItem[] | null {
+  const stored = read<BOCuration[]>(CURATION_KEY);
+  if (!stored) return null;
+  return stored
+    .filter((c) => c.active && inPeriod(c.publishStart, c.publishEnd))
+    .sort((a, b) => (a.deadline < b.deadline ? -1 : 1))
+    .map((c) => ({ title: c.title, sub: c.sub, deadline: c.deadline, question: c.question, laws: c.laws }));
 }

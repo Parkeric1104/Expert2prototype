@@ -1,5 +1,5 @@
 import { ArrowLeft, Megaphone, ChevronRight } from "lucide-react";
-import { CURATION_SET, ddayLabel } from "@/app/data/curation";
+import { getCurationSet, ddayLabel } from "@/app/data/curation";
 
 // 체크포인트 전체 페이지(전체화면). 홈 '체크포인트 > 더보기' → 페이지 전환으로 진입.
 // 각 항목 클릭 시 추천질문과 동일하게 질문을 바로 시작한다(onSelectQuestion).
@@ -10,7 +10,7 @@ export function CurationView({
   onBack: () => void;
   onSelectQuestion: (question: string, laws: string[]) => void;
 }) {
-  const items = CURATION_SET.items;
+  const { caption, items } = getCurationSet();
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
@@ -28,7 +28,7 @@ export function CurationView({
         <div className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4 py-8">
           <div className="flex items-center gap-2 mb-1.5">
             <Megaphone className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-bold text-foreground">{CURATION_SET.caption}</h1>
+            <h1 className="text-xl font-bold text-foreground">{caption}</h1>
           </div>
           <p className="text-sm text-muted-foreground mb-5" style={{ wordBreak: "keep-all" }}>
             지금 챙겨야 할 세무·노무 일정입니다. 항목을 선택하면 바로 질문이 시작됩니다.

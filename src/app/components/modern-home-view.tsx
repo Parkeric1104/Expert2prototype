@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { track } from "@/app/utils/track";
 import { getServiceVersion, getNotices } from "@/app/data/service-content";
-import { CURATION_SET, ddayLabel } from "@/app/data/curation";
+import { getCurationSet, ddayLabel } from "@/app/data/curation";
 import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import { RagSourceSelect } from "@/app/components/rag-source-select";
@@ -115,6 +115,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
 
   const svcVersion = getServiceVersion(); // #3 버전 정보(푸터 표기)
   const boardNotices = getNotices().slice(0, 2); // 홈 게시판 — 종🔔과 동일 소스(최신 2건)
+  const curation = getCurationSet(); // 체크포인트 — BO 저장값 우선(없으면 기본 세트)
 
   // 퍼널 S2: 홈 넛지(정책 등록 유도) 노출 시 1회 집계
   useEffect(() => {
@@ -622,14 +623,14 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
             {/* 큐레이션 — BO 운영 콘텐츠(CUR) · 클릭→질문 전환 */}
             <div className="flex items-center">
               <span className="text-sm font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
-                <Megaphone className="w-4 h-4 text-primary" />{CURATION_SET.caption}
+                <Megaphone className="w-4 h-4 text-primary" />{curation.caption}
               </span>
               {onOpenCuration && (
                 <button onClick={onOpenCuration} className="ml-auto text-xs text-muted-foreground font-medium hover:text-foreground transition-colors">더보기 ›</button>
               )}
             </div>
             <div className="mt-1.5">
-              {CURATION_SET.items.slice(0, 2).map((it, i) => {
+              {curation.items.slice(0, 2).map((it, i) => {
                 return (
                   <button
                     key={i}
