@@ -641,16 +641,12 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
             </span>
             <div className="mt-1.5">
               {CURATION_SET.items.slice(0, 2).map((it, i) => {
-                const Icon = it.icon;
                 return (
                   <button
                     key={i}
                     onClick={() => { track("curation_click", { title: it.title }); handlePromptClick(it.question, it.laws, "normal"); }}
                     className="flex items-center gap-2.5 w-full py-2.5 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors"
                   >
-                    <span className="w-9 h-9 rounded-[10px] bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-[17px] h-[17px]" />
-                    </span>
                     <span className="flex-1 min-w-0">
                       <span className="block text-[13px] font-bold text-foreground truncate">{it.title}</span>
                       <span className="block text-[11px] text-muted-foreground mt-0.5 truncate">{it.sub}</span>
