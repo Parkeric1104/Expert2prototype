@@ -34,7 +34,7 @@ export function NoticeView({ onBack }: { onBack: () => void }) {
 
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4 py-8">
-            <h1 className="text-xl font-bold text-foreground mb-4">공지사항</h1>
+            <h1 className="text-xl font-bold text-foreground mb-4">게시판</h1>
             {/* 카테고리 탭 — 콘텐츠 유형(전체/공지/릴리즈노트) */}
             <div className="flex items-center gap-1 mb-4">
               {TABS.map((t) => (

@@ -215,8 +215,8 @@ export function HistorySidebarPanel({
             variant="ghost"
             onClick={onOpenNotices}
             className="relative h-10 w-10 p-0"
-            aria-label="공지사항"
-            title="공지사항"
+            aria-label="게시판"
+            title="게시판"
           >
             <Bell className="w-5 h-5" />
             {unreadNoticeCount > 0 && (
@@ -449,7 +449,7 @@ export function HistorySidebarPanel({
             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-card" />
           )}
         </span>
-        <span className="font-medium">공지사항</span>
+        <span className="font-medium">게시판</span>
         <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
       </button>
 
