@@ -3,6 +3,7 @@ import { track } from "@/app/utils/track";
 import { FunnelDebugPanel } from "@/app/components/funnel-debug-panel";
 import { NoticeView } from "@/app/components/notice-view";
 import { CurationView } from "@/app/components/curation-view";
+import type { CurationItem } from "@/app/data/curation";
 import { CreditUsageView } from "@/app/components/credit-usage-view";
 import { EmergencyPopup } from "@/app/components/emergency-popup";
 import { getEmergency, getUnreadCount } from "@/app/data/service-content";
@@ -58,9 +59,28 @@ export default function App() {
   const [showFunnelPanel, setShowFunnelPanel] = useState<boolean>(
     () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("funnel")
   );
-  // 공지사항 — 페이지 전환 방식(전체보기)
+  // 체크포인트/게시판 상세 진입용 초기 선택 — 메인 각 영역 '항목' 클릭 시 상세로 직행(더보기는 목록)
+  const [curationInitial, setCurationInitial] = useState<CurationItem | null>(null);
+  const [noticeInitialId, setNoticeInitialId] = useState<string | null>(null);
+
+  // 공지사항(게시판) — 더보기/사이드바 진입 = 목록(상세 미지정)
   const handleOpenNotices = () => {
+    setNoticeInitialId(null);
     setCurrentView("notice");
+  };
+  // 게시판 '항목' 클릭 = 해당 게시글 상세로 직행
+  const handleOpenNoticeItem = (id: string) => {
+    setNoticeInitialId(id);
+    setCurrentView("notice");
+  };
+  // 체크포인트 더보기 = 목록 / '항목' 클릭 = 해당 항목 상세로 직행
+  const handleOpenCuration = () => {
+    setCurationInitial(null);
+    setCurrentView("curation");
+  };
+  const handleOpenCurationItem = (item: CurationItem) => {
+    setCurationInitial(item);
+    setCurrentView("curation");
   };
   // 크레딧 사용현황 — 페이지 전환(전체화면)
   const handleOpenCredit = () => {
@@ -452,8 +472,10 @@ export default function App() {
               onOpenPolicyManagement={() => handleOpenPolicyUpload("home_nudge")}
               onOpenCalculator={() => setCurrentView("calculator")}
               onOpenNoticePopup={() => setShowEmergency(true)}
-              onOpenNotices={() => setCurrentView("notice")}
-              onOpenCuration={() => setCurrentView("curation")}
+              onOpenNotices={handleOpenNotices}
+              onOpenNoticeItem={handleOpenNoticeItem}
+              onOpenCuration={handleOpenCuration}
+              onOpenCurationItem={handleOpenCurationItem}
               onRegisterFileAsPolicy={handleRegisterFileAsPolicy}
             />
           )}
@@ -498,12 +520,13 @@ export default function App() {
             <LaborCalculatorView onBack={() => setCurrentView("home")} />
           )}
 
-          {currentView === "notice" && <NoticeView onBack={() => setCurrentView("home")} />}
+          {currentView === "notice" && <NoticeView onBack={() => setCurrentView("home")} initialNoticeId={noticeInitialId} />}
 
           {currentView === "curation" && (
             <CurationView
               onBack={() => setCurrentView("home")}
               onSelectQuestion={(question, laws) => handleStartChat(question, selectedLaws, laws, "normal")}
+              initialItem={curationInitial}
             />
           )}
 

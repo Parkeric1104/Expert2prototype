@@ -4,9 +4,12 @@ import { getNotices, getNoticeTypes, markAllNoticesRead, type Notice, type Notic
 
 // 공지사항 페이지(전체화면). 사이드패널 하단 '공지사항' → 페이지 전환으로 진입.
 // 목록: 상단 '메인으로 돌아가기' 바 노출 / 상세: 상단 GNB 미노출(몰입형) + 하단 고정 '목록으로'.
-export function NoticeView({ onBack }: { onBack: () => void }) {
+export function NoticeView({ onBack, initialNoticeId }: { onBack: () => void; initialNoticeId?: string | null }) {
   const notices = getNotices();
-  const [selected, setSelected] = useState<Notice | null>(null);
+  // 메인 게시판 항목 클릭 진입 시 해당 게시글 상세로 바로 노출(더보기는 목록)
+  const [selected, setSelected] = useState<Notice | null>(
+    () => (initialNoticeId ? notices.find((n) => n.id === initialNoticeId) ?? null : null)
+  );
   const [filter, setFilter] = useState<"전체" | NoticeType>("전체");
   // 카테고리 탭 = 기본 유형 + BO에서 추가된 커스텀 유형 (데이터에서 파생)
   const TABS: ("전체" | NoticeType)[] = ["전체", ...getNoticeTypes()];

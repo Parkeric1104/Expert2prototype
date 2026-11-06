@@ -9,12 +9,14 @@ import { getCurationSet, ddayLabel, type CurationItem } from "@/app/data/curatio
 export function CurationView({
   onBack,
   onSelectQuestion,
+  initialItem = null,
 }: {
   onBack: () => void;
   onSelectQuestion: (question: string, laws: string[]) => void;
+  initialItem?: CurationItem | null; // 메인 항목 클릭 진입 시 바로 상세로 노출(더보기는 목록)
 }) {
   const { caption, items } = getCurationSet();
-  const [selected, setSelected] = useState<CurationItem | null>(null);
+  const [selected, setSelected] = useState<CurationItem | null>(initialItem);
 
   // ── 상세: 공지 상세와 동일(상단 GNB 미노출 + 하단 고정 바) ─────────────
   if (selected) {

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { track } from "@/app/utils/track";
 import { getServiceVersion, getNotices } from "@/app/data/service-content";
-import { getCurationSet, ddayLabel } from "@/app/data/curation";
+import { getCurationSet, ddayLabel, type CurationItem } from "@/app/data/curation";
 import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
 import { RagSourceSelect } from "@/app/components/rag-source-select";
@@ -29,8 +29,10 @@ interface ModernHomeViewProps {
   onOpenPolicyManagement?: () => void; // 미등록 넛지 배너 → 정책 문서 관리 진입
   onOpenCalculator?: () => void; // 펑션 메뉴 → 노무 계산기 진입
   onOpenNoticePopup?: () => void; // 펑션 메뉴 → 공지 팝업(프로토타입 확인용)
-  onOpenNotices?: () => void; // 홈 게시판 → 게시판 전체(종🔔과 동일 소스)
-  onOpenCuration?: () => void; // 홈 체크포인트 더보기 → 체크포인트 전체 페이지
+  onOpenNotices?: () => void; // 홈 게시판 '더보기' → 게시판 목록(종🔔과 동일 소스)
+  onOpenNoticeItem?: (id: string) => void; // 홈 게시판 '항목' 클릭 → 해당 게시글 상세
+  onOpenCuration?: () => void; // 홈 체크포인트 '더보기' → 체크포인트 목록
+  onOpenCurationItem?: (item: CurationItem) => void; // 홈 체크포인트 '항목' 클릭 → 해당 항목 상세
   onRegisterFileAsPolicy?: (file: { name: string; size: number }) => void; // 파일 오류 팝업 '등록하기' → 노무정책문서관리 등록
 }
 
@@ -61,7 +63,7 @@ const TAB_CHIPS: Record<string, string[]> = {
 
 // 큐레이션(체크포인트) 데이터·D-day 계산은 @/app/data/curation 로 분리(홈·전체페이지 공용).
 
-export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator, onOpenNoticePopup, onOpenNotices, onOpenCuration, onRegisterFileAsPolicy }: ModernHomeViewProps) {
+export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, onClearLaws, onOpenPolicyManagement, onOpenCalculator, onOpenNoticePopup, onOpenNotices, onOpenNoticeItem, onOpenCuration, onOpenCurationItem, onRegisterFileAsPolicy }: ModernHomeViewProps) {
   const [inputValue, setInputValue]     = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: number }[]>([]);
   const [isDragging, setIsDragging]     = useState(false);
@@ -634,7 +636,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                 return (
                   <button
                     key={i}
-                    onClick={() => { track("curation_click", { title: it.title }); handlePromptClick(it.question, it.laws, "normal"); }}
+                    onClick={() => { track("curation_click", { title: it.title }); onOpenCurationItem?.(it); }}
                     className="flex items-center gap-2.5 w-full py-2.5 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors"
                   >
                     <span className="flex-1 min-w-0">
@@ -661,7 +663,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
               {boardNotices.map((n) => (
                 <button
                   key={n.id}
-                  onClick={onOpenNotices}
+                  onClick={() => onOpenNoticeItem?.(n.id)}
                   className="flex items-center gap-2 w-full py-2 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors"
                 >
                   <span className={`text-[10px] font-extrabold rounded-md px-1.5 py-1 flex-shrink-0 ${n.type === "공지" ? "text-primary bg-primary/10" : "text-purple-600 bg-purple-500/10"}`}>
