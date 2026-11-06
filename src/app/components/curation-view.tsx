@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { ArrowLeft, Megaphone, ChevronRight, ChevronLeft } from "lucide-react";
+import { ArrowLeft, Megaphone, ChevronRight, ChevronLeft, X } from "lucide-react";
 import { getCurationSet, ddayLabel, type CurationItem } from "@/app/data/curation";
-import { LawViewerPanel } from "@/app/components/law-viewer-panel";
+import { LawCenterView } from "@/app/components/law-viewer-panel";
 
 // 체크포인트 전체 페이지(전체화면). 홈 '체크포인트 > 더보기' → 페이지 전환으로 진입.
 // 목록: 상단 '메인으로 돌아가기' 바 노출.
@@ -23,8 +23,9 @@ export function CurationView({
   // ── 상세: 공지 상세와 동일(상단 GNB 미노출 + 하단 고정 바) ─────────────
   if (selected) {
     return (
-      <>
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex">
+      {/* 상세 본문 컬럼 — 법령 패널이 열리면 폭이 줄며 옆으로 밀림(오버레이 아님) */}
+      <div className="flex-1 min-w-0 flex flex-col">
         {/* 본문(고정 영역, 내부 스크롤) */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           <article className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4 py-8">
@@ -83,8 +84,26 @@ export function CurationView({
           </div>
         </div>
       </div>
-      <LawViewerPanel lawRef={lawRef} onClose={() => setLawRef(null)} />
-      </>
+
+      {/* 우측 법령 패널 — 본문을 밀어 나란히(split). 오버레이/딤 없음 */}
+      {lawRef && (
+        <aside className="w-[440px] max-lg:w-[380px] flex-shrink-0 border-l border-border bg-card flex flex-col">
+          <div className="flex items-center justify-between px-5 h-14 border-b border-border flex-shrink-0">
+            <h2 className="text-base font-bold text-foreground">법령 원문</h2>
+            <button
+              onClick={() => setLawRef(null)}
+              aria-label="닫기"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <LawCenterView lawRef={lawRef} />
+          </div>
+        </aside>
+      )}
+      </div>
     );
   }
 
