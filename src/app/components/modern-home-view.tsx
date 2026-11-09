@@ -612,6 +612,15 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                     </button>
                   );
                 })}
+                {filteredPrompts.length === 0 && (
+                  <div className="py-6 flex flex-col items-center text-center" style={{ wordBreak: "keep-all" }}>
+                    <span className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center mb-2">
+                      <Search className="w-4 h-4 text-muted-foreground/50" />
+                    </span>
+                    <p className="text-[12.5px] font-semibold text-foreground/70">등록된 추천 질문이 없어요</p>
+                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">궁금한 점은 위 입력창에 직접 물어보세요.</p>
+                  </div>
+                )}
               </div>
               {/* 3개 초과 시 하단 페이드(더 있음 암시) */}
               {filteredPrompts.length > 3 && (
