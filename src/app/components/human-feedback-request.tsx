@@ -222,42 +222,73 @@ export function HumanFeedbackRequest({
               <p className="text-sm text-foreground/90 leading-relaxed">{descriptionText}</p>
             )
           )}
-        </div>
-      </div>
 
-      {/* 액션 — 되묻기에 대한 응답 (버블과 좌측 정렬) */}
-      <div className="flex items-center gap-2 pl-[52px] flex-wrap">
-        {data ? (
-          <>
-            <button
-              onClick={handleContinue}
-              disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ wordBreak: "keep-all" }}
-            >
-              바로 답변받기
-            </button>
-            <button
-              onClick={() => setAdding(true)}
-              disabled={isSubmitting}
-              className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                adding ? "border-primary bg-primary/5 text-primary" : "border-primary/50 text-primary hover:bg-primary/5"
-              }`}
-              style={{ wordBreak: "keep-all" }}
-            >
-              내용 추가하기
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={handleRetype}
-            disabled={isSubmitting}
-            className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ wordBreak: "keep-all" }}
-          >
-            질문 다시 입력하기
-          </button>
-        )}
+          {/* 액션 — 버블(박스) 내부: 버튼 ↔ '내용 추가' 입력창 전환 */}
+          {adding && data ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setAdding(false); setAddText(""); }}
+                disabled={isSubmitting}
+                aria-label="닫기"
+                className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                닫기
+              </button>
+              <textarea
+                autoFocus
+                value={addText}
+                onChange={(e) => setAddText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitAdd(); } }}
+                placeholder="추가로 알려주실 내용을 입력해 보세요."
+                rows={1}
+                disabled={isSubmitting}
+                className="flex-1 resize-none px-3.5 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors placeholder:text-muted-foreground/70 disabled:opacity-50"
+                style={{ maxHeight: 120 }}
+              />
+              <button
+                onClick={submitAdd}
+                disabled={!addText.trim() || isSubmitting}
+                aria-label="보내기"
+                className="h-10 w-10 flex-shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground/50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ArrowUp className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap">
+              {data ? (
+                <>
+                  <button
+                    onClick={handleContinue}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ wordBreak: "keep-all" }}
+                  >
+                    바로 답변받기
+                  </button>
+                  <button
+                    onClick={() => setAdding(true)}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 rounded-lg border border-primary/50 text-sm font-medium text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ wordBreak: "keep-all" }}
+                  >
+                    내용 추가하기
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleRetype}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ wordBreak: "keep-all" }}
+                >
+                  질문 다시 입력하기
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 원클릭 맥락 추가 칩 (insufficient — 원 질문 주제 고정) */}
@@ -308,42 +339,6 @@ export function HumanFeedbackRequest({
             </div>
           </div>
         )
-      )}
-
-      {/* 내용 추가 인라인 입력창 — '내용 추가하기' 선택 시 피드백 영역 하단에 노출 */}
-      {data && adding && (
-        <div className="pl-[52px] pt-1">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { setAdding(false); setAddText(""); }}
-              disabled={isSubmitting}
-              aria-label="닫기"
-              className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              닫기
-            </button>
-            <textarea
-              autoFocus
-              value={addText}
-              onChange={(e) => setAddText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitAdd(); } }}
-              placeholder="추가로 알려주실 내용을 입력해 보세요."
-              rows={1}
-              disabled={isSubmitting}
-              className="flex-1 resize-none px-3.5 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors placeholder:text-muted-foreground/70 disabled:opacity-50"
-              style={{ maxHeight: 120 }}
-            />
-            <button
-              onClick={submitAdd}
-              disabled={!addText.trim() || isSubmitting}
-              aria-label="보내기"
-              className="h-10 w-10 flex-shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground/50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ArrowUp className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       )}
     </div>
   );
