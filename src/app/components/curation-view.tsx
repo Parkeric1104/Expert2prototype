@@ -76,7 +76,15 @@ export function CurationView({
           <div className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4">
             {asking ? (
               <div className="border-t border-border py-3">
-                <div className="flex items-end gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setAsking(false); setAskText(""); }}
+                    aria-label="닫기"
+                    className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    닫기
+                  </button>
                   <textarea
                     autoFocus
                     value={askText}
@@ -96,13 +104,6 @@ export function CurationView({
                     <ArrowUp className="w-4 h-4" />
                   </button>
                 </div>
-                <button
-                  onClick={() => { setAsking(false); setAskText(""); }}
-                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  닫기
-                </button>
               </div>
             ) : (
               <div className="border-t border-border py-4 flex items-center justify-between gap-3">
