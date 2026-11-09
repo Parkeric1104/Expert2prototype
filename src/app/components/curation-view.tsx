@@ -179,12 +179,10 @@ export function CurationView({
                   className="group w-full text-left px-4 py-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all flex items-center gap-3"
                 >
                   <span className="flex-1 min-w-0">
-                    <span className="flex items-center gap-2">
-                      <span className="text-[15px] font-bold text-foreground" style={{ wordBreak: "keep-all" }}>{it.title}</span>
-                      <span className="text-[11px] font-extrabold text-white bg-rose-500 rounded-md px-2 py-0.5 flex-shrink-0">{ddayLabel(it.deadline)}</span>
-                    </span>
+                    <span className="block text-[15px] font-bold text-foreground" style={{ wordBreak: "keep-all" }}>{it.title}</span>
                     <span className="block text-[12.5px] text-muted-foreground mt-1" style={{ wordBreak: "keep-all" }}>{it.sub}</span>
                   </span>
+                  <span className="text-[11px] font-extrabold text-white bg-rose-500 rounded-md px-2 py-0.5 flex-shrink-0">{ddayLabel(it.deadline)}</span>
                   <ChevronRight className="w-5 h-5 text-muted-foreground/60 group-hover:text-primary flex-shrink-0 transition-colors" />
                 </button>
               </li>
