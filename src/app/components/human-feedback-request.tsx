@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, HelpCircle, Plus } from "lucide-react";
+import { Search, HelpCircle, Plus, ArrowUp, ChevronLeft } from "lucide-react";
 import characterImg from "@/assets/dobi-chat.png";
 
 interface HumanFeedbackRequestProps {
@@ -120,9 +120,18 @@ export function HumanFeedbackRequest({
   onContextChip,
 }: HumanFeedbackRequestProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [adding, setAdding] = useState(false); // '내용 추가하기' → 피드백 영역 하단 인라인 입력창 노출
+  const [addText, setAddText] = useState("");
 
   // insufficient일 때만 구조화 데이터(요약·조건·칩) 사용
   const data = reason === "insufficient" ? buildFeedbackData(originalQuestion) : null;
+
+  // 인라인 입력창 전송 — 원 질문에 추가 맥락을 더해 바로 답변(칩 선택과 동일 경로)
+  const submitAdd = () => {
+    const t = addText.trim();
+    if (!t || isSubmitting) return;
+    onContextChip?.(t);
+  };
 
   const getDescriptionText = () => {
     switch (reason) {
@@ -229,9 +238,11 @@ export function HumanFeedbackRequest({
               바로 답변받기
             </button>
             <button
-              onClick={() => onAddContext?.()}
+              onClick={() => setAdding(true)}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg border border-primary/50 text-sm font-medium text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                adding ? "border-primary bg-primary/5 text-primary" : "border-primary/50 text-primary hover:bg-primary/5"
+              }`}
               style={{ wordBreak: "keep-all" }}
             >
               내용 추가하기
@@ -297,6 +308,42 @@ export function HumanFeedbackRequest({
             </div>
           </div>
         )
+      )}
+
+      {/* 내용 추가 인라인 입력창 — '내용 추가하기' 선택 시 피드백 영역 하단에 노출 */}
+      {data && adding && (
+        <div className="pl-[52px] pt-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setAdding(false); setAddText(""); }}
+              disabled={isSubmitting}
+              aria-label="닫기"
+              className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              닫기
+            </button>
+            <textarea
+              autoFocus
+              value={addText}
+              onChange={(e) => setAddText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitAdd(); } }}
+              placeholder="추가로 알려주실 내용을 입력해 보세요."
+              rows={1}
+              disabled={isSubmitting}
+              className="flex-1 resize-none px-3.5 py-2.5 rounded-xl border border-border bg-card text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors placeholder:text-muted-foreground/70 disabled:opacity-50"
+              style={{ maxHeight: 120 }}
+            />
+            <button
+              onClick={submitAdd}
+              disabled={!addText.trim() || isSubmitting}
+              aria-label="보내기"
+              className="h-10 w-10 flex-shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground/50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ArrowUp className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
