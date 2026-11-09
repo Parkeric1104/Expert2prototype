@@ -6,7 +6,7 @@ import { CurationView } from "@/app/components/curation-view";
 import type { CurationItem } from "@/app/data/curation";
 import { CreditUsageView } from "@/app/components/credit-usage-view";
 import { EmergencyPopup } from "@/app/components/emergency-popup";
-import { getEmergency, getUnreadCount } from "@/app/data/service-content";
+import { getEmergency, getEmergencyQueue, getUnreadCount, type Emergency } from "@/app/data/service-content";
 import { useContentTick } from "@/app/hooks/use-live-content";
 import { TopHeader } from "@/app/components/top-header";
 import { ModernHomeView } from "@/app/components/modern-home-view";
@@ -24,6 +24,25 @@ import { Toaster } from "@/app/components/ui/sonner";
 import { getHistorySession, ChatHistorySession } from "@/app/data/chat-history";
 import { ExpertVerifyModal } from "@/app/components/expert-verify-modal";
 import { useExpertAuth } from "@/app/data/expert-auth";
+
+// 공지 팝업 '다시 보지 않기' — 팝업(id)+리비전 단위 키. 여러 팝업을 각각 억제(Set, localStorage 영구).
+const emgKey = (e: Emergency) => `${e.popupId ?? "static"}:${e.revision ?? 0}`;
+const POPUP_HIDDEN_KEY = "notice_popup_hidden_revs";
+function readPopupHiddenSet(): Set<string> {
+  try {
+    const arr = JSON.parse(localStorage.getItem(POPUP_HIDDEN_KEY) || "[]");
+    const set = new Set<string>(Array.isArray(arr) ? arr : []);
+    const legacy = localStorage.getItem("notice_popup_hidden_rev"); // 구버전 단일 키 호환
+    if (legacy) set.add(legacy);
+    return set;
+  } catch { return new Set<string>(); }
+}
+function addPopupHidden(key: string) {
+  try {
+    const set = readPopupHiddenSet(); set.add(key);
+    localStorage.setItem(POPUP_HIDDEN_KEY, JSON.stringify([...set]));
+  } catch { /* noop */ }
+}
 
 export default function App() {
   const [currentView, setCurrentView] = useState<"home" | "chat" | "policy" | "embedding" | "calculator" | "notice" | "curation" | "credit">("home");
@@ -86,30 +105,28 @@ export default function App() {
   const handleOpenCredit = () => {
     setCurrentView("credit");
   };
-  // 공지 팝업(중앙) — content.active 자동 노출(단, '다시 보지 않기' 시 억제) / 데모 ?emergency는 강제
-  const [showEmergency, setShowEmergency] = useState<boolean>(() => {
-    if (typeof window === "undefined") return getEmergency().active;
+  // 공지 팝업(중앙) — 활성 팝업 N개를 등록일순 순차 노출(최대 3개). '확인'으로 다음, '다시 보지 않기'는 영구 억제.
+  // 데모 ?emergency는 '다시 보지 않기' 무시하고 전부 강제 노출.
+  const buildEmergencyQueue = (): Emergency[] => {
+    if (typeof window === "undefined") { const e = getEmergency(); return e.active ? [e] : []; }
     const params = new URLSearchParams(window.location.search);
-    if (params.has("emergency")) return true; // 데모 강제 노출
-    const e = getEmergency();
-    // '다시 보지 않기'는 팝업(id)+리비전 단위 — BO에서 수정/재활성화 시 리비전 증가로 재노출(POP-003)
-    if (localStorage.getItem("notice_popup_hidden_rev") === `${e.popupId ?? "static"}:${e.revision ?? 0}`) return false;
-    return e.active;
-  });
+    const force = params.has("emergency");
+    let list = getEmergencyQueue();
+    if (force && list.length === 0) list = [getEmergency()]; // 데모: 활성 없어도 정적 팝업 노출
+    if (force) return list;
+    // '다시 보지 않기'는 팝업(id)+리비전 단위 — BO 수정/재활성화 시 리비전 증가로 재노출(POP-003)
+    const hidden = readPopupHiddenSet();
+    return list.filter((e) => !hidden.has(emgKey(e)));
+  };
+  const [emgQueue, setEmgQueue] = useState<Emergency[]>(buildEmergencyQueue);
+  const [emgIdx, setEmgIdx] = useState(0);
+  const currentEmergency = emgIdx < emgQueue.length ? emgQueue[emgIdx] : null;
 
-  // 공지 팝업 크로스탭 실시간: BO가 다른 탭에서 활성/수정하면 새로고침 없이 노출.
-  // '확인'으로 닫은 리비전은 이 세션 재노출 안 함(popupDismissedKey) / '다시 보지 않기'는 영구(localStorage) / BO 비활성화 시 닫힘.
-  const [popupDismissedKey, setPopupDismissedKey] = useState<string | null>(null);
+  // 크로스탭 실시간: BO가 다른 탭에서 활성/수정하면 새로고침 없이 큐 재구성(처음부터 노출).
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (new URLSearchParams(window.location.search).has("emergency")) return; // 데모 강제 노출 유지
-    const e = getEmergency();
-    const key = `${e.popupId ?? "static"}:${e.revision ?? 0}`;
-    if (!e.active) { setShowEmergency(false); return; }                         // BO 비활성화 → 닫기
-    if (localStorage.getItem("notice_popup_hidden_rev") === key) return;        // 다시 보지 않기(영구)
-    if (popupDismissedKey === key) return;                                      // 이 세션에서 '확인'으로 닫음
-    setShowEmergency(true);
-  }, [contentTick, popupDismissedKey]);
+    setEmgQueue(buildEmergencyQueue());
+    setEmgIdx(0);
+  }, [contentTick]);
   const [requestDraftDocument, setRequestDraftDocument] = useState(false);
   const [historySession, setHistorySession] = useState<ChatHistorySession | null>(null); // 채팅 이력 보기(전체화면 복원)
   // 전문가 인증(자격 검증) — 법무검토(260928): 상세분석·의견서는 승인된 전문가에게만 제공
@@ -360,18 +377,15 @@ export default function App() {
       {/* 퍼널 검증 패널 (?funnel) */}
       {showFunnelPanel && <FunnelDebugPanel onClose={() => setShowFunnelPanel(false)} />}
 
-      {/* 서비스 오류 긴급 팝업 (전역 최우선) */}
-      {showEmergency && (
+      {/* 공지 팝업 (전역 최우선) — 활성 N개 등록일순 순차 노출(최대 3개) */}
+      {currentEmergency && (
         <EmergencyPopup
-          onClose={() => {
-            setShowEmergency(false);
-            const e = getEmergency();
-            setPopupDismissedKey(`${e.popupId ?? "static"}:${e.revision ?? 0}`); // '확인'=이 세션 재노출 억제
-          }}
+          emergency={currentEmergency}
+          step={{ current: emgIdx + 1, total: emgQueue.length }}
+          onClose={() => setEmgIdx((i) => i + 1)} // '확인'/'다음' → 큐의 다음 팝업
           onDontShowAgain={() => {
-            setShowEmergency(false);
-            const e = getEmergency();
-            try { localStorage.setItem("notice_popup_hidden_rev", `${e.popupId ?? "static"}:${e.revision ?? 0}`); } catch { /* noop */ }
+            addPopupHidden(emgKey(currentEmergency)); // 영구 억제(이 팝업 리비전)
+            setEmgIdx((i) => i + 1);
           }}
         />
       )}
@@ -471,7 +485,7 @@ export default function App() {
               onClearLaws={() => setSelectedLaws([])}
               onOpenPolicyManagement={() => handleOpenPolicyUpload("home_nudge")}
               onOpenCalculator={() => setCurrentView("calculator")}
-              onOpenNoticePopup={() => setShowEmergency(true)}
+              onOpenNoticePopup={() => { setEmgQueue(buildEmergencyQueue()); setEmgIdx(0); }}
               onOpenNotices={handleOpenNotices}
               onOpenNoticeItem={handleOpenNoticeItem}
               onOpenCuration={handleOpenCuration}

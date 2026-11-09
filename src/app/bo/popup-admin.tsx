@@ -1,13 +1,13 @@
 /**
  * BO 공지팝업 관리 (POP-001~004).
  * 상단 "현재 노출 상태" 요약 카드 + 목록(활성/비활성 제어) + 등록·수정 폼(우측 스티키 미리보기).
- * 단일 팝업만 노출(POP-002), 수정 시 '다시 보지 않기' 사용자에게도 재노출(POP-003).
+ * 활성 팝업은 여럿 가능 — 등록일순 최대 MAX_POPUP_QUEUE개까지 순차 노출(POP-002), 수정 시 '다시 보지 않기' 사용자에게도 재노출(POP-003).
  */
 import { useMemo, useState } from "react";
 import { Plus, Search, Info, AlertTriangle, AlertOctagon } from "lucide-react";
 import { toast } from "sonner";
 import {
-  BOPopup, loadPopups, savePopup, deletePopup, setPopupActive, popupStatus, PopupStatus, inPeriod, todayStr, newId,
+  BOPopup, loadPopups, savePopup, deletePopup, setPopupActive, popupStatus, PopupStatus, inPeriod, todayStr, newId, MAX_POPUP_QUEUE,
 } from "@/app/bo/bo-store";
 import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, PeriodCell } from "@/app/bo/bo-ui";
 
@@ -29,12 +29,15 @@ export function PopupAdmin() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<BOPopup | null>(null);
-  const [activateTarget, setActivateTarget] = useState<BOPopup | null>(null); // 기존 활성 팝업 교체 확인
 
   const refresh = () => setPopups(loadPopups());
 
-  const shown = popups.find((p) => p.active && inPeriod(p.publishStart, p.publishEnd));
-  const currentActive = popups.find((p) => p.active);
+  // 현재 노출 중(활성 + 기간 내) — 등록일순, 최대 MAX_POPUP_QUEUE개만 실제 순차 노출
+  const liveSorted = popups
+    .filter((p) => p.active && inPeriod(p.publishStart, p.publishEnd))
+    .sort((a, b) => (a.createdAt === b.createdAt ? (a.id < b.id ? -1 : 1) : a.createdAt < b.createdAt ? -1 : 1));
+  const shownList = liveSorted.slice(0, MAX_POPUP_QUEUE);
+  const waitingCount = Math.max(0, liveSorted.length - MAX_POPUP_QUEUE); // 3개 초과 대기분
 
   const filtered = useMemo(() => {
     const sorted = [...popups].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
@@ -45,20 +48,19 @@ export function PopupAdmin() {
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleToggle = (p: BOPopup) => {
+    setPopupActive(p.id, !p.active);
+    const next = loadPopups();
+    setPopups(next);
     if (p.active) {
-      setPopupActive(p.id, false);
-      refresh();
       toast.success("팝업이 비활성화되었어요.");
       return;
     }
-    // 다른 팝업이 활성 상태면 교체 확인(단일 노출)
-    if (currentActive && currentActive.id !== p.id) {
-      setActivateTarget(p);
-      return;
+    const liveCount = next.filter((x) => x.active && inPeriod(x.publishStart, x.publishEnd)).length;
+    if (liveCount > MAX_POPUP_QUEUE) {
+      toast.success(`팝업이 활성화되었어요. 노출 중 팝업이 ${MAX_POPUP_QUEUE}개를 초과해, 등록일 빠른 ${MAX_POPUP_QUEUE}개만 순차 노출돼요.`);
+    } else {
+      toast.success("팝업이 활성화되었어요. 서비스 메인에 순차 노출돼요.");
     }
-    setPopupActive(p.id, true);
-    refresh();
-    toast.success("팝업이 활성화되었어요. 서비스 메인에 바로 노출돼요.");
   };
 
   if (editing) {
@@ -79,7 +81,7 @@ export function PopupAdmin() {
     <div>
       <PageHeader
         title="공지팝업"
-        desc="서비스 메인 중앙에 노출되는 팝업을 관리할 수 있어요. 팝업은 한 번에 1개만 노출돼요."
+        desc={`서비스 메인 중앙에 노출되는 팝업을 관리할 수 있어요. 활성 팝업이 여러 개면 등록일 순서로 최대 ${MAX_POPUP_QUEUE}개까지 순차 노출돼요(사용자는 확인/다음으로 넘겨 봐요).`}
         action={
           <button
             onClick={() => setEditing("new")}
@@ -91,24 +93,30 @@ export function PopupAdmin() {
         }
       />
 
-      {/* 현재 노출 상태 요약 카드 (apps in toss '현재 출시된 버전' 패턴) */}
+      {/* 현재 노출 상태 요약 카드 — 순차 큐(등록일순, 최대 MAX_POPUP_QUEUE개) */}
       <Card className="p-5 mb-4">
-        {shown ? (
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full ${SEV[shown.severity].bg} flex items-center justify-center flex-shrink-0`}>
-              {(() => { const I = SEV[shown.severity].Icon; return <I className={`w-5 h-5 ${SEV[shown.severity].text}`} />; })()}
+        {shownList.length > 0 ? (
+          <div>
+            <div className="flex items-center gap-2">
+              <StatusDot tone="green" label={`현재 노출 중인 팝업 ${shownList.length}개`} />
+              {shownList.length > 1 && <span className="text-xs text-muted-foreground">등록일 순서로 순차 노출</span>}
+              {waitingCount > 0 && <span className="text-xs text-amber-600">외 {waitingCount}개 대기(최대 {MAX_POPUP_QUEUE}개 노출)</span>}
             </div>
-            <div className="flex-1 min-w-0">
-              <StatusDot tone="green" label="현재 노출 중인 팝업" />
-              <p className="mt-0.5 text-lg font-bold text-foreground truncate">{shown.title}</p>
-            </div>
+            <ol className="mt-2.5 space-y-1.5">
+              {shownList.map((p, i) => (
+                <li key={p.id} className="flex items-center gap-2.5">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center">{i + 1}</span>
+                  <div className={`w-7 h-7 rounded-full ${SEV[p.severity].bg} flex items-center justify-center flex-shrink-0`}>
+                    {(() => { const I = SEV[p.severity].Icon; return <I className={`w-4 h-4 ${SEV[p.severity].text}`} />; })()}
+                  </div>
+                  <p className="flex-1 min-w-0 text-sm font-semibold text-foreground truncate">{p.title}</p>
+                </li>
+              ))}
+            </ol>
           </div>
         ) : (
           <div className="flex items-center gap-3">
             <StatusDot tone="gray" label="현재 노출 중인 팝업이 없어요" />
-            {currentActive && popupStatus(currentActive) !== "노출중" && (
-              <span className="text-xs text-muted-foreground">활성 팝업이 게시 기간 밖이에요 ({popupStatus(currentActive)})</span>
-            )}
           </div>
         )}
       </Card>
@@ -183,19 +191,6 @@ export function PopupAdmin() {
         }}
       />
 
-      <ConfirmModal
-        open={activateTarget != null}
-        title="이 팝업으로 교체할까요?"
-        desc={`팝업은 한 번에 1개만 노출할 수 있어요. "${activateTarget?.title}"을(를) 활성화하면 기존 활성 팝업 "${currentActive?.title}"은(는) 자동으로 비활성화돼요.`}
-        confirmLabel="교체하고 활성화"
-        onCancel={() => setActivateTarget(null)}
-        onConfirm={() => {
-          if (activateTarget) setPopupActive(activateTarget.id, true);
-          setActivateTarget(null);
-          refresh();
-          toast.success("팝업이 교체되었어요. 서비스 메인에 바로 노출돼요.");
-        }}
-      />
     </div>
   );
 }

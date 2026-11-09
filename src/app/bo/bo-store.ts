@@ -26,7 +26,7 @@ export interface BOPopup {
   title: string;          // ≤30자 (POP-003)
   message: string;        // ≤150자
   severity: EmergencySeverity;
-  active: boolean;        // 단일 팝업만 활성(POP-002)
+  active: boolean;        // 활성 팝업은 여럿 가능 — 노출은 등록일순 순차 큐(POP-002)
   revision: number;       // 수정/재활성화 시 증가 → '다시 보지 않기' 해제(재노출)
   createdAt: string;
   publishStart?: string;
@@ -36,6 +36,9 @@ export interface BOPopup {
 const NOTICES_KEY = "bo_notices";
 const POPUPS_KEY = "bo_popups";
 const VERSION_KEY = "bo_version";
+
+/** 공지 팝업 동시 노출 최대 개수 — 활성 팝업이 이보다 많으면 등록일 빠른 순으로 상위 N개만 순차 노출(POP-002). */
+export const MAX_POPUP_QUEUE = 3;
 
 // 최초 진입 시드 — 서비스 정적 소스(service-content)와 동일 내용
 const SEED_NOTICES: BONotice[] = [
@@ -166,13 +169,12 @@ export function deletePopup(id: string) {
   write(POPUPS_KEY, loadPopups().filter((p) => p.id !== id));
 }
 
-/** 활성/비활성 전환 — 단일 팝업만 노출 가능하므로 활성화 시 나머지는 자동 비활성(POP-002).
+/** 활성/비활성 전환 — 활성 팝업은 여럿 가능(등록일순 순차 노출, 최대 MAX_POPUP_QUEUE개).
  *  활성화도 새 노출로 간주해 revision 증가(재노출). */
 export function setPopupActive(id: string, active: boolean) {
-  const list = loadPopups().map((p) => {
-    if (p.id === id) return { ...p, active, revision: active ? p.revision + 1 : p.revision };
-    return active ? { ...p, active: false } : p;
-  });
+  const list = loadPopups().map((p) =>
+    p.id === id ? { ...p, active, revision: active ? p.revision + 1 : p.revision } : p
+  );
   write(POPUPS_KEY, list);
 }
 
@@ -414,20 +416,35 @@ export function getBOVisibleNotices(): Notice[] | null {
     }));
 }
 
-/** BO 저장값 기준 현재 노출 팝업(활성 + 기간 내). BO 미사용 시 null → 정적 소스 폴백 */
+const toEmergency = (p: BOPopup): Emergency => ({
+  active: true,
+  severity: p.severity,
+  title: p.title,
+  message: p.message,
+  popupId: p.id,
+  revision: p.revision,
+});
+
+/** BO 저장값 기준 현재 노출 팝업(활성 + 기간 내). BO 미사용 시 null → 정적 소스 폴백.
+ *  순차 큐의 첫 번째(등록일 가장 빠른) 팝업과 동일. */
 export function getBOEmergency(): Emergency | null {
+  const q = getBOEmergencyQueue();
+  if (q === null) return null;
+  return q[0] ?? { active: false, severity: "info", title: "", message: "" };
+}
+
+/** BO 저장값 기준 현재 노출 팝업 큐(활성 + 기간 내), 등록일 오름차순 · 최대 MAX_POPUP_QUEUE개.
+ *  BO 미사용 시 null → 정적 소스 폴백. 활성 팝업이 없으면 빈 배열([]). */
+export function getBOEmergencyQueue(): Emergency[] | null {
   const stored = read<BOPopup[]>(POPUPS_KEY);
   if (!stored) return null;
-  const shown = stored.find((p) => p.active && inPeriod(p.publishStart, p.publishEnd));
-  if (!shown) return { active: false, severity: "info", title: "", message: "" };
-  return {
-    active: true,
-    severity: shown.severity,
-    title: shown.title,
-    message: shown.message,
-    popupId: shown.id,
-    revision: shown.revision,
-  };
+  return stored
+    .filter((p) => p.active && inPeriod(p.publishStart, p.publishEnd))
+    .sort((a, b) =>
+      a.createdAt === b.createdAt ? (a.id < b.id ? -1 : 1) : a.createdAt < b.createdAt ? -1 : 1
+    )
+    .slice(0, MAX_POPUP_QUEUE)
+    .map(toEmergency);
 }
 
 export function getBOVersion(): ServiceVersion | null {

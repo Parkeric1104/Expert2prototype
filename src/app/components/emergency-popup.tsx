@@ -1,21 +1,32 @@
 import { AlertTriangle, AlertOctagon, Info } from "lucide-react";
-import { getEmergency, type EmergencySeverity } from "@/app/data/service-content";
+import { type Emergency, type EmergencySeverity } from "@/app/data/service-content";
 
 // 메인 중앙 공지 팝업(SVC-002). 심각도 3단계로 아이콘·색·라벨 구분.
-// 콘텐츠·심각도는 service-content(추후 백오피스). 데모: URL ?severity=info|warning|critical
+// 활성 팝업이 여러 개면 등록일순 순차 노출(최대 3개) — step으로 위치/전체 수 표기, '확인'→'다음'.
+// 데모: URL ?severity=info|warning|critical
 const SEV: Record<EmergencySeverity, { Icon: typeof Info; ring: string; bg: string }> = {
   info:     { Icon: Info,          ring: "text-primary",   bg: "bg-primary/10" },
   warning:  { Icon: AlertTriangle, ring: "text-amber-600", bg: "bg-amber-500/10" },
   critical: { Icon: AlertOctagon,  ring: "text-red-600",   bg: "bg-red-500/10" },
 };
 
-export function EmergencyPopup({ onClose, onDontShowAgain }: { onClose: () => void; onDontShowAgain: () => void }) {
-  const e = getEmergency();
+export function EmergencyPopup({
+  emergency,
+  step,
+  onClose,
+  onDontShowAgain,
+}: {
+  emergency: Emergency;
+  step?: { current: number; total: number }; // 순차 큐 위치(1부터). total>1일 때만 표기
+  onClose: () => void;
+  onDontShowAgain: () => void;
+}) {
   // 데모용 심각도 오버라이드(프로토타입에서 단계 확인)
   const override = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("severity") : null;
   const severity: EmergencySeverity =
-    override === "info" || override === "warning" || override === "critical" ? override : e.severity;
+    override === "info" || override === "warning" || override === "critical" ? override : emergency.severity;
   const s = SEV[severity];
+  const hasNext = step ? step.current < step.total : false;
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4">
@@ -25,10 +36,13 @@ export function EmergencyPopup({ onClose, onDontShowAgain }: { onClose: () => vo
           <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center flex-shrink-0`}>
             <s.Icon className={`w-5 h-5 ${s.ring}`} />
           </div>
-          <h2 className="text-base font-bold text-foreground" style={{ wordBreak: "keep-all" }}>{e.title}</h2>
+          <h2 className="flex-1 min-w-0 text-base font-bold text-foreground" style={{ wordBreak: "keep-all" }}>{emergency.title}</h2>
+          {step && step.total > 1 && (
+            <span className="flex-shrink-0 text-[11px] font-semibold text-muted-foreground tabular-nums">{step.current} / {step.total}</span>
+          )}
         </div>
         <div className="px-6 flex-1 min-h-0 overflow-y-auto">
-          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line" style={{ wordBreak: "keep-all" }}>{e.message}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line" style={{ wordBreak: "keep-all" }}>{emergency.message}</p>
         </div>
         <div className="px-6 pt-3 pb-5 flex-shrink-0 flex items-center justify-between">
           <button
@@ -41,7 +55,7 @@ export function EmergencyPopup({ onClose, onDontShowAgain }: { onClose: () => vo
             onClick={onClose}
             className="px-3 py-2 rounded-lg text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
           >
-            확인
+            {hasNext ? "다음" : "확인"}
           </button>
         </div>
       </div>

@@ -5,7 +5,7 @@
  * 우선 읽고, BO 저장값이 없으면 아래 정적 소스로 폴백(무배포 반영 SYS-003 데모).
  * 운영 전환 시 getter 내부만 BO API fetch로 교체하면 됨 — FE는 이 getter만 의존.
  */
-import { getBOVisibleNotices, getBOEmergency, getBOVersion } from "@/app/bo/bo-store";
+import { getBOVisibleNotices, getBOEmergency, getBOEmergencyQueue, getBOVersion } from "@/app/bo/bo-store";
 
 // 기본 유형(공지·릴리즈노트) 외에 BO에서 직접 입력한 유형도 허용 — FE 탭은 getNoticeTypes()에서 파생
 export type NoticeType = string;
@@ -86,6 +86,13 @@ export function getServiceVersion(): ServiceVersion {
 
 export function getEmergency(): Emergency {
   return getBOEmergency() ?? SERVICE_CONTENT.emergency;
+}
+
+/** 현재 노출 공지 팝업 큐 — 등록일순·최대 3개(순차 노출). BO 미사용 시 정적 폴백(활성 1건). */
+export function getEmergencyQueue(): Emergency[] {
+  const q = getBOEmergencyQueue();
+  if (q !== null) return q; // BO 사용 중(빈 배열이면 노출할 활성 팝업 없음)
+  return SERVICE_CONTENT.emergency.active ? [SERVICE_CONTENT.emergency] : [];
 }
 
 export function getNotices(): Notice[] {
