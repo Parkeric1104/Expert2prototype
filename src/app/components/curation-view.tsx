@@ -40,9 +40,9 @@ export function CurationView({
           <article className="w-full max-w-[760px] mx-auto px-6 max-sm:px-4 py-8">
             <div className="flex items-start justify-between gap-4 mb-4 pb-4 border-b border-border">
               <h2 className="flex-1 min-w-0 text-2xl font-bold text-foreground" style={{ wordBreak: "keep-all" }}>{selected.title}</h2>
-              <div className="flex-shrink-0 text-right text-xs text-muted-foreground space-y-1 pt-1">
-                <div>마감 {selected.deadline.replace(/-/g, ".")}</div>
-                <div className="inline-block text-[11px] font-extrabold text-white bg-rose-500 rounded-md px-2 py-0.5">{ddayLabel(selected.deadline)}</div>
+              <div className="flex-shrink-0 flex items-center gap-2 pt-1.5">
+                <span className="text-[11px] font-bold text-rose-600 bg-rose-50 rounded-md px-2 py-0.5">{ddayLabel(selected.deadline)}</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">마감 {selected.deadline.replace(/-/g, ".")}</span>
               </div>
             </div>
 
