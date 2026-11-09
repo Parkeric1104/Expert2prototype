@@ -53,7 +53,7 @@ export function CurationView({
             )}
 
             {selected.laws.length > 0 && (
-              <div className="mt-6">
+              <div className="mt-6 pt-6 border-t border-border">
                 <p className="text-xs font-semibold text-muted-foreground mb-2">근거 법령 <span className="font-normal text-muted-foreground/70">· 선택하면 원문을 볼 수 있어요</span></p>
                 <div className="flex flex-wrap gap-1.5">
                   {selected.laws.map((law, li) => (
