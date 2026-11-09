@@ -184,13 +184,6 @@ export function CurationView({
                       <span className="text-[11px] font-extrabold text-white bg-rose-500 rounded-md px-2 py-0.5 flex-shrink-0">{ddayLabel(it.deadline)}</span>
                     </span>
                     <span className="block text-[12.5px] text-muted-foreground mt-1" style={{ wordBreak: "keep-all" }}>{it.sub}</span>
-                    {it.laws.length > 0 && (
-                      <span className="mt-2 flex flex-wrap gap-1.5">
-                        {it.laws.map((law, li) => (
-                          <span key={li} className="text-[11px] font-medium text-primary bg-primary/10 rounded-md px-2 py-0.5">{law}</span>
-                        ))}
-                      </span>
-                    )}
                   </span>
                   <ChevronRight className="w-5 h-5 text-muted-foreground/60 group-hover:text-primary flex-shrink-0 transition-colors" />
                 </button>
