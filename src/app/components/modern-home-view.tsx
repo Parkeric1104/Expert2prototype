@@ -648,9 +648,13 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                 );
               })}
               {curation.items.length === 0 && (
-                <p className="py-5 text-center text-xs text-muted-foreground/70" style={{ wordBreak: "keep-all" }}>
-                  지금은 등록된 체크포인트가 없어요.
-                </p>
+                <div className="py-6 flex flex-col items-center text-center" style={{ wordBreak: "keep-all" }}>
+                  <span className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center mb-2">
+                    <Megaphone className="w-4 h-4 text-muted-foreground/50" />
+                  </span>
+                  <p className="text-[12.5px] font-semibold text-foreground/70">등록된 체크포인트가 없어요</p>
+                  <p className="text-[11px] text-muted-foreground/60 mt-0.5">새로운 일정이 등록되면 여기에 표시됩니다.</p>
+                </div>
               )}
             </div>
 
@@ -679,9 +683,13 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                 </button>
               ))}
               {boardNotices.length === 0 && (
-                <p className="py-5 text-center text-xs text-muted-foreground/70" style={{ wordBreak: "keep-all" }}>
-                  등록된 게시글이 없어요.
-                </p>
+                <div className="py-6 flex flex-col items-center text-center" style={{ wordBreak: "keep-all" }}>
+                  <span className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center mb-2">
+                    <ClipboardList className="w-4 h-4 text-muted-foreground/50" />
+                  </span>
+                  <p className="text-[12.5px] font-semibold text-foreground/70">등록된 게시글이 없어요</p>
+                  <p className="text-[11px] text-muted-foreground/60 mt-0.5">공지·릴리즈 소식이 올라오면 여기에 표시됩니다.</p>
+                </div>
               )}
             </div>
           </div>
