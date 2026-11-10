@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { track } from "@/app/utils/track";
-import { getServiceVersion, getNotices, getNoticeTypes, getHomeBlocks } from "@/app/data/service-content";
+import { getServiceVersion, getNotices, getHomeBlocks, getHomeBoardTypes } from "@/app/data/service-content";
 import { getCurationSet, ddayLabel, type CurationItem } from "@/app/data/curation";
 import { FunctionMenu } from "@/app/components/function-menu";
 import { AVAILABLE_LAWS } from "@/app/components/law-selection-modal";
@@ -122,11 +122,12 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
   const homeBlocks = getHomeBlocks();
   const singleBlock = homeBlocks.length === 1; // 1개만 노출 시 더 많은 항목 표시
   const allNotices = getNotices(); // 게시판 — 종🔔과 동일 소스(전체)
-  const boardTypeTabs = ["전체", ...getNoticeTypes()]; // 게시판 카테고리 탭(전체 + 공지 유형)
-  const [boardTab, setBoardTab] = useState("전체");
   const curationItems = curation.items.slice(0, singleBlock ? 4 : 2);
-  const boardNotices = (boardTab === "전체" ? allNotices : allNotices.filter((n) => n.type === boardTab))
-    .slice(0, singleBlock ? 6 : 2);
+  // 게시판 노출 유형(BO 설정) — 1개=단일 목록, 2개 이상=위·아래 스택 섹션
+  const boardTypes = getHomeBoardTypes();
+  const boardTotalMax = singleBlock ? 4 : 2; // 블록이 영역 전체면 4개, 분할이면 2개
+  const boardPerSection = Math.max(1, Math.floor(boardTotalMax / Math.max(1, boardTypes.length)));
+  const boardHasAny = boardTypes.some((t) => allNotices.some((n) => n.type === t));
 
   // 퍼널 S2: 홈 넛지(정책 등록 유도) 노출 시 1회 집계
   useEffect(() => {
@@ -682,7 +683,7 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                     </div>
                   </>
                 ) : (
-                  /* 게시판 — 기존 공지(종🔔)와 동일 소스 · 카테고리 탭 메뉴 제공 */
+                  /* 게시판 — BO가 선택한 공지 유형을 스택 섹션으로 노출(1개=단일 목록, 2개 이상=위·아래) */
                   <>
                     <div className="flex items-center">
                       <span className="text-sm font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
@@ -690,44 +691,45 @@ export function ModernHomeView({ onStartChat, onOpenLawSelector, selectedLaws, o
                       </span>
                       <button onClick={onOpenNotices} className="ml-auto text-xs text-muted-foreground font-medium hover:text-foreground transition-colors">더보기 ›</button>
                     </div>
-                    {/* 카테고리 탭 — 공지 유형 기반(전체 + BO 등록 유형 자동 반영) */}
-                    <div className="flex items-center gap-1 mt-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                      {boardTypeTabs.map((t) => (
-                        <button
-                          key={t}
-                          onClick={() => setBoardTab(t)}
-                          className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
-                            boardTab === t ? "bg-primary/10 text-primary" : "text-muted-foreground/70 hover:text-foreground"
-                          }`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="mt-1">
-                      {boardNotices.map((n) => (
-                        <button
-                          key={n.id}
-                          onClick={() => onOpenNoticeItem?.(n.id)}
-                          className="flex items-center gap-2 w-full py-2 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors"
-                        >
-                          <span className={`text-[10px] font-extrabold rounded-md px-1.5 py-1 flex-shrink-0 ${n.type === "공지" ? "text-primary bg-primary/10" : "text-purple-600 bg-purple-500/10"}`}>
-                            {n.type === "공지" ? "공지" : n.type === "릴리즈노트" ? "릴리즈" : n.type}
-                          </span>
-                          <span className="flex-1 min-w-0 text-[12.5px] font-medium text-foreground/90 truncate">{n.title}</span>
-                          <span className="text-[11px] text-muted-foreground/70 flex-shrink-0">{n.date.slice(5).replace("-", ".")}</span>
-                        </button>
-                      ))}
-                      {boardNotices.length === 0 && (
-                        <div className="py-6 flex flex-col items-center text-center" style={{ wordBreak: "keep-all" }}>
-                          <span className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center mb-2">
-                            <ClipboardList className="w-4 h-4 text-muted-foreground/50" />
-                          </span>
-                          <p className="text-[12.5px] font-semibold text-foreground/70">{boardTab === "전체" ? "등록된 게시글이 없어요" : `'${boardTab}' 게시글이 없어요`}</p>
-                          <p className="text-[11px] text-muted-foreground/60 mt-0.5">공지·릴리즈 소식이 올라오면 여기에 표시됩니다.</p>
-                        </div>
-                      )}
-                    </div>
+                    {boardHasAny ? (
+                      <div className="mt-1.5 space-y-2.5">
+                        {boardTypes.map((type) => {
+                          const items = allNotices.filter((n) => n.type === type).slice(0, boardPerSection);
+                          if (items.length === 0) return null;
+                          const multi = boardTypes.length > 1; // 2개 이상이면 섹션 헤더로 구분
+                          return (
+                            <div key={type}>
+                              {multi && (
+                                <p className="text-[11px] font-bold text-foreground/70 px-1 mb-0.5">{type}</p>
+                              )}
+                              {items.map((n) => (
+                                <button
+                                  key={n.id}
+                                  onClick={() => onOpenNoticeItem?.(n.id)}
+                                  className="flex items-center gap-2 w-full py-2 px-1 text-left border-t border-border/40 first:border-t-0 hover:bg-muted/30 transition-colors"
+                                >
+                                  {!multi && (
+                                    <span className={`text-[10px] font-extrabold rounded-md px-1.5 py-1 flex-shrink-0 ${n.type === "공지" ? "text-primary bg-primary/10" : "text-purple-600 bg-purple-500/10"}`}>
+                                      {n.type === "공지" ? "공지" : n.type === "릴리즈노트" ? "릴리즈" : n.type}
+                                    </span>
+                                  )}
+                                  <span className="flex-1 min-w-0 text-[12.5px] font-medium text-foreground/90 truncate">{n.title}</span>
+                                  <span className="text-[11px] text-muted-foreground/70 flex-shrink-0">{n.date.slice(5).replace("-", ".")}</span>
+                                </button>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="mt-1.5 py-6 flex flex-col items-center text-center" style={{ wordBreak: "keep-all" }}>
+                        <span className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center mb-2">
+                          <ClipboardList className="w-4 h-4 text-muted-foreground/50" />
+                        </span>
+                        <p className="text-[12.5px] font-semibold text-foreground/70">등록된 게시글이 없어요</p>
+                        <p className="text-[11px] text-muted-foreground/60 mt-0.5">공지·릴리즈 소식이 올라오면 여기에 표시됩니다.</p>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

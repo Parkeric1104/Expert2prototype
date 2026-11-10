@@ -240,13 +240,15 @@ export function curationStatus(c: BOCuration, at: number = Date.now()): Curation
 }
 
 // ── 홈 구성 (HOME) ────────────────────────────────────────
-/** 홈 우측 콘텐츠 영역 구성 — 노출 블록(큐레이션/게시판) 선택. 최소 1·최대 2, 노출 순서는 고정(큐레이션→게시판). */
+/** 홈 우측 콘텐츠 영역 구성 — 노출 블록(큐레이션/게시판) 선택. 최소 1·최대 2, 노출 순서는 고정(큐레이션→게시판).
+ *  boardTypes: 게시판 블록에 노출할 공지 유형(개별, '전체' 없음). 1개=단일 목록, 2개 이상=위·아래 스택 섹션. */
 export interface BOHomeLayout {
   blocks: HomeBlockKey[];
+  boardTypes?: NoticeType[];
 }
 
 const HOME_LAYOUT_KEY = "bo_home_layout";
-const SEED_HOME_LAYOUT: BOHomeLayout = { blocks: ["curation", "board"] };
+const SEED_HOME_LAYOUT: BOHomeLayout = { blocks: ["curation", "board"], boardTypes: ["공지", "릴리즈노트"] };
 
 /** 노출 순서 고정 — 저장 순서와 무관하게 항상 큐레이션 → 게시판 순으로 정규화 */
 const CANON_HOME_ORDER: HomeBlockKey[] = ["curation", "board"];
@@ -256,7 +258,7 @@ function normalizeHomeBlocks(blocks: HomeBlockKey[]): HomeBlockKey[] {
 
 export function loadHomeLayout(): BOHomeLayout {
   const stored = read<BOHomeLayout>(HOME_LAYOUT_KEY);
-  if (stored) return { blocks: normalizeHomeBlocks(stored.blocks) };
+  if (stored) return { blocks: normalizeHomeBlocks(stored.blocks), boardTypes: stored.boardTypes ?? [...SEED_HOME_LAYOUT.boardTypes!] };
   write(HOME_LAYOUT_KEY, SEED_HOME_LAYOUT);
   return SEED_HOME_LAYOUT;
 }
@@ -264,7 +266,12 @@ export function loadHomeLayout(): BOHomeLayout {
 export function saveHomeLayout(l: BOHomeLayout) {
   // 최소 1개 보장 — 둘 다 해제 시 저장 거부(기본값 유지)
   const blocks = normalizeHomeBlocks(l.blocks);
-  write(HOME_LAYOUT_KEY, { blocks: blocks.length ? blocks : SEED_HOME_LAYOUT.blocks });
+  const boardTypes = (l.boardTypes ?? []).filter(Boolean);
+  write(HOME_LAYOUT_KEY, {
+    blocks: blocks.length ? blocks : SEED_HOME_LAYOUT.blocks,
+    // 게시판 노출 시 유형 최소 1개 보장
+    boardTypes: boardTypes.length ? boardTypes : [...SEED_HOME_LAYOUT.boardTypes!],
+  });
 }
 
 /** BO 저장값 기준 홈 노출 블록(고정 순서). BO 미사용 시 null → FE 폴백(둘 다 노출). */
@@ -272,6 +279,13 @@ export function getBOHomeBlocks(): HomeBlockKey[] | null {
   const stored = read<BOHomeLayout>(HOME_LAYOUT_KEY);
   if (!stored) return null;
   return normalizeHomeBlocks(stored.blocks);
+}
+
+/** BO 저장값 기준 게시판 노출 유형(순서=노출 순서). BO 미사용 시 null → FE 폴백(전체 유형). */
+export function getBOHomeBoardTypes(): NoticeType[] | null {
+  const stored = read<BOHomeLayout>(HOME_LAYOUT_KEY);
+  if (!stored || !stored.boardTypes) return null;
+  return stored.boardTypes;
 }
 
 // ── 계정 (ACC-001~005) ────────────────────────────────────
