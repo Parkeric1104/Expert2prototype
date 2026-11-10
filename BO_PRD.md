@@ -1,6 +1,6 @@
 # Expert Back-Office 요구사항 정의서 — SVC-004 운영 콘텐츠 관리
 
-> Expert Back-Office 요구사항 정의서 | 2026.11.10 | v0.6 — **버전정보(VER) 범위 제외 확정**(FE 버전 표기 기획 드랍) / v0.5: 추천질문(FAQ) 관리 추가 / v0.4: 버전정보 자동화·조회 전용 / v0.3: 계정관리(ACC) 도입
+> Expert Back-Office 요구사항 정의서 | 2026.11.10 | v0.7 — **홈 구성(HOME) 관리 추가**(홈 우측 콘텐츠 영역 노출 블록 가변 구성 + 게시판 카테고리 탭) / v0.6: 버전정보(VER) 범위 제외·공지팝업 순차 큐 확정 / v0.5: 추천질문(FAQ) 관리 추가 / v0.4: 버전정보 자동화·조회 전용 / v0.3: 계정관리(ACC) 도입
 > 📌 정본은 사내 ONEFFICE 문서(PRD_Expert_BO_요구사항 정의서) — 이 파일은 저장소 참조용 사본
 
 ## 개요
@@ -26,7 +26,7 @@
 
 | 구분 | 내용 |
 |---|---|
-| 범위 | 공지사항(SVC-001)·공지팝업(SVC-002)·버전정보(SVC-003)의 관리 화면 + FE 콘텐츠 공급 API + **계정관리(로그인·권한·계정 CRUD, v0.3 추가)** + **추천질문(FAQ) 관리(v0.5 요구사항 추가, 구현 예정)**. 범위 제외: 승인 워크플로, SSO 연동(오픈 이슈), 서비스 FE 화면 변경(기반영) |
+| 범위 | 공지사항(SVC-001)·공지팝업(SVC-002)·버전정보(SVC-003)의 관리 화면 + FE 콘텐츠 공급 API + **계정관리(로그인·권한·계정 CRUD, v0.3 추가)** + **추천질문(FAQ) 관리(v0.5 요구사항 추가, 구현 예정)** + **홈 구성(HOME) 관리(v0.7 추가)**. 범위 제외: 승인 워크플로, SSO 연동(오픈 이슈), 서비스 FE 화면 변경(기반영) |
 | 서비스명 | Expert Back-Office (BO) |
 | 서비스 설명 | 현재 FE 정적 소스(`src/app/data/service-content.ts`)에 하드코딩된 운영 콘텐츠를 BO가 공급하는 구조로 대체. 공지 한 줄 수정에도 코드 수정→빌드→배포가 필요한 현 상태를 해소 |
 | 사용자 유형 | 서비스 운영 담당자(비개발자, 사내) |
@@ -37,6 +37,7 @@
 | 기능명 | 내용 |
 |---|---|
 | 공지사항 관리 | 목록(필터·검색·페이지네이션)·등록·수정·삭제·미리보기·노출기간·예약 발행 |
+| 홈 구성 관리 | 홈 우측 콘텐츠 영역 노출 블록(체크포인트/게시판) 선택(최소1·최대2)·순서 고정·미리보기 + 게시판 카테고리 탭 |
 | 추천질문(FAQ) 관리 | 분야 탭·카테고리(칩)·질문·연결 법령·질문유형 등록/수정/삭제·노출제어·미리보기 (**구현 예정**) |
 | 공지팝업 관리 | 팝업 활성/비활성·**순차 큐 노출(등록일순, 최대 3개 — v0.6 확정)**·문구·미리보기·노출기간 |
 | 버전정보 조회 | 서비스 버전·법령 DB 갱신일 **자동 기록**(배포 파이프라인/법령 적재 배치), BO는 **조회 전용** + 변경 이력 |
@@ -66,6 +67,17 @@
 | NTC-004 | 공지사항 | 미리보기 | - 저장 전 서비스 실제 렌더 형태를 우측 스티키 패널로 실시간 확인 | Phase 1 | |
 | NTC-005 | 공지사항 | 노출기간 | - 시작~종료 설정 시 기간 외 자동 비노출, 미설정 시 상시 노출 | Phase 2 | |
 | NTC-006 | 공지사항 | 예약 발행 | - 게시일이 미래인 경우 해당 시점부터 노출 | Phase 2 | |
+
+### 홈 구성 관리 (v0.7 신규)
+
+> 서비스 홈(메인) 우측 콘텐츠 영역에 노출할 블록을 운영자가 배포 없이 구성. 노출 블록은 체크포인트(큐레이션)·게시판 2종.
+
+| REQ | 구분 | 요구사항명 | Description | 적용일정 | 비고 |
+|---|---|---|---|---|---|
+| HOME-001 | 홈 구성 | 노출 블록 선택 | - 홈 우측 영역에 노출할 블록(체크포인트·게시판) 선택, 최소 1·최대 2 | Phase 2 | FE: 메인 우측 콘텐츠 영역 |
+| HOME-002 | 홈 구성 | 노출 순서·제약 | - 노출 순서 고정(체크포인트→게시판), 최소 1개 노출 보장 | Phase 2 | 순서 변경(드래그)은 후순위 |
+| HOME-003 | 홈 구성 | 미리보기 | - 저장 전 홈 우측 영역 구성을 우측 스티키로 실시간 확인 | Phase 2 | 공지·체크포인트와 동일 패턴 |
+| HOME-004 | 홈 구성 | 게시판 카테고리 탭 | - 게시판 블록은 공지 유형 기반 카테고리 탭(전체 + 등록 유형) 제공 | Phase 2 | FE 연동, 유형은 공지 등록값 자동 반영 |
 
 ### 추천질문(FAQ) 관리 (v0.5 신규 — 구현 예정)
 
@@ -124,7 +136,7 @@
 | REQ | 구분 | 요구사항명 | Description | 적용일정 | 비고 |
 |---|---|---|---|---|---|
 | INT-001 | 연동 | 콘텐츠 공급 API | - FE의 `getNotices / getEmergency / getServiceVersion`(현 `service-content.ts` 정적 소스)을 API fetch로 대체<br>- `GET /api/content/notices`, `GET /api/content/popup`, `GET /api/content/version` | Phase 1 | |
-| INT-002 | 연동 | 데이터 계약 | - Notice: `id · type(공지\|릴리즈노트) · title · body · date · important · views` (+P2: `publishAt · expireAt`)<br>- Popup: `active · severity(info\|warning\|critical) · title · message · revision`<br>- Version: `service · lawDataUpdatedAt` | Phase 1 | 기존 FE 계약 유지 |
+| INT-002 | 연동 | 데이터 계약 | - Notice: `id · type(공지\|릴리즈노트) · title · body · date · important · views` (+P2: `publishAt · expireAt`)<br>- Popup: `active · severity(info\|warning\|critical) · title · message · revision`<br>- Version: `service · lawDataUpdatedAt`<br>- HomeLayout: `blocks[]`(curation\|board, 1~2개) — P2 | Phase 1 | 기존 FE 계약 유지 (HomeLayout은 HOME-001 연동) |
 | INT-003 | 연동 | BO 쓰기 API | - `POST/PUT/DELETE /api/admin/notices[/{id}]`, `PUT /api/admin/popup`, `GET /api/admin/audit-log`<br>- 버전 기록은 파이프라인 전용 API(`PUT /api/internal/version`, CI/배치 인증)로 분리 — BO 쓰기 경로에서 제외(v0.4) | Phase 1 | audit-log는 Phase 2 |
 | INT-005 | 연동 | 계정 API | - `POST /api/admin/login`(세션/토큰 발급), `POST /api/admin/logout`<br>- `GET/POST /api/admin/accounts`, `PUT/DELETE /api/admin/accounts/{id}`<br>- `/api/admin/*` 전체에 인증 필수(권한 검사 포함) | Phase 1 | v0.3 신규 |
 | INT-004 | 연동 | 조회수 API | - `POST /api/content/notices/{id}/view` | Phase 2 | |
