@@ -4,7 +4,7 @@
  * 로그인 필수(ACC-001), 계정관리는 관리자 권한만 노출(ACC-002).
  */
 import { useState } from "react";
-import { Megaphone, MessageSquareWarning, Tag, ExternalLink, Users, LogOut, ShieldCheck, CalendarCheck } from "lucide-react";
+import { Megaphone, MessageSquareWarning, Tag, ExternalLink, Users, LogOut, ShieldCheck, CalendarCheck, LayoutGrid } from "lucide-react";
 import { Toaster } from "@/app/components/ui/sonner";
 import { BOAccount, currentAccount, logout } from "@/app/bo/bo-store";
 import { BOLogin, BOPasswordChange } from "@/app/bo/bo-login";
@@ -12,12 +12,14 @@ import { NoticeAdmin } from "@/app/bo/notice-admin";
 import { CurationAdmin } from "@/app/bo/curation-admin";
 import { PopupAdmin } from "@/app/bo/popup-admin";
 import { VersionAdmin } from "@/app/bo/version-admin";
+import { HomeLayoutAdmin } from "@/app/bo/home-layout-admin";
 import { AccountAdmin } from "@/app/bo/account-admin";
 import { ExpertReviewAdmin } from "@/app/bo/expert-review-admin";
 
-type Section = "notice" | "curation" | "popup" | "version" | "expert" | "account";
+type Section = "home" | "notice" | "curation" | "popup" | "version" | "expert" | "account";
 
 const CONTENT_NAV: { key: Section; label: string; Icon: typeof Megaphone; iconColor: string }[] = [
+  { key: "home", label: "홈 구성", Icon: LayoutGrid, iconColor: "text-sky-500" },
   { key: "notice", label: "공지사항", Icon: Megaphone, iconColor: "text-primary" },
   { key: "curation", label: "체크포인트", Icon: CalendarCheck, iconColor: "text-rose-500" },
   { key: "popup", label: "공지팝업", Icon: MessageSquareWarning, iconColor: "text-amber-500" },
@@ -123,6 +125,7 @@ export function BOApp() {
       {/* 콘텐츠 영역 */}
       <main className="flex-1 min-w-0 overflow-y-auto">
         <div className="max-w-[1080px] mx-auto px-8 py-8">
+          {section === "home" && <HomeLayoutAdmin />}
           {section === "notice" && <NoticeAdmin />}
           {section === "curation" && <CurationAdmin />}
           {section === "popup" && <PopupAdmin />}

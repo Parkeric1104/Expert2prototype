@@ -5,7 +5,7 @@
  * BO를 한 번도 열지 않아 저장값이 없으면 getter는 null을 반환하고 FE는 기존 정적 소스로 폴백.
  * 실제 서비스 전환 시 이 모듈이 BO API 클라이언트로 대체된다.
  */
-import type { Notice, NoticeType, Emergency, EmergencySeverity, ServiceVersion } from "@/app/data/service-content";
+import type { Notice, NoticeType, Emergency, EmergencySeverity, ServiceVersion, HomeBlockKey } from "@/app/data/service-content";
 import type { CurationItem } from "@/app/data/curation";
 
 // ── 저장 모델 ─────────────────────────────────────────────
@@ -237,6 +237,41 @@ export function curationStatus(c: BOCuration, at: number = Date.now()): Curation
   if (c.publishStart && at < new Date(c.publishStart).getTime()) return "예약";
   if (c.publishEnd && at > new Date(c.publishEnd).getTime()) return "종료";
   return "노출중";
+}
+
+// ── 홈 구성 (HOME) ────────────────────────────────────────
+/** 홈 우측 콘텐츠 영역 구성 — 노출 블록(큐레이션/게시판) 선택. 최소 1·최대 2, 노출 순서는 고정(큐레이션→게시판). */
+export interface BOHomeLayout {
+  blocks: HomeBlockKey[];
+}
+
+const HOME_LAYOUT_KEY = "bo_home_layout";
+const SEED_HOME_LAYOUT: BOHomeLayout = { blocks: ["curation", "board"] };
+
+/** 노출 순서 고정 — 저장 순서와 무관하게 항상 큐레이션 → 게시판 순으로 정규화 */
+const CANON_HOME_ORDER: HomeBlockKey[] = ["curation", "board"];
+function normalizeHomeBlocks(blocks: HomeBlockKey[]): HomeBlockKey[] {
+  return CANON_HOME_ORDER.filter((b) => blocks.includes(b));
+}
+
+export function loadHomeLayout(): BOHomeLayout {
+  const stored = read<BOHomeLayout>(HOME_LAYOUT_KEY);
+  if (stored) return { blocks: normalizeHomeBlocks(stored.blocks) };
+  write(HOME_LAYOUT_KEY, SEED_HOME_LAYOUT);
+  return SEED_HOME_LAYOUT;
+}
+
+export function saveHomeLayout(l: BOHomeLayout) {
+  // 최소 1개 보장 — 둘 다 해제 시 저장 거부(기본값 유지)
+  const blocks = normalizeHomeBlocks(l.blocks);
+  write(HOME_LAYOUT_KEY, { blocks: blocks.length ? blocks : SEED_HOME_LAYOUT.blocks });
+}
+
+/** BO 저장값 기준 홈 노출 블록(고정 순서). BO 미사용 시 null → FE 폴백(둘 다 노출). */
+export function getBOHomeBlocks(): HomeBlockKey[] | null {
+  const stored = read<BOHomeLayout>(HOME_LAYOUT_KEY);
+  if (!stored) return null;
+  return normalizeHomeBlocks(stored.blocks);
 }
 
 // ── 계정 (ACC-001~005) ────────────────────────────────────

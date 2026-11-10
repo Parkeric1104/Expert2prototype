@@ -5,7 +5,11 @@
  * 우선 읽고, BO 저장값이 없으면 아래 정적 소스로 폴백(무배포 반영 SYS-003 데모).
  * 운영 전환 시 getter 내부만 BO API fetch로 교체하면 됨 — FE는 이 getter만 의존.
  */
-import { getBOVisibleNotices, getBOEmergency, getBOEmergencyQueue, getBOVersion } from "@/app/bo/bo-store";
+import { getBOVisibleNotices, getBOEmergency, getBOEmergencyQueue, getBOVersion, getBOHomeBlocks } from "@/app/bo/bo-store";
+
+// 홈 우측 콘텐츠 영역을 구성하는 블록 — BO에서 노출 블록을 선택(최소 1·최대 2), 노출 순서는 고정(큐레이션→게시판)
+export type HomeBlockKey = "curation" | "board";
+export const HOME_BLOCK_ORDER: HomeBlockKey[] = ["curation", "board"];
 
 // 기본 유형(공지·릴리즈노트) 외에 BO에서 직접 입력한 유형도 허용 — FE 탭은 getNoticeTypes()에서 파생
 export type NoticeType = string;
@@ -93,6 +97,12 @@ export function getEmergencyQueue(): Emergency[] {
   const q = getBOEmergencyQueue();
   if (q !== null) return q; // BO 사용 중(빈 배열이면 노출할 활성 팝업 없음)
   return SERVICE_CONTENT.emergency.active ? [SERVICE_CONTENT.emergency] : [];
+}
+
+/** 홈 우측 콘텐츠 영역에 노출할 블록 — BO 설정값 우선(순서는 고정), 미사용 시 큐레이션+게시판 둘 다. */
+export function getHomeBlocks(): HomeBlockKey[] {
+  const b = getBOHomeBlocks();
+  return b && b.length ? b : [...HOME_BLOCK_ORDER];
 }
 
 export function getNotices(): Notice[] {
