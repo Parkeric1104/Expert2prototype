@@ -699,64 +699,74 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
 작성자: LaborCopilot AI 노무사`;
   };
 
+  // 최초 질문 플로우(가드레일 → 복잡도 분기 → 피드백/답변) — 최초 진입과 '원 질문 수정' 재시작에서 공용
+  const startQuestionFlow = (text: string, presetType?: string) => {
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      text,
+      isUser: true,
+      lawCategory: detectLawCategory(text),
+    };
+    setMessages([userMsg]);
+
+    // 가드레일: 부적절/위법/범위 외/무의미 질문 차단 (휴먼피드백 미적용)
+    const validation = validateQuestion(text);
+    const blocked =
+      presetType === "inappropriate" ||
+      validation.reason === "inappropriate" ||
+      validation.reason === "unethical" ||
+      validation.reason === "out-of-scope" ||
+      validation.reason === "meaningless";
+
+    // 차단 질문(가드레일) → 거부 메시지. 세션 유지·카운트 제외(PRD RIS-001, CHA-004)
+    if (blocked) {
+      const refusal =
+        validation.reason === "meaningless"
+          ? "질문을 이해하지 못했습니다. 노무·세법 관련 질문을 구체적으로 입력해 주세요."
+          : GUARDRAIL_REFUSAL;
+      onStepChange?.(2);
+      setCurrentStep(2);
+      setMessages([{ ...userMsg, isError: true }, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
+      setTimeout(() => {
+        setMessages((prev) => prev.filter(m => !m.isLoading).concat({
+          id: (Date.now() + 2).toString(),
+          text: refusal,
+          isUser: false,
+          isError: true,
+        }));
+        // 세션 유지 → 다른 질문으로 재시도 가능
+      }, 800);
+      return;
+    }
+
+    // 최초 질문이 '상세 답변'(복잡도 중간~높음)이면 휴먼피드백 먼저 노출 (간단 답변은 미적용)
+    if (classifyComplexity(text, presetType) === "detailed") {
+      setMessages((prev) => [...prev, makeFeedbackMessage()]);
+      return;
+    }
+
+    // 간단 답변: 로딩 → 답변
+    onStepChange?.(2);
+    setCurrentStep(2);
+    setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
+    const { msg, delay } = buildAnswerMessage(text, { isFirst: true, presetType });
+    setTimeout(() => {
+      setMessages((prev) => prev.filter(m => !m.isLoading).concat(msg));
+      setIsTyping(false);
+      onStepChange?.(3);
+      setCurrentStep(3);
+    }, delay);
+  };
+
+  // 원 질문 수정 → 기존 피드백/대화 폐기 후 수정 질문으로 처음부터 재실행 (presetType 없이 재분류)
+  const handleEditOriginalQuestion = (newText: string) => {
+    startQuestionFlow(newText);
+  };
+
   // Handle initial message
   useEffect(() => {
     if (initialMessage && messages.length === 0) {
-      const userMsg: Message = {
-        id: Date.now().toString(),
-        text: initialMessage,
-        isUser: true,
-        lawCategory: detectLawCategory(initialMessage),
-      };
-      setMessages([userMsg]);
-
-      // 가드레일: 부적절/위법/범위 외/무의미 질문 차단 (휴먼피드백 미적용)
-      const validation = validateQuestion(initialMessage);
-      const blocked =
-        questionType === "inappropriate" ||
-        validation.reason === "inappropriate" ||
-        validation.reason === "unethical" ||
-        validation.reason === "out-of-scope" ||
-        validation.reason === "meaningless";
-
-      // 차단 질문(가드레일) → 거부 메시지. 세션 유지·카운트 제외(PRD RIS-001, CHA-004)
-      if (blocked) {
-        const refusal =
-          validation.reason === "meaningless"
-            ? "질문을 이해하지 못했습니다. 노무·세법 관련 질문을 구체적으로 입력해 주세요."
-            : GUARDRAIL_REFUSAL;
-        onStepChange?.(2);
-        setCurrentStep(2);
-        setMessages([{ ...userMsg, isError: true }, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
-        setTimeout(() => {
-          setMessages((prev) => prev.filter(m => !m.isLoading).concat({
-            id: (Date.now() + 2).toString(),
-            text: refusal,
-            isUser: false,
-            isError: true,
-          }));
-          // 세션 유지 → 다른 질문으로 재시도 가능
-        }, 800);
-        return;
-      }
-
-      // 최초 질문이 '상세 답변'(복잡도 중간~높음)이면 휴먼피드백 먼저 노출 (간단 답변은 미적용)
-      if (classifyComplexity(initialMessage, questionType) === "detailed") {
-        setMessages((prev) => [...prev, makeFeedbackMessage()]);
-        return;
-      }
-
-      // 간단 답변: 로딩 → 답변
-      onStepChange?.(2);
-      setCurrentStep(2);
-      setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), text: "", isUser: false, isLoading: true, relatedLaws } as Message]);
-      const { msg, delay } = buildAnswerMessage(initialMessage, { isFirst: true, presetType: questionType });
-      setTimeout(() => {
-        setMessages((prev) => prev.filter(m => !m.isLoading).concat(msg));
-        setIsTyping(false);
-        onStepChange?.(3);
-        setCurrentStep(3);
-      }, delay);
+      startQuestionFlow(initialMessage, questionType);
     }
   }, [initialMessage, questionType]);
 
@@ -1622,6 +1632,8 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
   // 의견서 작성 이후에도 입력영역은 활성 유지 — 질문 전송 시 세션 전환 팝업 노출(submitQuestion의 opinionFlowStarted 가드)
   // 휴먼피드백 대기 중: 입력영역 비활성화. '질문 수정'/추천질문 선택 시(feedbackEditMode)에만 편집 허용
   const feedbackPending = messages.some(m => m.needsFeedback);
+  // 휴먼피드백이 가리키는 원 질문(최초 사용자 메시지) — 이 말풍선에만 '질문 수정' 노출
+  const firstUserMsgId = messages.find(m => m.isUser)?.id;
   const isInputDisabled =
     isHistoryView || chatEnded || isDebateInProgress || isAnswerLoading || isStreaming || (feedbackPending && !feedbackEditMode);
 
@@ -1692,6 +1704,8 @@ ${integratedData.sources.map(s => `- ${s.title}`).join('\n')}
                       currentTurn={hideRemaining ? undefined : userMessagesUpToNow}
                       remainingQuestions={hideRemaining ? undefined : remainingQuestions}
                       maxQuestions={MAX_QUESTIONS}
+                      editable={feedbackPending && message.id === firstUserMsgId && !isSystemUserText(message.text)}
+                      onEditQuestion={handleEditOriginalQuestion}
                     />
                   )}
                   {message.isLoading && <ProgressiveLoadingBubble relatedLaws={message.relatedLaws} onStop={handleStopResponse} onNavigateToMain={handleNavigateToMain} />}

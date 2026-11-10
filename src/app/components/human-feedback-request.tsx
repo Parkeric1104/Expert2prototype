@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, HelpCircle, Plus, ArrowUp, ChevronLeft } from "lucide-react";
+import { Search, HelpCircle, Plus, ArrowUp, ChevronLeft, Zap } from "lucide-react";
 import characterImg from "@/assets/dobi-chat.png";
 
 interface HumanFeedbackRequestProps {
@@ -212,9 +212,9 @@ export function HumanFeedbackRequest({
                 </div>
               )}
 
-              {/* 선택 안내 */}
+              {/* 선택 안내 — 행동 유도(이탈 방지) */}
               <p className="text-[13px] text-muted-foreground leading-relaxed">
-                이대로 답변을 받으시거나, 위 정보를 더해 주시면 더 정확히 답변드려요.
+                아래에서 방식을 선택하시면 최종 법률·판례 답변 작성을 시작합니다.
               </p>
             </>
           ) : (
@@ -259,21 +259,24 @@ export function HumanFeedbackRequest({
             <div className="flex items-center gap-2 flex-wrap">
               {data ? (
                 <>
-                  <button
-                    onClick={handleContinue}
-                    disabled={isSubmitting}
-                    className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ wordBreak: "keep-all" }}
-                  >
-                    바로 답변받기
-                  </button>
+                  {/* Primary(강조) — 맥락 보강 유도: '+ 내용 추가하기' */}
                   <button
                     onClick={() => setAdding(true)}
+                    disabled={isSubmitting}
+                    className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ wordBreak: "keep-all" }}
+                  >
+                    <Plus className="w-4 h-4" />
+                    내용 추가하기
+                  </button>
+                  {/* Secondary(테두리) — 지금 내용으로 바로 답변 */}
+                  <button
+                    onClick={handleContinue}
                     disabled={isSubmitting}
                     className="px-4 py-2 rounded-lg border border-primary/50 text-sm font-medium text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ wordBreak: "keep-all" }}
                   >
-                    내용 추가하기
+                    바로 답변받기
                   </button>
                 </>
               ) : (
@@ -295,9 +298,9 @@ export function HumanFeedbackRequest({
       {data ? (
         <div className="pl-[52px] pt-1">
           <div className="flex items-center gap-1.5 mb-2 px-1">
-            <Plus className="w-3.5 h-3.5 text-primary" />
+            <Zap className="w-3.5 h-3.5 text-primary" />
             <p className="text-xs font-medium text-muted-foreground">
-              자주 겪는 상황을 누르면 내용을 더해 바로 답변드려요.
+              클릭 한 번으로 내 상황(조건)을 바로 덧붙여보세요.
             </p>
           </div>
           <div className="space-y-2">
