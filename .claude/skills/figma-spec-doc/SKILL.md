@@ -36,7 +36,7 @@ Frame 650 = VERTICAL auto-layout(hug), 내용:
 - 마스터 컴포넌트 `10:1146`의 텍스트에는 **Pretendard 세그먼트**가 섞여 있고 이 환경에 Pretendard가 없어 직접 인스턴스 생성 후 텍스트 편집이 실패한다.
 - 해결: **05. BO 페이지에 이미 있는 Description 인스턴스(텍스트가 Inter로 통일됨)를 `clone()`** 해서 사용하고 characters만 교체한다.
 - `Description Numbering` 텍스트 편집 전 `NanumGothic ExtraBold` 로드 필요 (try/catch로 ExtraBold/Bold/Regular 모두 로드).
-- 새 텍스트는 모두 **Inter** (한글은 폴백 렌더, 파일 전체가 동일 방식).
+- **새 한글 텍스트는 `Noto Sans KR`**(Regular/Medium/Bold)로 만든다. ⚠️ 2026-11 확인: Inter로 만든 한글은 렌더(스크린샷)에서 글리프가 비어 보임 — 과거(2026-08)와 달리 폴백이 적용되지 않는다. Inter Semi Bold ↔ Noto Sans KR Medium으로 매핑. 기존 Description 인스턴스 clone의 텍스트도 characters 교체 전 `fontName`을 Noto Sans KR로 바꿔준다.
 
 ⚠️ **textAutoResize 함정**: `resize()`를 호출하면 textAutoResize가 NONE으로 리셋되어 텍스트가 잘린다. 순서: `t.resize(490, h)` → **마지막에** `t.textAutoResize = "HEIGHT"`.
 
