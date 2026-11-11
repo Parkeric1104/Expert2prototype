@@ -1,12 +1,12 @@
 /**
  * Expert Back-Office (SVC-004) — 운영 콘텐츠 관리 콘솔. URL ?bo 로 진입.
  * 룩앤필: apps in toss 콘솔 (BO_DESIGN_REFERENCE.md) — 좌측 사이드바 + 옅은 회색 바탕 흰 카드.
- * 로그인 필수(ACC-001), 계정관리는 관리자 권한만 노출(ACC-002).
+ * 로그인 필수(ACC-001). 로그인하면 기본 '조회' 제공, 계정관리는 최고관리자(DB 지정)만 노출(ACC-002~004).
  */
 import { useState } from "react";
 import { Megaphone, MessageSquareWarning, Tag, ExternalLink, Users, LogOut, ShieldCheck, CalendarCheck, LayoutGrid } from "lucide-react";
 import { Toaster } from "@/app/components/ui/sonner";
-import { BOAccount, currentAccount, logout } from "@/app/bo/bo-store";
+import { BOAccount, currentAccount, logout, accountPerms } from "@/app/bo/bo-store";
 import { BOLogin, BOPasswordChange } from "@/app/bo/bo-login";
 import { NoticeAdmin } from "@/app/bo/notice-admin";
 import { CurationAdmin } from "@/app/bo/curation-admin";
@@ -99,7 +99,7 @@ export function BOApp() {
           <div className="px-2.5 py-2 rounded-lg bg-gray-50 flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">{account.name}</p>
-              <p className="text-[11px] text-muted-foreground">{account.owner ? "최고관리자" : "운영자"}</p>
+              <p className="text-[11px] text-muted-foreground">{account.owner ? "최고관리자" : ((p) => (p.create || p.update || p.delete ? "운영 권한" : "보기 전용"))(accountPerms(account))}</p>
             </div>
             <button
               onClick={() => { logout(); setAccount(null); }}

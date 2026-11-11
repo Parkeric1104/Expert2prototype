@@ -15,7 +15,7 @@ import { PageHeader, Card, FieldLabel, ChipButton, ConfirmModal, Pagination } fr
 const PAGE_SIZE = 5;
 const PERM_KEYS: (keyof BOPerms)[] = ["read", "create", "update", "delete"];
 
-// 권한 요약: 최고관리자 / 승인 대기(조회 없음) / 활성 권한 나열(조회만=보기 전용)
+// 권한 요약: 최고관리자 / 보기 전용(조회만) / 활성 권한 나열(조회+등록·수정·삭제)
 function PermCell({ a }: { a: BOAccount }) {
   if (a.owner) return <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">최고관리자</span>;
   const p = accountPerms(a);

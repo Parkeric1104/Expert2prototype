@@ -322,11 +322,6 @@ export function currentPerms(): BOPerms {
   const a = currentAccount();
   return a ? accountPerms(a) : DEFAULT_PERMS;
 }
-/** 접근 가능(조회 권한 또는 최고관리자). false면 '접근 권한 없음(승인 대기)'. */
-export function hasAccess(a: BOAccount | null): boolean {
-  return !!a && (a.owner === true || accountPerms(a).read);
-}
-
 /** 계정 생성·초기화 시 부여되는 초기 비밀번호 (ACC-006) */
 export const DEFAULT_PASSWORD = "0000";
 
