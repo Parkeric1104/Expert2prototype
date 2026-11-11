@@ -289,16 +289,42 @@ export function getBOHomeBoardTypes(): NoticeType[] | null {
 }
 
 // ── 계정 (ACC-001~005) ────────────────────────────────────
-export type BORole = "admin" | "operator";
+/** 콘텐츠 CRUD 권한 — 역할 구분이 아니라 계정별 행위 권한. 메뉴별 차등 없이 전체 콘텐츠에 동일 적용(ACC-002). */
+export interface BOPerms {
+  read: boolean;   // 조회(보기)
+  create: boolean; // 등록
+  update: boolean; // 수정
+  delete: boolean; // 삭제
+}
+/** 신규/연동 계정 기본 권한 = 조회(보기)만. 등록/수정/삭제는 최고관리자가 부여. */
+export const DEFAULT_PERMS: BOPerms = { read: true, create: false, update: false, delete: false };
+export const FULL_PERMS: BOPerms = { read: true, create: true, update: true, delete: true };
+export const PERM_LABEL: Record<keyof BOPerms, string> = { read: "조회", create: "등록", update: "수정", delete: "삭제" };
+
 export interface BOAccount {
   id: string;
   loginId: string;   // 중복 불가
   name: string;
-  password: string;  // 프로토타입: 평문 저장(운영 전환 시 서버 해시)
-  role: BORole;      // admin=계정관리 포함 전체 / operator=콘텐츠 관리만
+  password: string;  // 프로토타입: 평문 저장(운영 전환 시 아마란스 연동)
+  owner?: boolean;   // 최고관리자 — 계정·권한 관리(계정관리/전문가인증) 접근. 콘텐츠는 항상 전체 권한
+  perms: BOPerms;    // 콘텐츠 CRUD 권한(최고관리자 외 계정에 적용)
   createdAt: string;
   lastLoginAt?: string; // YYYY-MM-DD HH:mm
   mustChangePassword?: boolean; // 초기 비밀번호(0000) 상태 — 최초 로그인 시 변경 강제(ACC-006)
+}
+
+/** 계정의 유효 콘텐츠 권한 — 최고관리자는 항상 전체. */
+export function accountPerms(a: BOAccount): BOPerms {
+  return a.owner ? FULL_PERMS : { ...DEFAULT_PERMS, ...(a.perms ?? {}) };
+}
+/** 현재 로그인 계정의 콘텐츠 권한(미로그인 시 기본=조회만). */
+export function currentPerms(): BOPerms {
+  const a = currentAccount();
+  return a ? accountPerms(a) : DEFAULT_PERMS;
+}
+/** 접근 가능(조회 권한 또는 최고관리자). false면 '접근 권한 없음(승인 대기)'. */
+export function hasAccess(a: BOAccount | null): boolean {
+  return !!a && (a.owner === true || accountPerms(a).read);
 }
 
 /** 계정 생성·초기화 시 부여되는 초기 비밀번호 (ACC-006) */
@@ -327,13 +353,29 @@ const SESSION_KEY = "bo_session"; // 로그인된 loginId — 기본 sessionStor
 const REMEMBER_KEY = "bo_saved_login_id"; // '아이디 저장' 체크 시 로그인 ID 기억
 
 const SEED_ACCOUNTS: BOAccount[] = [
-  { id: "a-admin", loginId: "admin", name: "박대웅", password: "expert2!", role: "admin", createdAt: "2026-08-04" },
-  { id: "a-op", loginId: "operator", name: "운영자", password: "expert2!", role: "operator", createdAt: "2026-08-04" },
+  { id: "a-admin", loginId: "admin", name: "박대웅", password: "expert2!", owner: true, perms: FULL_PERMS, createdAt: "2026-08-04" },
+  { id: "a-op", loginId: "operator", name: "운영자", password: "expert2!", perms: { read: true, create: true, update: true, delete: false }, createdAt: "2026-08-04" },
+  { id: "a-view", loginId: "viewer", name: "조회자", password: "expert2!", perms: { ...DEFAULT_PERMS }, createdAt: "2026-08-04" },
 ];
 
+/** 구(role) 모델로 저장된 계정을 CRUD 권한 모델로 마이그레이션(무배포 전환 호환). */
+function migrateAccount(a: any): BOAccount {
+  if (a && a.perms && typeof a.owner !== "undefined") return a as BOAccount;
+  const role = a?.role;
+  const { role: _omit, ...rest } = a ?? {};
+  if (role === "admin") return { ...rest, owner: true, perms: FULL_PERMS };
+  if (role === "operator") return { ...rest, owner: false, perms: { read: true, create: true, update: true, delete: false } };
+  return { ...rest, owner: a?.owner ?? false, perms: a?.perms ?? { ...DEFAULT_PERMS } };
+}
+
 export function loadAccounts(): BOAccount[] {
-  const stored = read<BOAccount[]>(ACCOUNTS_KEY);
-  if (stored) return stored;
+  const stored = read<any[]>(ACCOUNTS_KEY);
+  if (stored) {
+    const needsMigrate = stored.some((a) => !a.perms || typeof a.owner === "undefined");
+    const list = stored.map(migrateAccount);
+    if (needsMigrate) write(ACCOUNTS_KEY, list);
+    return list;
+  }
   write(ACCOUNTS_KEY, SEED_ACCOUNTS);
   return SEED_ACCOUNTS;
 }

@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import {
-  BOCuration, loadCuration, saveCuration, deleteCuration, curationStatus, CurationStatus, todayStr, newId,
+  BOCuration, loadCuration, saveCuration, deleteCuration, curationStatus, CurationStatus, todayStr, newId, currentPerms,
 } from "@/app/bo/bo-store";
 import { ddayLabel } from "@/app/data/curation";
 import { LAW_SUGGESTIONS } from "@/app/components/law-selection-modal";
@@ -23,6 +23,7 @@ export function CurationAdmin() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<BOCuration | null>(null);
+  const perms = currentPerms(); // CRUD 권한 — 버튼 노출 제어
 
   const refresh = () => setItems(loadCuration());
 
@@ -56,13 +57,15 @@ export function CurationAdmin() {
         title="체크포인트"
         desc="메인 화면에 노출되는 시즌 체크포인트를 배포 없이 관리할 수 있어요."
         action={
-          <button
-            onClick={() => setEditing("new")}
-            className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            체크포인트 등록
-          </button>
+          perms.create ? (
+            <button
+              onClick={() => setEditing("new")}
+              className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              체크포인트 등록
+            </button>
+          ) : undefined
         }
       />
 
@@ -123,8 +126,9 @@ export function CurationAdmin() {
                   <td className="px-3 py-2.5 max-lg:hidden"><PeriodCell start={c.publishStart} end={c.publishEnd} /></td>
                   <td className="px-3 py-2.5 rounded-r-lg">
                     <div className="flex items-center justify-end gap-1.5">
-                      <ChipButton onClick={() => setEditing(c)}>수정</ChipButton>
-                      <ChipButton tone="red" onClick={() => setDeleteTarget(c)}>삭제</ChipButton>
+                      {perms.update && <ChipButton onClick={() => setEditing(c)}>수정</ChipButton>}
+                      {perms.delete && <ChipButton tone="red" onClick={() => setDeleteTarget(c)}>삭제</ChipButton>}
+                      {!perms.update && !perms.delete && <span className="text-[11px] text-muted-foreground/60">조회 전용</span>}
                     </div>
                   </td>
                 </tr>

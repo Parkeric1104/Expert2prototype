@@ -1,17 +1,34 @@
 /**
- * BO 계정관리 (ACC-002~004) — 관리자 전용.
+ * BO 계정관리 (ACC-002~004) — 최고관리자 전용.
+ * 역할 구분이 아니라 계정별 CRUD 권한(조회·등록·수정·삭제)으로 관리. 신규 계정 기본 = 조회(보기)만.
  * 목록(이름·아이디·권한·생성일·최근 접속) + 등록/수정 모달 + 삭제(본인 삭제 불가).
  */
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import {
-  BOAccount, BORole, loadAccounts, saveAccount, deleteAccount, isLoginIdTaken, DEFAULT_PASSWORD, todayStr, newId,
+  BOAccount, BOPerms, DEFAULT_PERMS, PERM_LABEL, accountPerms,
+  loadAccounts, saveAccount, deleteAccount, isLoginIdTaken, DEFAULT_PASSWORD, todayStr, newId,
 } from "@/app/bo/bo-store";
 import { PageHeader, Card, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls } from "@/app/bo/bo-ui";
 
 const PAGE_SIZE = 5;
-const ROLE_LABEL: Record<BORole, string> = { admin: "관리자", operator: "운영자" };
+const PERM_KEYS: (keyof BOPerms)[] = ["read", "create", "update", "delete"];
+
+// 권한 요약: 최고관리자 / 승인 대기(조회 없음) / 활성 권한 나열(조회만=보기 전용)
+function PermCell({ a }: { a: BOAccount }) {
+  if (a.owner) return <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-primary/10 text-primary">최고관리자</span>;
+  const p = accountPerms(a);
+  const on = PERM_KEYS.filter((k) => p[k]);
+  if (on.length === 1) return <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-200/70 text-gray-600">보기 전용</span>;
+  return (
+    <span className="inline-flex flex-wrap gap-1">
+      {on.map((k) => (
+        <span key={k} className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${k === "read" ? "bg-gray-200/70 text-gray-600" : "bg-primary/10 text-primary"}`}>{PERM_LABEL[k]}</span>
+      ))}
+    </span>
+  );
+}
 
 export function AccountAdmin({ me }: { me: BOAccount }) {
   const [accounts, setAccounts] = useState<BOAccount[]>(() => loadAccounts());
@@ -29,30 +46,20 @@ export function AccountAdmin({ me }: { me: BOAccount }) {
     <div>
       <PageHeader
         title="계정관리"
-        desc="BO에 접속할 수 있는 계정과 권한을 관리할 수 있어요. 관리자만 이 메뉴를 볼 수 있어요."
-        action={
-          <button
-            onClick={() => setEditing("new")}
-            className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            계정 등록
-          </button>
-        }
+        desc="아마란스 로그인으로 들어온 계정의 권한을 관리해요. 로그인하면 기본 '조회'가 제공되고, 등록·수정·삭제는 계정별로 부여해요. 최고관리자(DB 지정)만 이 메뉴를 볼 수 있어요."
       />
 
       <Card className="p-5">
         <h2 className="text-base font-bold text-foreground mb-4">계정 목록</h2>
-        {/* 좁은 화면에서는 테이블만 가로 스크롤(글자 넘침 방지) */}
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] table-fixed border-separate border-spacing-y-1">
+        <table className="w-full min-w-[600px] table-fixed border-separate border-spacing-y-1">
           <thead>
             <tr className="text-left text-xs text-muted-foreground">
               <th className="font-medium px-3 py-1 whitespace-nowrap">이름</th>
               <th className="w-[120px] font-medium px-3 py-1 whitespace-nowrap">아이디</th>
-              <th className="w-[80px] font-medium px-3 py-1 whitespace-nowrap">권한</th>
+              <th className="w-[180px] font-medium px-3 py-1 whitespace-nowrap">권한</th>
               <th className="w-[96px] font-medium px-3 py-1 whitespace-nowrap max-lg:hidden">생성일</th>
-              <th className="w-[136px] font-medium px-3 py-1 whitespace-nowrap">최근 접속</th>
+              <th className="w-[136px] font-medium px-3 py-1 whitespace-nowrap max-lg:hidden">최근 접속</th>
               <th className="w-[122px] font-medium px-3 py-1 whitespace-nowrap text-right">관리</th>
             </tr>
           </thead>
@@ -69,17 +76,13 @@ export function AccountAdmin({ me }: { me: BOAccount }) {
                     </div>
                   </td>
                   <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{a.loginId}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${a.role === "admin" ? "bg-primary/10 text-primary" : "bg-gray-200/70 text-gray-600"}`}>
-                      {ROLE_LABEL[a.role]}
-                    </span>
-                  </td>
+                  <td className="px-3 py-2.5"><PermCell a={a} /></td>
                   <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground max-lg:hidden">{a.createdAt}</td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground">{a.lastLoginAt ?? "—"}</td>
+                  <td className="px-3 py-2.5 whitespace-nowrap text-muted-foreground max-lg:hidden">{a.lastLoginAt ?? "—"}</td>
                   <td className="px-3 py-2.5 rounded-r-lg">
                     <div className="flex items-center justify-end gap-1.5">
                       <ChipButton onClick={() => setEditing(a)}>수정</ChipButton>
-                      {!isMe && <ChipButton tone="red" onClick={() => setDeleteTarget(a)}>삭제</ChipButton>}
+                      {!isMe && !a.owner && <ChipButton tone="red" onClick={() => setDeleteTarget(a)}>삭제</ChipButton>}
                     </div>
                   </td>
                 </tr>
@@ -98,7 +101,7 @@ export function AccountAdmin({ me }: { me: BOAccount }) {
           onSaved={(wasEdit) => {
             setEditing(null);
             refresh();
-            toast.success(wasEdit ? "계정이 수정되었어요." : "계정이 등록되었어요.");
+            toast.success(wasEdit ? "계정 권한이 저장되었어요." : "계정이 등록되었어요.");
           }}
         />
       )}
@@ -121,7 +124,7 @@ export function AccountAdmin({ me }: { me: BOAccount }) {
   );
 }
 
-// ── 등록/수정 모달 (ACC-004) ──
+// ── 등록/수정 모달 (ACC-004) — CRUD 권한 부여 ──
 function AccountModal({ initial, onClose, onSaved }: {
   initial: BOAccount | null;
   onClose: () => void;
@@ -129,9 +132,10 @@ function AccountModal({ initial, onClose, onSaved }: {
 }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [loginId, setLoginId] = useState(initial?.loginId ?? "");
-  const [resetPw, setResetPw] = useState(false); // 수정 시 '비밀번호 초기화(0000)' 선택
-  const [role, setRole] = useState<BORole>(initial?.role ?? "operator");
+  const [resetPw, setResetPw] = useState(false);
+  const [perms, setPerms] = useState<BOPerms>(initial && !initial.owner ? { ...DEFAULT_PERMS, ...initial.perms } : { ...DEFAULT_PERMS });
   const [submitted, setSubmitted] = useState(false);
+  const isOwner = !!initial?.owner;
 
   const errors = {
     name: name.trim() ? "" : "이름을 입력해 주세요.",
@@ -143,16 +147,22 @@ function AccountModal({ initial, onClose, onSaved }: {
   };
   const hasError = Object.values(errors).some(Boolean);
 
+  // 조회는 로그인 기본 제공(해제 불가). 등록·수정·삭제만 토글.
+  const toggle = (k: keyof BOPerms) => {
+    if (k === "read") return;
+    setPerms((p) => ({ ...p, read: true, [k]: !p[k] }));
+  };
+
   const handleSave = () => {
     setSubmitted(true);
     if (hasError) return;
-    // 신규 생성·초기화 시 초기 비밀번호(0000) 부여 + 최초 로그인 변경 강제 (ACC-006)
     saveAccount({
       id: initial?.id ?? newId("a"),
       loginId: loginId.trim(),
       name: name.trim(),
       password: initial ? (resetPw ? DEFAULT_PASSWORD : initial.password) : DEFAULT_PASSWORD,
-      role,
+      owner: initial?.owner ?? false,
+      perms: isOwner ? initial!.perms : perms,
       createdAt: initial?.createdAt ?? todayStr(),
       lastLoginAt: initial?.lastLoginAt,
       mustChangePassword: initial ? (resetPw ? true : initial.mustChangePassword) : true,
@@ -196,16 +206,43 @@ function AccountModal({ initial, onClose, onSaved }: {
               </p>
             </div>
           )}
+
+          {/* CRUD 권한 */}
           <div>
-            <FieldLabel required>권한</FieldLabel>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as BORole)}
-              className="w-full h-10 px-3 rounded-lg border border-border bg-white text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-colors"
-            >
-              <option value="operator">운영자 — 콘텐츠 관리만</option>
-              <option value="admin">관리자 — 계정관리 포함 전체</option>
-            </select>
+            <FieldLabel>권한 (CRUD)</FieldLabel>
+            {isOwner ? (
+              <div className="px-3 py-2.5 rounded-lg bg-primary/5 border border-primary/20">
+                <p className="text-xs text-foreground/80" style={{ wordBreak: "keep-all" }}>
+                  <b className="text-primary">최고관리자</b> 계정으로 모든 콘텐츠·계정 권한을 가져요. 권한은 변경할 수 없어요.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {PERM_KEYS.map((k) => {
+                    const isRead = k === "read";
+                    const on = isRead ? true : perms[k];
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        disabled={isRead}
+                        onClick={() => toggle(k)}
+                        className={`h-10 rounded-lg border text-sm font-medium inline-flex items-center justify-center gap-1 transition-colors ${
+                          on ? "border-primary bg-primary/10 text-primary" : "border-border bg-white text-foreground/60 hover:bg-gray-50"
+                        } ${isRead ? "opacity-70 cursor-default" : ""}`}
+                      >
+                        {on && <Check className="w-3.5 h-3.5" />}
+                        {PERM_LABEL[k]}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1.5 text-xs text-muted-foreground" style={{ wordBreak: "keep-all" }}>
+                  조회는 로그인 시 기본 제공돼요(해제 불가). 등록·수정·삭제만 부여하며, 메뉴별 차등 없이 전체 콘텐츠에 동일 적용돼요.
+                </p>
+              </>
+            )}
           </div>
         </div>
 

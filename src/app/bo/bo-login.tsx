@@ -89,7 +89,7 @@ export function BOLogin({ onLogin }: { onLogin: (account: BOAccount) => void }) 
         </div>
 
         <p className="mt-4 text-center text-xs text-muted-foreground" style={{ wordBreak: "keep-all" }}>
-          데모 계정 — 관리자: admin / expert2! · 운영자: operator / expert2!
+          데모 계정 — 최고관리자: admin · 등록·수정: operator · 조회만: viewer (공통 PW expert2!)
         </p>
       </div>
     </div>

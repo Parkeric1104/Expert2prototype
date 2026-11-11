@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Megaphone, ClipboardList, Check } from "lucide-react";
-import { loadHomeLayout, saveHomeLayout } from "@/app/bo/bo-store";
+import { loadHomeLayout, saveHomeLayout, currentPerms } from "@/app/bo/bo-store";
 import { getNoticeTypes, type HomeBlockKey, type NoticeType } from "@/app/data/service-content";
 import { PageHeader, Card } from "@/app/bo/bo-ui";
 
@@ -23,6 +23,7 @@ export function HomeLayoutAdmin() {
   const [blocks, setBlocks] = useState<HomeBlockKey[]>(init.blocks);
   const [boardTypes, setBoardTypes] = useState<NoticeType[]>(init.boardTypes ?? []);
   const [dirty, setDirty] = useState(false);
+  const perms = currentPerms(); // 저장(수정)은 update 권한 필요
 
   const isOn = (k: HomeBlockKey) => blocks.includes(k);
   const shown = ORDER.filter((b) => blocks.includes(b)); // 노출 순서 정규화
@@ -131,7 +132,7 @@ export function HomeLayoutAdmin() {
             <div className="flex items-center justify-end gap-2 mt-5">
               <button
                 onClick={handleSave}
-                disabled={!dirty}
+                disabled={!dirty || !perms.update}
                 className="px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
               >
                 저장하기

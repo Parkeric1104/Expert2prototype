@@ -7,7 +7,7 @@ import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { NoticeType } from "@/app/data/service-content";
 import {
-  BONotice, loadNotices, saveNotice, deleteNotice, noticeStatus, NoticeStatus, todayStr, newId,
+  BONotice, loadNotices, saveNotice, deleteNotice, noticeStatus, NoticeStatus, todayStr, newId, currentPerms,
 } from "@/app/bo/bo-store";
 import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, PeriodCell } from "@/app/bo/bo-ui";
 
@@ -21,6 +21,7 @@ export function NoticeAdmin() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<BONotice | null>(null);
+  const perms = currentPerms(); // CRUD 권한 — 버튼 노출 제어
 
   const refresh = () => setNotices(loadNotices());
 
@@ -61,13 +62,15 @@ export function NoticeAdmin() {
         title="공지사항"
         desc="서비스에 노출되는 공지를 배포 없이 관리할 수 있어요."
         action={
-          <button
-            onClick={() => setEditing("new")}
-            className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            공지 등록
-          </button>
+          perms.create ? (
+            <button
+              onClick={() => setEditing("new")}
+              className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              공지 등록
+            </button>
+          ) : undefined
         }
       />
 
@@ -134,8 +137,9 @@ export function NoticeAdmin() {
                   <td className="px-3 py-2.5"><PeriodCell start={n.publishStart} end={n.publishEnd} /></td>
                   <td className="px-3 py-2.5 rounded-r-lg">
                     <div className="flex items-center justify-end gap-1.5">
-                      <ChipButton onClick={() => setEditing(n)}>수정</ChipButton>
-                      <ChipButton tone="red" onClick={() => setDeleteTarget(n)}>삭제</ChipButton>
+                      {perms.update && <ChipButton onClick={() => setEditing(n)}>수정</ChipButton>}
+                      {perms.delete && <ChipButton tone="red" onClick={() => setDeleteTarget(n)}>삭제</ChipButton>}
+                      {!perms.update && !perms.delete && <span className="text-[11px] text-muted-foreground/60">조회 전용</span>}
                     </div>
                   </td>
                 </tr>

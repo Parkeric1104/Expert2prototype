@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { Plus, Search, Info, AlertTriangle, AlertOctagon } from "lucide-react";
 import { toast } from "sonner";
 import {
-  BOPopup, loadPopups, savePopup, deletePopup, setPopupActive, popupStatus, PopupStatus, inPeriod, todayStr, newId, MAX_POPUP_QUEUE,
+  BOPopup, loadPopups, savePopup, deletePopup, setPopupActive, popupStatus, PopupStatus, inPeriod, todayStr, newId, MAX_POPUP_QUEUE, currentPerms,
 } from "@/app/bo/bo-store";
 import { PageHeader, Card, StatusDot, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls, PeriodCell } from "@/app/bo/bo-ui";
 
@@ -29,6 +29,7 @@ export function PopupAdmin() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<BOPopup | null>(null);
+  const perms = currentPerms(); // CRUD 권한 — 버튼 노출 제어
 
   const refresh = () => setPopups(loadPopups());
 
@@ -83,13 +84,15 @@ export function PopupAdmin() {
         title="공지팝업"
         desc={`서비스 메인 중앙에 노출되는 팝업을 관리할 수 있어요. 활성 팝업이 여러 개면 등록일 순서로 최대 ${MAX_POPUP_QUEUE}개까지 순차 노출돼요(사용자는 확인/다음으로 넘겨 봐요).`}
         action={
-          <button
-            onClick={() => setEditing("new")}
-            className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            팝업 등록
-          </button>
+          perms.create ? (
+            <button
+              onClick={() => setEditing("new")}
+              className="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              팝업 등록
+            </button>
+          ) : undefined
         }
       />
 
@@ -159,11 +162,14 @@ export function PopupAdmin() {
                     <td className="px-3 py-2.5"><PeriodCell start={p.publishStart} end={p.publishEnd} /></td>
                     <td className="px-3 py-2.5 rounded-r-lg">
                       <div className="flex items-center justify-end gap-1.5">
-                        <ChipButton tone={p.active ? "gray" : "blue"} onClick={() => handleToggle(p)}>
-                          {p.active ? "비활성화" : "활성화"}
-                        </ChipButton>
-                        <ChipButton onClick={() => setEditing(p)}>수정</ChipButton>
-                        <ChipButton tone="red" onClick={() => setDeleteTarget(p)}>삭제</ChipButton>
+                        {perms.update && (
+                          <ChipButton tone={p.active ? "gray" : "blue"} onClick={() => handleToggle(p)}>
+                            {p.active ? "비활성화" : "활성화"}
+                          </ChipButton>
+                        )}
+                        {perms.update && <ChipButton onClick={() => setEditing(p)}>수정</ChipButton>}
+                        {perms.delete && <ChipButton tone="red" onClick={() => setDeleteTarget(p)}>삭제</ChipButton>}
+                        {!perms.update && !perms.delete && <span className="text-[11px] text-muted-foreground/60">조회 전용</span>}
                       </div>
                     </td>
                   </tr>

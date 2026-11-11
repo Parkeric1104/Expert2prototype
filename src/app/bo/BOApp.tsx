@@ -85,7 +85,7 @@ export function BOApp() {
         <nav className="flex-1 px-3 space-y-0.5">
           <p className="px-2 pb-1.5 text-[11px] font-medium text-muted-foreground/70">콘텐츠</p>
           {CONTENT_NAV.map(({ key, label, Icon, iconColor }) => navItem(key, label, Icon, iconColor))}
-          {account.role === "admin" && (
+          {account.owner && (
             <>
               <p className="px-2 pt-4 pb-1.5 text-[11px] font-medium text-muted-foreground/70">관리</p>
               {navItem("expert", "전문가 인증", ShieldCheck, "text-blue-500")}
@@ -99,7 +99,7 @@ export function BOApp() {
           <div className="px-2.5 py-2 rounded-lg bg-gray-50 flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-foreground truncate">{account.name}</p>
-              <p className="text-[11px] text-muted-foreground">{account.role === "admin" ? "관리자" : "운영자"}</p>
+              <p className="text-[11px] text-muted-foreground">{account.owner ? "최고관리자" : "운영자"}</p>
             </div>
             <button
               onClick={() => { logout(); setAccount(null); }}
@@ -130,8 +130,8 @@ export function BOApp() {
           {section === "curation" && <CurationAdmin />}
           {section === "popup" && <PopupAdmin />}
           {section === "version" && <VersionAdmin />}
-          {section === "expert" && account.role === "admin" && <ExpertReviewAdmin me={account} />}
-          {section === "account" && account.role === "admin" && <AccountAdmin me={account} />}
+          {section === "expert" && account.owner && <ExpertReviewAdmin me={account} />}
+          {section === "account" && account.owner && <AccountAdmin me={account} />}
         </div>
       </main>
 
