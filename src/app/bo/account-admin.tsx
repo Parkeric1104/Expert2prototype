@@ -8,9 +8,9 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   BOAccount, BOPerms, DEFAULT_PERMS, PERM_LABEL, accountPerms,
-  loadAccounts, saveAccount, deleteAccount, isLoginIdTaken, DEFAULT_PASSWORD, todayStr, newId,
+  loadAccounts, saveAccount, deleteAccount,
 } from "@/app/bo/bo-store";
-import { PageHeader, Card, FieldLabel, ChipButton, ConfirmModal, Pagination, inputCls } from "@/app/bo/bo-ui";
+import { PageHeader, Card, FieldLabel, ChipButton, ConfirmModal, Pagination } from "@/app/bo/bo-ui";
 
 const PAGE_SIZE = 5;
 const PERM_KEYS: (keyof BOPerms)[] = ["read", "create", "update", "delete"];
@@ -124,28 +124,15 @@ export function AccountAdmin({ me }: { me: BOAccount }) {
   );
 }
 
-// ── 등록/수정 모달 (ACC-004) — CRUD 권한 부여 ──
+// ── 권한 수정 모달 (ACC-004) — 아마란스 연동 계정의 CRUD 권한만 관리 ──
 function AccountModal({ initial, onClose, onSaved }: {
   initial: BOAccount | null;
   onClose: () => void;
   onSaved: (wasEdit: boolean) => void;
 }) {
-  const [name, setName] = useState(initial?.name ?? "");
-  const [loginId, setLoginId] = useState(initial?.loginId ?? "");
-  const [resetPw, setResetPw] = useState(false);
-  const [perms, setPerms] = useState<BOPerms>(initial && !initial.owner ? { ...DEFAULT_PERMS, ...initial.perms } : { ...DEFAULT_PERMS });
-  const [submitted, setSubmitted] = useState(false);
-  const isOwner = !!initial?.owner;
-
-  const errors = {
-    name: name.trim() ? "" : "이름을 입력해 주세요.",
-    loginId: loginId.trim()
-      ? isLoginIdTaken(loginId.trim(), initial?.id)
-        ? "이미 사용 중인 아이디예요."
-        : ""
-      : "아이디를 입력해 주세요.",
-  };
-  const hasError = Object.values(errors).some(Boolean);
+  const acc = initial!; // 수정 전용(수동 등록 없음)
+  const [perms, setPerms] = useState<BOPerms>(acc.owner ? accountPerms(acc) : { ...DEFAULT_PERMS, ...acc.perms });
+  const isOwner = !!acc.owner;
 
   // 조회는 로그인 기본 제공(해제 불가). 등록·수정·삭제만 토글.
   const toggle = (k: keyof BOPerms) => {
@@ -154,58 +141,30 @@ function AccountModal({ initial, onClose, onSaved }: {
   };
 
   const handleSave = () => {
-    setSubmitted(true);
-    if (hasError) return;
-    saveAccount({
-      id: initial?.id ?? newId("a"),
-      loginId: loginId.trim(),
-      name: name.trim(),
-      password: initial ? (resetPw ? DEFAULT_PASSWORD : initial.password) : DEFAULT_PASSWORD,
-      owner: initial?.owner ?? false,
-      perms: isOwner ? initial!.perms : perms,
-      createdAt: initial?.createdAt ?? todayStr(),
-      lastLoginAt: initial?.lastLoginAt,
-      mustChangePassword: initial ? (resetPw ? true : initial.mustChangePassword) : true,
-    });
-    onSaved(initial != null);
+    // 이름·아이디·비밀번호는 아마란스 연동값(편집 불가) — 권한만 저장
+    saveAccount({ ...acc, perms: isOwner ? acc.perms : perms });
+    onSaved(true);
   };
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-[440px] bg-white rounded-2xl shadow-xl p-6">
-        <h3 className="text-lg font-bold text-foreground mb-5">{initial ? "계정 수정하기" : "계정 등록하기"}</h3>
+        <h3 className="text-lg font-bold text-foreground mb-5">권한 수정 — {acc.name}</h3>
 
         <div className="space-y-4">
+          {/* 아이디(아마란스 연동값, 비활성) */}
           <div>
-            <FieldLabel required>이름</FieldLabel>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="입력하기" className={inputCls} />
-            {submitted && errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+            <FieldLabel>아이디</FieldLabel>
+            <input
+              value={acc.loginId}
+              disabled
+              readOnly
+              className="w-full h-10 px-3 rounded-lg border border-border bg-gray-100 text-sm text-muted-foreground cursor-not-allowed"
+            />
+            <p className="mt-1.5 text-xs text-muted-foreground" style={{ wordBreak: "keep-all" }}>
+              아마란스에서 연동된 계정이에요. 이름·아이디·비밀번호는 BO에서 변경할 수 없어요.
+            </p>
           </div>
-          <div>
-            <FieldLabel required>아이디</FieldLabel>
-            <input value={loginId} onChange={(e) => setLoginId(e.target.value)} placeholder="입력하기" className={inputCls} />
-            {submitted && errors.loginId && <p className="mt-1 text-xs text-red-500">{errors.loginId}</p>}
-          </div>
-          {initial ? (
-            <button
-              type="button"
-              onClick={() => setResetPw(!resetPw)}
-              className="w-full flex items-start gap-2 px-3 py-2.5 rounded-lg bg-gray-50 border border-border text-left hover:bg-gray-100 transition-colors"
-            >
-              <span className={`mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center border transition-colors ${resetPw ? "bg-primary border-primary" : "bg-white border-gray-300"}`}>
-                {resetPw && <span className="text-white text-[10px] font-bold">✓</span>}
-              </span>
-              <span className="text-xs text-foreground/80" style={{ wordBreak: "keep-all" }}>
-                비밀번호 초기화 — {DEFAULT_PASSWORD}으로 재설정되고, 다음 로그인 시 새 비밀번호로 변경해야 해요.
-              </span>
-            </button>
-          ) : (
-            <div className="px-3 py-2.5 rounded-lg bg-gray-50 border border-border">
-              <p className="text-xs text-foreground/80" style={{ wordBreak: "keep-all" }}>
-                초기 비밀번호는 <b>{DEFAULT_PASSWORD}</b>이에요. 최초 로그인 시 비밀번호 규칙에 맞는 새 비밀번호로 변경해야 해요.
-              </p>
-            </div>
-          )}
 
           {/* CRUD 권한 */}
           <div>
@@ -251,7 +210,7 @@ function AccountModal({ initial, onClose, onSaved }: {
             닫기
           </button>
           <button onClick={handleSave} className="px-4 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-            {initial ? "저장하기" : "등록하기"}
+            저장하기
           </button>
         </div>
       </div>
